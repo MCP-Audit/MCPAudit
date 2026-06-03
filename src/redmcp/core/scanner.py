@@ -88,8 +88,7 @@ class Scanner:
             console.print()
             for finding in report.findings[:10]:
                 console.print(
-                    f"[{finding.severity.color}]{finding.severity.value.upper()}[/]: "
-                    f"{finding.title}"
+                    f"[{finding.severity.color}]{finding.severity.value.upper()}[/]: {finding.title}"
                 )
             if len(report.findings) > 10:
                 console.print(f"... and {len(report.findings) - 10} more findings")

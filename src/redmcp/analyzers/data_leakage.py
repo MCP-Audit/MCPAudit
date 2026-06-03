@@ -40,9 +40,7 @@ class DataLeakageAnalyzer(BaseAnalyzer):
 
     def analyze(self, server: MCPServerInfo) -> list[Finding]:
         findings: list[Finding] = []
-        corpus = " ".join(
-            f"{tool.name} {tool.description} {tool.input_schema}" for tool in server.tools
-        )
+        corpus = " ".join(f"{tool.name} {tool.description} {tool.input_schema}" for tool in server.tools)
 
         for label, pattern, severity in SECRET_PATTERNS:
             if pattern.search(corpus):
