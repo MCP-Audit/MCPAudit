@@ -156,13 +156,9 @@ def build_executive_summary(findings: list[Finding], summary: ScanSummary) -> di
     exfil_findings = [
         f
         for f in findings
-        if "exfil" in f.title.lower()
-        or "webhook" in f.title.lower()
-        or "send_webhook" in (f.tool or "")
+        if "exfil" in f.title.lower() or "webhook" in f.title.lower() or "send_webhook" in (f.tool or "")
     ]
-    if exfil_findings or any(
-        "exfil_tools" in f.evidence for f in findings if f.analyzer == "attack_chains"
-    ):
+    if exfil_findings or any("exfil_tools" in f.evidence for f in findings if f.analyzer == "attack_chains"):
         paragraphs.append("Sensitive data exfiltration paths were identified.")
 
     file_findings = [
@@ -178,9 +174,7 @@ def build_executive_summary(findings: list[Finding], summary: ScanSummary) -> di
         if summary.total == 0:
             paragraphs.append("No significant security issues were detected in this scan.")
         else:
-            paragraphs.append(
-                f"The scan identified {summary.total} finding(s) across severity levels."
-            )
+            paragraphs.append(f"The scan identified {summary.total} finding(s) across severity levels.")
 
     recs = build_recommendations(findings)
     action_map = [
@@ -376,11 +370,7 @@ def build_dashboard_payload(report: ScanReport) -> dict[str, Any]:
 
     findings_rows = []
     for finding in sort_findings(report.findings):
-        owasp_ids = [
-            oid
-            for oid, _, names in OWASP_CATALOG
-            if finding.analyzer in names
-        ]
+        owasp_ids = [oid for oid, _, names in OWASP_CATALOG if finding.analyzer in names]
         findings_rows.append(
             {
                 "id": finding.id,
@@ -433,10 +423,7 @@ def build_dashboard_payload(report: ScanReport) -> dict[str, Any]:
         "categories": category_scores(report.findings),
         "trend": score_trend(report),
         "findings": findings_rows,
-        "tools": [
-            {"name": t.name, "description": t.description}
-            for t in report.server.tools
-        ],
+        "tools": [{"name": t.name, "description": t.description} for t in report.server.tools],
         "analyzers": analyzer_summaries(report.findings),
         "attack_graph": build_attack_graph(report),
         "owasp": owasp_mappings(report.findings),
