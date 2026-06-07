@@ -58,13 +58,6 @@ runs:
         name: mcts-report-json
         path: mcts-report.json
 
-    - name: Upload SARIF for GitHub Code Scanning
-      if: always()
-      uses: github/codeql-action/upload-sarif@v3
-      with:
-        sarif_file: mcts-report.sarif
-      continue-on-error: true
-
     - name: Upload HTML dashboard
       if: always()
       uses: actions/upload-artifact@v4

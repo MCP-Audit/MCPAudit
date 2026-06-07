@@ -2,7 +2,7 @@
 
 Composite action for running MCTS security scans in CI with JSON, SARIF, and HTML outputs.
 
-**Status:** Ready for `@v1` tag — SARIF upload to GitHub Code Scanning is wired. Publish with `git tag v1 && git push origin v1` on the default branch.
+**Status:** Ready for `@v1` tag — generates SARIF for Code Scanning; upload via a workflow step with `security-events: write`. Publish with `git tag v1 && git push origin v1` on the default branch.
 
 ---
 
@@ -28,7 +28,22 @@ Composite action for running MCTS security scans in CI with JSON, SARIF, and HTM
     min-score: "70"
 ```
 
-The action runs `mcts scan`, emits `mcts-report.sarif`, generates HTML via `mcts report`, uploads artifacts, and attempts SARIF upload via `github/codeql-action/upload-sarif`.
+The action runs `mcts scan`, emits `mcts-report.sarif`, generates HTML via `mcts report`, and uploads JSON/HTML artifacts. Add a separate workflow step to publish SARIF to GitHub Code Scanning (requires `security-events: write`):
+
+```yaml
+permissions:
+  contents: read
+  security-events: write
+
+- uses: MCP-Audit/MCTS@v1
+  with:
+    target: ./server.py
+
+- uses: github/codeql-action/upload-sarif@v3
+  if: always()
+  with:
+    sarif_file: mcts-report.sarif
+```
 
 ---
 
