@@ -1,40 +1,42 @@
 # CLI Reference
 
-**Planned commands and flags:** see [Feature Expansion Plan — Part 4](feature-expansion-plan.md#part-4--phased-implementation). Status in [Roadmap](roadmap.md).
+Commands and flags reflect the current Typer CLI in `src/mcts/cli/main.py`. Planned commands are marked 📋.
 
 ---
 
 ## `mcts scan`
 
-Run a full security scan.
+Run a full security scan against an MCP server entrypoint or repository.
 
 ```bash
-mcts scan <target> [--output report.json] [--fail-on-critical] [--theme cyber]
+mcts scan <target> [options]
 ```
 
-| Flag | Status | Description |
-|------|--------|-------------|
-| `--output`, `-o` | ✅ | Write JSON report to file |
-| `--fail-on-critical` | ✅ | Exit code 1 if critical findings exist |
-| `--theme` | ✅ | Terminal theme: `cyber`, `minimal`, `github` |
-| `--no-progress` | ✅ | Skip pre-report progress animation |
-| `--format` | ✅ | `json` (default) or `sarif` |
-| `--min-score` | ✅ | Exit 1 if overall score below threshold |
-| `--max-critical` | ✅ | Exit 1 if critical count exceeds limit |
-| `--live` | ✅ | Connect to running server via MCP stdio |
-| `--command`, `--args` | ✅ | Spawn command for live probe |
-| `--config`, `--server` | ✅ | Scan server entry from client MCP config |
-| `--i-understand-live-risk` | ✅ | Consent for live MCP probing (or `MCTS_LIVE_OK=1` in CI) |
-| `--runtime-events` | ✅ | JSON telemetry file for runtime analyzers |
-| `--behavioral-probe` | ✅ | Multi-turn MCTS-T-1026 probe events (on by default with `--live`) |
-| `--semantic-secrets` | ✅ | Opt-in semantic credential detection (MCTS-T-1022) |
-| `--sigma-rules-path` | ✅ | Extra Sigma YAML directory (`MCTS-T-*/detection-rule.yml`) |
-| `--baseline` / `--save-baseline` | ✅ | Rug-pull baseline compare/snapshot |
-| `--languages` | ✅ | Discovery languages: `python`, `typescript` |
-| `--profile` | 📋 | Policy profile: `strict`, `balanced`, `dev` |
-| `--llm-review` | 📋 | Opt-in LLM finding review (requires API key) |
+| Flag | Description |
+|------|-------------|
+| `--output`, `-o` | Write report to file (JSON or SARIF) |
+| `--format`, `-f` | `json` (default) or `sarif` |
+| `--fail-on-critical` | Exit 1 if critical findings exist |
+| `--min-score` | Exit 1 if overall score below threshold (0–100) |
+| `--max-critical` | Exit 1 if critical count exceeds limit |
+| `--fail-on-category` | Exit 1 when category risk ≥ threshold (e.g. `permissions:10`). Repeatable. |
+| `--theme` | Terminal theme: `cyber`, `minimal`, `github` |
+| `--no-progress` | Skip pre-report progress animation |
+| `--live` | Connect to live stdio MCP server (requires consent) |
+| `--command`, `--args` | Custom launch command for live mode |
+| `--config`, `--server` | Scan server from client MCP config JSON |
+| `--i-understand-live-risk` | Consent for live probing (or `MCTS_LIVE_OK=1` in CI) |
+| `--languages` | Discovery languages: `python`, `typescript` (default: both) |
+| `--baseline` | Compare tool metadata against saved baseline JSON (rug-pull) |
+| `--save-baseline` | Write current tool metadata snapshot to JSON |
+| `--sigma-rules-path` | Extra directory with `MCTS-T-*/detection-rule.yml` Sigma rules |
+| `--semantic-secrets` | Opt-in semantic credential detection (MCTS-T-1022) |
+| `--runtime-events` | JSON file with probe/runtime telemetry for analyzers |
+| `--behavioral-probe` | Multi-turn MCTS-T-1026 probe events (auto-enabled with `--live`) |
+| `--profile` | 📋 Policy profile: `strict`, `balanced`, `dev` |
+| `--llm-review` | 📋 Opt-in LLM finding review (requires API key) |
 
-`<target>`: path to MCP server entrypoint **or repository directory** (multi-file discovery). Use `.` with `--config` + `--server`.
+**Target:** path to MCP server file, repository directory, or `.` with `--config` + `--server`.
 
 ### Scoring output
 
@@ -42,17 +44,39 @@ Each scan prints:
 
 - **Overall Score** — security score (higher is better), exponential decay on weighted findings
 - **Risk Index** — raw risk capped at 100 (higher is worse)
-- **Scoring basis** — severity counts used (compliance meta-findings excluded)
+- **Scoring basis** — severity counts (compliance meta-findings excluded)
+- **Category breakdown** — per-category risk bars in the terminal dashboard
 
-**Planned:** per-category scorecard in terminal (matches HTML dashboard bars).
+Details: [Scoring Specification](scoring-spec.md).
 
-JSON reports include `score.overall`, `score.risk_index`, `score.raw_risk`, and `score.basis`.
+### Examples
+
+```bash
+# Repo scan (Python + TypeScript)
+mcts scan ./my-mcp-repo/ -o report.json
+
+# Live stdio probe
+mcts scan ./server.py --live --i-understand-live-risk
+
+# From Cursor config
+mcts scan . --config ~/.cursor/mcp.json --server my-server --live --i-understand-live-risk
+
+# SARIF + CI gates
+mcts scan ./server.py -o report.sarif --format sarif --min-score 70 --max-critical 0
+
+# Fuzz telemetry replay
+mcts scan ./server.py --runtime-events fuzz.json
+
+# Rug-pull baseline
+mcts scan ./server.py --save-baseline baseline.json
+mcts scan ./server.py --baseline baseline.json
+```
 
 ---
 
 ## `mcts report`
 
-Generate a **premium HTML security dashboard** from JSON scan output.
+Generate an HTML security dashboard from JSON scan output.
 
 ```bash
 mcts report report.json [--output security-report.html] [--theme cyber]
@@ -65,11 +89,9 @@ mcts report report.json [--output security-report.html] [--theme cyber]
 
 See [HTML Security Dashboard](html-report.md).
 
-**Planned dashboard sections:** Capability Matrix, Technique Map (`MCTS-T-*`), real trend from scan history.
-
 ---
 
-## `mcts inventory` (✅ Shipped)
+## `mcts inventory`
 
 Discover MCP servers configured on this machine.
 
@@ -78,7 +100,44 @@ mcts inventory
 mcts inventory --scan -o inventory.json
 ```
 
-Supports Cursor, Claude Desktop, VS Code, Windsurf. Optional `--skills` in Phase 3.
+| Flag | Description |
+|------|-------------|
+| `--scan` | Static-scan each discovered server entrypoint for tool names |
+| `--output`, `-o` | Write inventory JSON report |
+| `--theme` | Terminal theme |
+
+Clients: Cursor, Claude Desktop, VS Code, Windsurf. Cross-server shadowing findings may fail the command (exit 1).
+
+See [Config Inventory](inventory.md).
+
+---
+
+## `mcts fuzz`
+
+Protocol-level probing against a live stdio MCP server.
+
+```bash
+mcts fuzz <target> --i-understand-live-risk [options]
+```
+
+| Flag | Description |
+|------|-------------|
+| `--fuzz-level` | `safe` (default), `standard`, or `aggressive` |
+| `--command`, `--args` | Custom server launch |
+| `--config`, `--server` | Launch from client MCP config |
+| `--output`, `-o` | Write findings + `runtime_events` JSON |
+| `--i-understand-live-risk` | Consent to start subprocess (or `MCTS_LIVE_OK=1`) |
+| `--i-understand-fuzz-risk` | Required for **aggressive** (may invoke `tools/call`) |
+| `--theme` | Terminal theme |
+
+Pipe output into scan:
+
+```bash
+mcts fuzz ./server.py --i-understand-live-risk -o fuzz.json
+mcts scan ./server.py --runtime-events fuzz.json
+```
+
+See [Protocol Fuzzing](fuzzing.md).
 
 ---
 
@@ -93,57 +152,39 @@ mcts audit-config ./claude_desktop_config.json --probe
 
 ---
 
-## `mcts fuzz` (✅ Shipped)
-
-Protocol-level probing against a live stdio MCP server.
-
-```bash
-mcts fuzz <target> --i-understand-live-risk --fuzz-level safe|standard|aggressive
-mcts fuzz . --config ~/.cursor/mcp.json --server my-server --i-understand-live-risk -o fuzz.json
-```
-
-Output includes `runtime_events` for piping into `mcts scan --runtime-events`. Aggressive level requires `--i-understand-fuzz-risk`.
-
----
-
 ## `mcts simulate` (📋 Planned)
 
-Active attack-path simulation (Phase 2). See [Roadmap § Attack Simulation](roadmap.md#phase-2--differentiation--future).
+Active attack-path simulation. See [Roadmap](roadmap.md).
 
 ---
 
 ## `mcts pentest` (📋 Planned)
 
-AI-assisted penetration testing agent (Phase 3). Stub today.
+AI-assisted penetration testing agent. Stub today — prints "not yet implemented".
 
 ---
 
 ## `mcts vet` (📋 Planned)
 
-Pre-install package vetting (Phase 3).
-
-```bash
-mcts vet pypi:mcp-server-foo
-mcts vet npm:@scope/mcp-server
-```
+Pre-install package vetting (`pypi:…`, `npm:…`).
 
 ---
 
 ## `mcts trend` (📋 Planned)
 
-Show score history for a target from `.mcts/history/`.
+Score history from `.mcts/history/`.
 
 ---
 
 ## `mcts badge` (📋 Planned)
 
-Generate README certification SVG from scan JSON.
+README certification SVG from scan JSON.
 
 ---
 
 ## `mcts serve` (📋 Planned)
 
-Local REST API for pipeline integration (optional `api` extra).
+Local REST API for pipeline integration.
 
 ---
 
@@ -153,20 +194,35 @@ Print the installed version.
 
 ---
 
+## Exit codes
+
+| Code | When |
+|------|------|
+| 0 | Success; gates passed |
+| 1 | Gate failure or high/critical fuzz/inventory findings |
+| 2 | Usage error, missing consent, probe failure |
+
+---
+
 ## CI examples
 
-**Today:**
-
 ```bash
-mcts scan ./server.py --fail-on-critical -o report.json
+# Static gate
+mcts scan ./server.py --fail-on-critical --min-score 70 -o report.json
+
+# SARIF for GitHub Code Scanning
+mcts scan ./server.py --format sarif -o report.sarif --max-critical 0
+
+# Category gates
+mcts scan ./repo/ --fail-on-category permissions:10 --fail-on-category injection:15
 ```
 
-**Planned:**
+GitHub Action: [CI Integration](ci-integration.md) · [`action/action.yml`](../action/action.yml)
 
-```bash
-mcts scan ./server.py -o report.sarif --format sarif --min-score 70
-```
+---
 
-GitHub Action: see [Roadmap — GitHub Action](roadmap.md#2-github-action) and `action/action.yml`.
+## Related
 
-Full CI guide (planned): `docs/ci-integration.md`.
+- [Architecture](architecture.md)
+- [Live Scanning](live-scanning.md)
+- [Scoring Specification](scoring-spec.md)
