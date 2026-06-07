@@ -59,5 +59,7 @@ permissions:
 
 ## Related
 
-- [Roadmap — GitHub Action](../docs/roadmap.md#2-github-action)
-- [CLI Reference](../docs/cli.md)
+- [CI Integration](../docs/platform/ci-integration.md)
+- [Roadmap — GitHub Action](../docs/more/roadmap.md#2-github-action)
+- [CLI Reference](../docs/platform/cli.md)
+- [Documentation index](../docs/index.md)

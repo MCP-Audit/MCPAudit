@@ -9,6 +9,8 @@ Thank you for helping make MCP security testing accessible to everyone.
 3. Run `uv sync --all-extras`
 4. Install pre-commit hooks: `pre-commit install`
 
+See [Getting Started](docs/get-started/getting-started.md) and [CLI Reference](docs/platform/cli.md) for usage beyond local development.
+
 ## Development Workflow
 
 ```bash
@@ -60,8 +62,9 @@ The ruleset definition lives in `.github/rulesets/main.json`.
 
 Before large features, read:
 
-- [Feature Expansion Plan](docs/feature-expansion-plan.md) — gap analysis, implementation how-to, module layout
-- [Product Roadmap](docs/roadmap.md) — phased deliverables and success criteria
+- [Documentation index](docs/index.md)
+- [Feature Expansion Plan](docs/more/feature-expansion-plan.md) — gap analysis, implementation how-to, module layout
+- [Product Roadmap](docs/more/roadmap.md) — phased deliverables and success criteria
 
 Pick a phase item and open a [feature request](https://github.com/MCP-Audit/MCTS/issues/new?template=feature_request.yml) or Discussion to align on design.
 
@@ -70,8 +73,8 @@ Pick a phase item and open a [feature request](https://github.com/MCP-Audit/MCTS
 1. Create a module under `src/mcts/analyzers/`
 2. Subclass `BaseAnalyzer` and implement `analyze()`
 3. Register it in `src/mcts/core/scanner.py`
-4. Add benchmark fixture in `examples/bench/` when applicable (see Feature Expansion Plan § 1.7)
-5. Assign `technique_id` (`MCTS-T-*`) when taxonomy module exists
+4. Add benchmark fixture in `examples/bench/` when applicable (see [Feature Expansion Plan § 1.7](docs/more/feature-expansion-plan.md#part-1--current-state-honest-inventory))
+5. Assign `technique_id` (`MCTS-T-*`) — see [Threat Taxonomy](docs/reporting/taxonomy.md)
 6. Add tests under `tests/`
 
 ## Code of Conduct

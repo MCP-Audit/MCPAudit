@@ -3,6 +3,10 @@ description: Report a bug in MCTS
 title: "[Bug]: "
 labels: ["bug", "triage"]
 body:
+  - type: markdown
+    attributes:
+      value: |
+        For MCTS tool bugs, see [Getting Started](https://github.com/MCP-Audit/MCTS/blob/main/docs/get-started/getting-started.md) and [CLI Reference](https://github.com/MCP-Audit/MCTS/blob/main/docs/platform/cli.md). For vulnerabilities in **MCTS itself**, see [SECURITY.md](https://github.com/MCP-Audit/MCTS/blob/main/SECURITY.md).
   - type: textarea
     id: description
     attributes:

@@ -25,4 +25,4 @@
 - [ ] CHANGELOG.md updated (if user-facing) — see [Keep a Changelog](../CHANGELOG.md)
 - [ ] Tests added or updated
 - [ ] No secrets or credentials in code
-- [ ] Docs updated if CLI behavior or report output changed — see [docs/](docs/)
+- [ ] Docs updated if CLI behavior or report output changed — see [Documentation index](docs/index.md) (guides live under `docs/get-started/`, `docs/scanning/`, `docs/platform/`, etc.)

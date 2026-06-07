@@ -98,7 +98,7 @@ uv run mcts report report.json -o security-report.html
 open security-report.html
 ```
 
-The HTML report includes a dark-themed overview (score gauge, letter grade, severity cards, posture summary), risk breakdown with radar chart, searchable findings, attack chain graph, OWASP mapping, and in-browser export (JSON / HTML / PDF). See [docs/html-report.md](docs/html-report.md).
+The HTML report includes a dark-themed overview (score gauge, letter grade, severity cards, posture summary), risk breakdown with radar chart, searchable findings, attack chain graph, OWASP mapping, and in-browser export (JSON / HTML / PDF). See [docs/reporting/html-report.md](docs/reporting/html-report.md).
 
 ### CI gate (fail on critical or score)
 
@@ -107,7 +107,7 @@ uv run mcts scan ./server.py --fail-on-critical --min-score 70
 uv run mcts scan ./server.py -o report.sarif --format sarif
 ```
 
-See [docs/ci-integration.md](docs/ci-integration.md) and [action/README.md](action/README.md).
+See [docs/platform/ci-integration.md](docs/platform/ci-integration.md) and [action/README.md](action/README.md).
 
 ### Themes
 
@@ -138,14 +138,23 @@ uv run mcts scan ./server.py --theme minimal --no-progress
 
 ## Documentation
 
-- [Getting Started](docs/getting-started.md)
-- [CLI Reference](docs/cli.md)
-- [Architecture](docs/architecture.md)
-- [Live Scanning](docs/live-scanning.md) · [Fuzzing](docs/fuzzing.md) · [Inventory](docs/inventory.md)
-- [Scoring Spec](docs/scoring-spec.md) · [CI Integration](docs/ci-integration.md)
-- [Threat Taxonomy](docs/taxonomy.md) · [TypeScript Discovery](docs/typescript-discovery.md)
-- [HTML Security Dashboard](docs/html-report.md)
-- [Feature Expansion Plan](docs/feature-expansion-plan.md) · [Roadmap](docs/roadmap.md)
+Full index: [docs/index.md](docs/index.md)
+
+**Get started**
+- [Install and first scan](docs/get-started/getting-started.md)
+
+**Scanning**
+- [Live Scanning](docs/scanning/live-scanning.md) · [Fuzzing](docs/scanning/fuzzing.md) · [Inventory](docs/scanning/inventory.md) · [TypeScript Discovery](docs/scanning/typescript-discovery.md)
+
+**Analysis & reporting**
+- [Architecture](docs/analysis/architecture.md)
+- [Scoring Spec](docs/reporting/scoring-spec.md) · [Threat Taxonomy](docs/reporting/taxonomy.md) · [HTML Dashboard](docs/reporting/html-report.md)
+
+**Platform**
+- [CLI Reference](docs/platform/cli.md) · [CI Integration](docs/platform/ci-integration.md)
+
+**Planning**
+- [Feature Expansion Plan](docs/more/feature-expansion-plan.md) · [Roadmap](docs/more/roadmap.md)
 - [Changelog](CHANGELOG.md)
 
 ## Project Structure
@@ -171,6 +180,12 @@ MCTS/
 ├── examples/            # Sample MCP servers & benchmarks
 ├── action/              # GitHub Action (`@v1`)
 └── docs/                # Documentation
+    ├── get-started/     # Install and first scan
+    ├── scanning/        # Live, fuzz, TS discovery, inventory
+    ├── analysis/        # Pipeline architecture
+    ├── reporting/       # Scoring, taxonomy, HTML dashboard
+    ├── platform/        # CLI and CI
+    └── more/            # Roadmap and planning
 ```
 
 ## Development
@@ -197,10 +212,10 @@ pre-commit install
 
 | Doc | Contents |
 |-----|----------|
-| [Feature Expansion Plan](docs/feature-expansion-plan.md) | Full gap analysis, how to implement each capability, module layout, build order |
-| [Product Roadmap](docs/roadmap.md) | Phased deliverables: foundation → CI adoption → differentiation → platform |
+| [Feature Expansion Plan](docs/more/feature-expansion-plan.md) | Full gap analysis, how to implement each capability, module layout, build order |
+| [Product Roadmap](docs/more/roadmap.md) | Phased deliverables: foundation → CI adoption → differentiation → platform |
 
-**Next up:** SSE/HTTP transports, `mcts audit-config`, scan history/trends, `mcts pentest` agent. Phase 0–1 foundation (repo scan, SARIF, live probe, inventory, taxonomy) is shipped — see [Roadmap](docs/roadmap.md).
+**Next up:** SSE/HTTP transports, `mcts audit-config`, scan history/trends, `mcts pentest` agent. Phase 0–1 foundation (repo scan, SARIF, live probe, inventory, taxonomy) is shipped — see [Roadmap](docs/more/roadmap.md).
 
 ## Contributing
 

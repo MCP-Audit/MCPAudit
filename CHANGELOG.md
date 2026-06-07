@@ -22,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Metadata integrity analyzer** — description poisoning and line-jumping patterns
 - **MCTS-T taxonomy** — `techniques.json` with CWE/OWASP mapping; auto-enriched on findings
 - **GitHub Action** — JSON + SARIF + HTML artifacts, `--min-score` input, Code Scanning upload
-- Docs: [Product Positioning](docs/product-positioning.md)
+- Docs: [Product Positioning](docs/more/product-positioning.md)
 - **Live stdio probing** — `mcts scan --live --i-understand-live-risk` connects via MCP protocol; merges live schemas with static analysis
 - **Config-based live scan** — `mcts scan --config ~/.cursor/mcp.json --server NAME --live --i-understand-live-risk`
 - Example: `examples/live-mcp-server/server.py` for probe integration tests
@@ -34,7 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Exponential risk scoring** — Security score `round(100 × e^(-raw_risk/50))`, risk index, and auditable `ScoreBasis` on every report (compliance meta-findings excluded)
 - Example servers: `examples/safe-mcp-server/`, `examples/medium-risk-mcp-server/` for scoring regression bands
 - Brand assets in `src/mcts/brand/` (canonical logo + HTML-optimized embed)
-- Docs: [HTML Security Dashboard](docs/html-report.md), updated CLI, getting started, architecture, and README
+- Docs: [HTML Security Dashboard](docs/reporting/html-report.md), [CLI](docs/platform/cli.md), [Getting Started](docs/get-started/getting-started.md), [Architecture](docs/analysis/architecture.md), and README
 
 ### Changed
 

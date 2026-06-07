@@ -25,6 +25,7 @@ report.json
 
 # Local analysis mirrors (not shipped)
 competitors/
+local/
 
 # IDE
 .idea/

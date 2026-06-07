@@ -1,8 +1,22 @@
 # MCTS Feature Expansion Plan
 
+> [Documentation](../index.md) → [More](README.md)
+
+
 Detailed gap analysis and implementation guide for evolving MCTS from alpha static scanner to a full MCP security platform. This plan is **original MCTS architecture** — informed by [product positioning](product-positioning.md) and [external frameworks](external-frameworks.md).
 
-**Related:** [Product Roadmap](roadmap.md) · [Architecture](architecture.md) · [CLI Reference](cli.md)
+**Related:** [Product Roadmap](roadmap.md) · [Architecture](../analysis/architecture.md) · [CLI Reference](../platform/cli.md)
+
+### User documentation map
+
+| Topic | Guide |
+|-------|-------|
+| Install and first scan | [get-started/getting-started.md](../get-started/getting-started.md) |
+| Live probe, fuzz, inventory, TS discovery | [scanning/](../scanning/README.md) |
+| Pipeline and analyzers | [analysis/architecture.md](../analysis/architecture.md) |
+| Scoring, taxonomy, HTML dashboard | [reporting/](../reporting/README.md) |
+| CLI and CI | [platform/](../platform/README.md) |
+| Full doc index | [index.md](../index.md) |
 
 ---
 
@@ -250,7 +264,7 @@ Fix structural limits before adding features.
 1. Expand `examples/bench/` with technique-specific servers
 2. `benchmarks/expected/<server>.json` with `required_findings`, `score_range`
 3. `tests/test_benchmarks.py` regression suite
-4. Document weights in `docs/scoring-spec.md`
+4. Document weights in `docs/reporting/scoring-spec.md`
 
 ---
 
@@ -353,21 +367,19 @@ src/mcts/
 
 | Doc | Status |
 |-----|--------|
-| `docs/scoring-spec.md` | Shipped |
-| `docs/taxonomy.md` | Shipped |
-| `docs/live-scanning.md` | Shipped |
-| `docs/inventory.md` | Shipped |
-| `docs/ci-integration.md` | Shipped |
-<<<<<<< HEAD
-| `docs/product-positioning.md` | Shipped |
-=======
-| `docs/competitive-positioning.md` | Shipped |
->>>>>>> origin/main
-| `docs/architecture.md` | Updated — discovery, probe, analyzer list |
-| `docs/cli.md` | Updated — all commands and flags |
-| `docs/roadmap.md` | Aligned with Phases 0–3 |
-| `docs/fuzzing.md` | Shipped |
-| `docs/typescript-discovery.md` | Shipped |
+| `docs/reporting/scoring-spec.md` | Shipped |
+| `docs/reporting/taxonomy.md` | Shipped |
+| `docs/scanning/live-scanning.md` | Shipped |
+| `docs/scanning/inventory.md` | Shipped |
+| `docs/platform/ci-integration.md` | Shipped |
+| `docs/more/product-positioning.md` | Shipped |
+| `docs/more/external-frameworks.md` | Shipped |
+| `docs/analysis/architecture.md` | Updated — discovery, probe, analyzer list |
+| `docs/platform/cli.md` | Updated — all commands and flags |
+| `docs/more/roadmap.md` | Aligned with Phases 0–3 |
+| `docs/scanning/fuzzing.md` | Shipped |
+| `docs/scanning/typescript-discovery.md` | Shipped |
+| `docs/index.md` | Section hub and navigation |
 | `action/README.md` | Shipped |
 
 ---
@@ -438,4 +450,4 @@ Week 11+:  Phase 2 (fuzz, audit-config, baselines, drift, TS discovery)
 
 Pick a phase item, read the implementation notes above, and open a [feature request](https://github.com/MCP-Audit/MCTS/issues/new?template=feature_request.yml) or [Discussion](https://github.com/MCP-Audit/MCTS/discussions) to align on design before opening a PR.
 
-See [CONTRIBUTING.md](../CONTRIBUTING.md) for development setup.
+See [CONTRIBUTING.md](../../CONTRIBUTING.md) for development setup.

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 MCTS_REPO = "https://github.com/MCP-Audit/MCTS"
-MCTS_DOCS = f"{MCTS_REPO}/blob/main/docs/taxonomy.md"
+MCTS_DOCS = f"{MCTS_REPO}/blob/main/docs/reporting/taxonomy.md"
 
 
 def mitigation_url(mitigation_id: str) -> str:

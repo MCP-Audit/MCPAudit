@@ -1,8 +1,13 @@
 # MCTS Roadmap
 
+> [Documentation](../index.md) → [More](README.md)
+
+
 MCTS aims to become the **default security platform for the MCP ecosystem** — the CVSS-style scorecard, CI gate, and threat intelligence layer for AI agent tooling.
 
 **Detailed implementation guide:** [Feature Expansion Plan](feature-expansion-plan.md) — gap analysis, module layout, build order, and success criteria.
+
+**Operational docs (shipped features):** [Architecture](../analysis/architecture.md) · [CLI](../platform/cli.md) · [Scoring](../reporting/scoring-spec.md) · [CI](../platform/ci-integration.md)
 
 Status labels:
 
@@ -51,7 +56,7 @@ Today, MCTS identifies security issues across permissions, prompt injection, too
 
 ### Known alpha gaps
 
-See [Building in Public](blog-building-mcp-security-in-public.md) and [Feature Expansion Plan — Part 1](feature-expansion-plan.md#part-1--current-state-honest-inventory).
+See [Feature Expansion Plan — Part 1](feature-expansion-plan.md#part-1--current-state-honest-inventory) for the honest inventory.
 
 - Multi-file repo discovery shipped; jailbreak analyzer still uses weighted heuristic
 - `mcts pentest` remains a stub
@@ -121,7 +126,7 @@ Ship a published Action:
     min-score: 70
 ```
 
-Upload JSON, SARIF, and HTML artifacts. Implementation: [`action/action.yml`](../action/action.yml) — validated in CI via [`.github/workflows/action-validate.yml`](../.github/workflows/action-validate.yml). Publish with `git tag v1`.
+Upload JSON, SARIF, and HTML artifacts. Implementation: [`action/action.yml`](../../action/action.yml) — validated in CI via [`.github/workflows/action-validate.yml`](../../.github/workflows/action-validate.yml). Publish with `git tag v1`.
 
 ---
 
@@ -165,13 +170,13 @@ Per-tool capability dimensions (reads untrusted input, egresses network, execute
 
 ### 7. MCTS-T Technique Taxonomy — Shipped (core)
 
-`technique_id` on findings; [taxonomy.md](taxonomy.md); bundled Sigma rules. Technique Map in HTML dashboard still planned.
+`technique_id` on findings; [taxonomy.md](../reporting/taxonomy.md); bundled Sigma rules. Technique Map in HTML dashboard still planned.
 
 ---
 
 ### 8. Benchmark Corpus
 
-`examples/bench/` + regression fixtures + [scoring-spec.md](scoring-spec.md) for gate semantics. Expanded corpus still planned.
+`examples/bench/` + regression fixtures + [scoring-spec.md](../reporting/scoring-spec.md) for gate semantics. Expanded corpus still planned.
 
 ---
 
@@ -182,11 +187,11 @@ Per-tool capability dimensions (reads untrusted input, egresses network, execute
 
 | # | Deliverable | Command |
 |---|-------------|---------|
-| 2.1 | Protocol fuzzing (safe defaults) Yes | `mcts fuzz` — see [fuzzing.md](fuzzing.md) |
+| 2.1 | Protocol fuzzing (safe defaults) Yes | `mcts fuzz` — see [fuzzing.md](../scanning/fuzzing.md) |
 | 2.2 | Config audit (no LLM side effects) | `mcts audit-config` |
 | 2.3 | Rug-pull baselines Yes | `--baseline` / `--save-baseline` |
 | 2.4 | Description vs implementation drift | `ImplementationDriftAnalyzer` |
-| 2.5 | TypeScript/JavaScript static discovery Yes | `discovery/static_js.py` — see [typescript-discovery.md](typescript-discovery.md) |
+| 2.5 | TypeScript/JavaScript static discovery Yes | `discovery/static_js.py` — see [typescript-discovery.md](../scanning/typescript-discovery.md) |
 | 2.6 | Scan history + trend chart | `.mcts/history/` |
 | 2.7 | Attack simulation mode | `mcts simulate` |
 | 2.8 | Visual attack graph export | Mermaid, Graphviz, PNG |
@@ -270,14 +275,13 @@ Full checklist: [Feature Expansion Plan — Part 10](feature-expansion-plan.md#p
 
 1. Read [Feature Expansion Plan](feature-expansion-plan.md) for implementation detail.
 2. Pick a phase item and open a [feature request](https://github.com/MCP-Audit/MCTS/issues/new?template=feature_request.yml) or [Discussion](https://github.com/MCP-Audit/MCTS/discussions).
-3. See [CONTRIBUTING.md](../CONTRIBUTING.md) for dev setup.
+3. See [CONTRIBUTING.md](../../CONTRIBUTING.md) for dev setup.
 
 ---
 
 ## Related
 
 - [Feature Expansion Plan](feature-expansion-plan.md) — Full gap analysis and how-to
-- [Architecture](architecture.md) — Current and target pipeline
-- [CLI Reference](cli.md) — Commands including planned surface
-- [HTML Security Dashboard](html-report.md)
-- [Building in Public](blog-building-mcp-security-in-public.md)
+- [Architecture](../analysis/architecture.md) — Current and target pipeline
+- [CLI Reference](../platform/cli.md) — Commands including planned surface
+- [HTML Security Dashboard](../reporting/html-report.md)

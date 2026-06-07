@@ -2,39 +2,116 @@
 
 **MCTS** (Model Context Threat Scanner) analyzes MCP servers — static and live discovery, 19+ security analyzers, risk scoring, terminal dashboard, SARIF/JSON, and shareable HTML reports.
 
-## Guides
+This documentation covers installation, every scan mode, the analysis pipeline, scoring and taxonomy, CLI/CI integration, and long-term planning.
 
-- [Getting Started](getting-started.md) — Install, first scan, HTML dashboard
-- [CLI Reference](cli.md) — `scan`, `report`, `inventory`, `fuzz`, flags, exit codes
-- [Architecture](architecture.md) — Discovery → analyzers → scoring → reporting pipeline
-- [HTML Security Dashboard](html-report.md) — Layout, export, and design system
+---
 
-## Scan modes
+## What MCTS does
 
-- [Live Scanning](live-scanning.md) — Stdio MCP probing, consent, config-based launch
-- [Protocol Fuzzing](fuzzing.md) — Safe read-only fuzz levels; pipe into `--runtime-events`
-- [TypeScript Discovery](typescript-discovery.md) — Node MCP servers without npm install
-- [Config Inventory](inventory.md) — Cursor, Claude, VS Code, Windsurf discovery
+| Stage | Description |
+|-------|-------------|
+| **Discover** | Python/TS static analysis; optional stdio live probe; client config inventory |
+| **Analyze** | 19+ security analyzers on tool metadata, schemas, handler source, runtime events |
+| **Score** | Exponential security score + category breakdown + auditable `ScoreBasis` |
+| **Report** | Rich terminal UI, JSON, SARIF, executive HTML dashboard |
 
-## Scoring & CI
+Typical commands:
 
-- [Scoring Specification](scoring-spec.md) — Formula, category breakdown, gate semantics
-- [CI Integration](ci-integration.md) — GitHub Action, SARIF upload, thresholds
-- [Threat Taxonomy](taxonomy.md) — MCTS-T techniques and MCTS-M mitigations
+```bash
+mcts scan ./repo/ -o report.json --min-score 70
+mcts report report.json -o security-report.html
+mcts inventory --scan
+```
 
-## Planning
+---
 
-- [Feature Expansion Plan](feature-expansion-plan.md) — Gap analysis, phased implementation, module layout
-- [Product Roadmap](roadmap.md) — Phases from foundation → platform
-- [Product Positioning](product-positioning.md) — Strengths, use cases, design principles
-- [External Frameworks](external-frameworks.md) — How industry taxonomies relate to MCTS-T
-- [Feature matrix (README)](../README.md#features) — Current module status
+## Get Started
 
-## Blog & community
+New users: install, run the vulnerable example server, export JSON/SARIF/HTML, optional live modes.
 
-- [Building MCP Security in Public](blog-building-mcp-security-in-public.md) — Alpha status, known gaps, discussion prompts
-- [Product overview (promotional)](promotional-article.md) — Shorter introduction for sharing
+- [Install and first scan](get-started/getting-started.md) — step-by-step with troubleshooting
+
+All pages: [get-started/](get-started/README.md)
+
+---
+
+## Scanning
+
+Discovery modes — how MCTS finds MCP servers and collects signal before analysis.
+
+| Guide | Description |
+|-------|-------------|
+| [Live Scanning](scanning/live-scanning.md) | Stdio MCP probing, consent, config-based launch, runtime events |
+| [Protocol Fuzzing](scanning/fuzzing.md) | Safe/standard/aggressive fuzz levels; pipe into `--runtime-events` |
+| [TypeScript Discovery](scanning/typescript-discovery.md) | Node MCP servers without npm install |
+| [Config Inventory](scanning/inventory.md) | Cursor, Claude, VS Code, Windsurf; cross-server shadowing |
+
+All pages: [scanning/](scanning/README.md)
+
+---
+
+## Analysis
+
+How findings are produced from discovered tools and source code.
+
+| Guide | Description |
+|-------|-------------|
+| [Architecture](analysis/architecture.md) | Full pipeline: data models, discovery, 19 analyzers, scoring, reporting |
+
+All pages: [analysis/](analysis/README.md)
+
+---
+
+## Reporting
+
+Scores, taxonomies, and shareable output formats.
+
+| Guide | Description |
+|-------|-------------|
+| [HTML Security Dashboard](reporting/html-report.md) | Layout, pages, export, design system, implementation |
+| [Scoring Specification](reporting/scoring-spec.md) | Formula, categories, CI gates, worked examples |
+| [Threat Taxonomy](reporting/taxonomy.md) | MCTS-T techniques, MCTS-M mitigations, Sigma rules |
+
+All pages: [reporting/](reporting/README.md)
+
+---
+
+## Platform
+
+CLI commands, flags, exit codes, and CI/CD integration.
+
+| Guide | Description |
+|-------|-------------|
+| [CLI Reference](platform/cli.md) | Complete `scan`, `report`, `inventory`, `fuzz` reference |
+| [CI Integration](platform/ci-integration.md) | GitHub Action, SARIF, gates, workflow patterns |
+
+All pages: [platform/](platform/README.md)
+
+---
+
+## More
+
+Planning, positioning, and external references.
+
+| Guide | Description |
+|-------|-------------|
+| [Feature Expansion Plan](more/feature-expansion-plan.md) | Gap analysis, phased implementation, module layout |
+| [Product Roadmap](more/roadmap.md) | Phases from foundation → platform |
+| [Product Positioning](more/product-positioning.md) | Strengths, personas, use cases, design principles |
+| [External Frameworks](more/external-frameworks.md) | How industry taxonomies relate to MCTS-T |
+| [Feature matrix (README)](../README.md#features) | Current module status |
+
+All pages: [more/](more/README.md)
+
+---
 
 ## Changelog
 
 - [Changelog](../CHANGELOG.md) — User-facing release notes
+
+---
+
+## Contributing
+
+- [CONTRIBUTING.md](../CONTRIBUTING.md) — Development workflow, analyzer guide
+- [SECURITY.md](../SECURITY.md) — Vulnerability reporting and safe usage

@@ -3,6 +3,10 @@ description: Report a false positive or missed vulnerability pattern
 title: "[Security]: "
 labels: ["security", "triage"]
 body:
+  - type: markdown
+    attributes:
+      value: |
+        Technique IDs and taxonomy: [Threat Taxonomy](https://github.com/MCP-Audit/MCTS/blob/main/docs/reporting/taxonomy.md). Scoring behavior: [Scoring Specification](https://github.com/MCP-Audit/MCTS/blob/main/docs/reporting/scoring-spec.md).
   - type: textarea
     id: finding
     attributes:

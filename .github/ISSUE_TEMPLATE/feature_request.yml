@@ -3,6 +3,10 @@ description: Suggest a new feature or analyzer
 title: "[Feature]: "
 labels: ["enhancement", "triage"]
 body:
+  - type: markdown
+    attributes:
+      value: |
+        Check the [Product Roadmap](https://github.com/MCP-Audit/MCTS/blob/main/docs/more/roadmap.md) and [Feature Expansion Plan](https://github.com/MCP-Audit/MCTS/blob/main/docs/more/feature-expansion-plan.md) before proposing large features.
   - type: textarea
     id: problem
     attributes:
