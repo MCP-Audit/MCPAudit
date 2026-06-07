@@ -1,4 +1,4 @@
-"""Shared TPA / metadata poisoning patterns (aligned with SAF-T1001, SAF-T1402, SAF-T1501)."""
+"""Shared TPA / metadata poisoning patterns (aligned with MCTS-T-1001, MCTS-T-1041, MCTS-T-1001.002)."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ INVISIBLE_CHAR_PATTERN = re.compile(
     r"[\u200b-\u200f\ufeff\u202a-\u202e\u2060-\u206f\u206a-\u206f]"
 )
 
-# Cyrillic homoglyphs that visually mimic Latin letters (SAF-T1001 PoC values only)
+# Cyrillic homoglyphs that visually mimic Latin letters (MCTS-T-1001 PoC values only)
 _HOMOGLYPH_CHARS = frozenset("аАсСеЕоОрРхХуУвВнНкКмМтТ")
 
 _UNICODE_TAG_RANGE = range(0xE0000, 0xE0080)

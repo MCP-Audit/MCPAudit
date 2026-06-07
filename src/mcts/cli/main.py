@@ -171,14 +171,14 @@ def scan(
         Optional[Path],
         typer.Option(
             "--sigma-rules-path",
-            help="Extra SAF-MCP techniques directory for Sigma YAML rules",
+            help="Extra MCTS techniques directory for Sigma YAML rules",
         ),
     ] = None,
     semantic_secrets: Annotated[
         bool,
         typer.Option(
             "--semantic-secrets",
-            help="Enable semantic credential detection (SAF-M-63 / SAF-T1505)",
+            help="Enable semantic credential detection (MCTS-M-025 / MCTS-T-1022)",
         ),
     ] = False,
     runtime_events: Annotated[
@@ -192,7 +192,7 @@ def scan(
         bool,
         typer.Option(
             "--behavioral-probe",
-            help="Enable multi-turn SAF-T1603 behavioral probe events (auto with --live)",
+            help="Enable multi-turn MCTS-T-1026 behavioral probe events (auto with --live)",
         ),
     ] = False,
 ) -> None:

@@ -155,7 +155,7 @@ class OAuthConfigAnalyzer(BaseAnalyzer):
                     severity=Severity.HIGH,
                     source=source,
                     mcts_technique="MCTS-T-1011",
-                    saf_technique="SAF-T1007",
+                    technique_scenario="MCTS-T-1011",
                     evidence={"url": url, "key_path": key_path, "issue": "plaintext_http"},
                 )
             )
@@ -169,7 +169,7 @@ class OAuthConfigAnalyzer(BaseAnalyzer):
                     severity=Severity.HIGH,
                     source=source,
                     mcts_technique="MCTS-T-1012",
-                    saf_technique="SAF-T1009",
+                    technique_scenario="MCTS-T-1012",
                     evidence={"url": url, "host": host, "issue": "idn_homograph"},
                 )
             )
@@ -186,7 +186,7 @@ class OAuthConfigAnalyzer(BaseAnalyzer):
                     severity=Severity.CRITICAL,
                     source=source,
                     mcts_technique="MCTS-T-1012",
-                    saf_technique="SAF-T1009",
+                    technique_scenario="MCTS-T-1012",
                     evidence={"url": url, "key_path": key_path, "issue": "typosquatting"},
                 )
             )
@@ -203,7 +203,7 @@ class OAuthConfigAnalyzer(BaseAnalyzer):
                         severity=Severity.MEDIUM,
                         source=source,
                         mcts_technique="MCTS-T-1012",
-                        saf_technique="SAF-T1009",
+                        technique_scenario="MCTS-T-1012",
                         evidence={"url": url, "host": host, "issue": "tld_substitution"},
                     )
                 )
@@ -245,12 +245,12 @@ class OAuthConfigAnalyzer(BaseAnalyzer):
                         title="Shared OAuth redirect URI across distinct clients",
                         description=(
                             f"Redirect URI {redirect!r} is reused across multiple OAuth "
-                            "client configurations — confused deputy risk (SAF-T1307)."
+                            "client configurations — confused deputy risk (MCTS-T-1018)."
                         ),
                         severity=Severity.HIGH,
                         source=entries[0][0],
                         mcts_technique="MCTS-T-1018",
-                        saf_technique="SAF-T1307",
+                        technique_scenario="MCTS-T-1018",
                         evidence={
                             "redirect_uri": redirect,
                             "sources": ",".join(sorted(sources)),
@@ -296,7 +296,7 @@ class OAuthConfigAnalyzer(BaseAnalyzer):
                         severity=Severity.CRITICAL,
                         source=source,
                         mcts_technique="MCTS-T-1017",
-                        saf_technique="SAF-T1306",
+                        technique_scenario="MCTS-T-1017",
                         evidence={"url": url, "field": label, "host": host, "issue": "rogue_authorization_server"},
                     )
                 )
@@ -319,7 +319,7 @@ class OAuthConfigAnalyzer(BaseAnalyzer):
                             severity=Severity.HIGH,
                             source=source,
                             mcts_technique="MCTS-T-1017",
-                            saf_technique="SAF-T1306",
+                            technique_scenario="MCTS-T-1017",
                             evidence={
                                 "issuer": issuer,
                                 "authorization_endpoint": auth_endpoint,
@@ -357,7 +357,7 @@ class OAuthConfigAnalyzer(BaseAnalyzer):
                     severity=Severity.HIGH,
                     source=source,
                     mcts_technique="MCTS-T-1019",
-                    saf_technique="SAF-T1308",
+                    technique_scenario="MCTS-T-1019",
                     evidence={"scope": scope_text, "field": key, "issue": "broad_scope"},
                 )
             )
@@ -386,7 +386,7 @@ class OAuthConfigAnalyzer(BaseAnalyzer):
                     severity=Severity.HIGH,
                     source=source,
                     mcts_technique="MCTS-T-1018",
-                    saf_technique="SAF-T1307",
+                    technique_scenario="MCTS-T-1018",
                     evidence={"key": key, "value": str(value)[:120], "issue": "token_forwarding"},
                 )
             )
@@ -401,7 +401,7 @@ def _oauth_finding(
     severity: Severity,
     source: str,
     mcts_technique: str,
-    saf_technique: str,
+    technique_scenario: str,
     evidence: dict[str, str],
 ) -> Finding:
     return Finding(
@@ -410,26 +410,25 @@ def _oauth_finding(
         title=title,
         description=description,
         severity=severity,
-        recommendation=_recommendation_for(saf_technique),
+        recommendation=_recommendation_for(technique_scenario),
         technique_id=mcts_technique,
-        saf_technique_id=saf_technique,
         confidence=0.85,
         location=SourceLocation(file=source, line=None),
         evidence=evidence,
     )
 
 
-def _recommendation_for(saf_technique: str) -> str:
+def _recommendation_for(technique_scenario: str) -> str:
     mapping = {
-        "SAF-T1007": "Use HTTPS-only OAuth endpoints from trusted providers.",
-        "SAF-T1009": "Pin Authorization Server URLs; validate issuer per RFC 9207.",
-        "SAF-T1306": "Allowlist Authorization Servers; reject unknown issuers and mismatched endpoints.",
-        "SAF-T1307": "Never forward tokens across users; isolate redirect URIs per client.",
-        "SAF-T1308": "Request least-privilege scopes; reject wildcard or admin scopes in client configs.",
+        "MCTS-T-1011": "Use HTTPS-only OAuth endpoints from trusted providers.",
+        "MCTS-T-1012": "Pin Authorization Server URLs; validate issuer per RFC 9207.",
+        "MCTS-T-1017": "Allowlist Authorization Servers; reject unknown issuers and mismatched endpoints.",
+        "MCTS-T-1018": "Never forward tokens across users; isolate redirect URIs per client.",
+        "MCTS-T-1019": "Request least-privilege scopes; reject wildcard or admin scopes in client configs.",
     }
     return mapping.get(
-        saf_technique,
-        "Review OAuth configuration against SAF-MCP OAuth hardening guidance.",
+        technique_scenario,
+        "Review OAuth configuration against MCTS OAuth hardening guidance.",
     )
 
 

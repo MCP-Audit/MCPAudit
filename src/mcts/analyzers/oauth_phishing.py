@@ -1,4 +1,4 @@
-"""OAuth authorization phishing detection (SAF-T1007)."""
+"""OAuth authorization phishing detection (MCTS-T-1011)."""
 
 from __future__ import annotations
 
@@ -22,7 +22,7 @@ SUSPICIOUS_REDIRECT_PATHS: tuple[str, ...] = (
 
 
 def detect_oauth_phishing_config(config: dict) -> bool:
-    """Detect suspicious OAuth redirect/provider configuration (SAF-T1007)."""
+    """Detect suspicious OAuth redirect/provider configuration (MCTS-T-1011)."""
     redirect = _first_str(
         config,
         ("oauth_redirect_uri", "redirect_uri", "redirectUri", "callback_url"),

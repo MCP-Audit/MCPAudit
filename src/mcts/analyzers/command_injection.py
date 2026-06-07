@@ -1,4 +1,4 @@
-"""Command injection detection in tool invocation parameters (SAF-T1101)."""
+"""Command injection detection in tool invocation parameters (MCTS-T-1023)."""
 
 from __future__ import annotations
 
@@ -113,7 +113,7 @@ def detect_command_injection(
     tool_name: str,
     tool_parameters: Any,
 ) -> bool:
-    """Return True when tool parameters match SAF-T1101 injection indicators."""
+    """Return True when tool parameters match MCTS-T-1023 injection indicators."""
     blob = _parameter_blob(tool_parameters)
     if not blob:
         return False

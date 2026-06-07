@@ -381,9 +381,9 @@ def build_recommendations(findings: list[Finding]) -> list[dict[str, Any]]:
                 "effort": effort_map[finding.severity],
                 "analyzer": finding.analyzer,
                 "tool": finding.tool,
-                "saf_mitigation_links": mitigation_links(finding.saf_mitigation_ids),
-                "saf_technique_url": technique_url(finding.saf_technique_id)
-                if finding.saf_technique_id
+                "mitigation_links": mitigation_links(finding.mitigation_ids),
+                "technique_url": technique_url(finding.technique_id)
+                if finding.technique_id
                 else None,
             }
         )
@@ -457,11 +457,10 @@ def build_dashboard_payload(report: ScanReport) -> dict[str, Any]:
                 "tool": finding.tool or "—",
                 "recommendation": finding.recommendation,
                 "technique_id": finding.technique_id or "—",
-                "saf_technique_id": finding.saf_technique_id or "—",
-                "saf_technique_url": technique_url(finding.saf_technique_id)
-                if finding.saf_technique_id
+                "technique_url": technique_url(finding.technique_id)
+                if finding.technique_id
                 else None,
-                "saf_mitigation_links": mitigation_links(finding.saf_mitigation_ids),
+                "mitigation_links": mitigation_links(finding.mitigation_ids),
                 "cwe_id": finding.cwe_id or "—",
             }
         )

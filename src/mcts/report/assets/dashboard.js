@@ -408,17 +408,17 @@
         <td>${escapeHtml(f.owasp)}</td>
         <td>${escapeHtml(f.tool)}</td>
         <td>${escapeHtml(f.recommendation)}${
-          f.saf_mitigation_links && f.saf_mitigation_links.length
+          f.mitigation_links && f.mitigation_links.length
             ? `<div style="margin-top:6px;font-size:12px">SAF mitigations: ${formatMitigationLinks(
-                f.saf_mitigation_links
+                f.mitigation_links
               )}</div>`
             : ""
         }${
-          f.saf_technique_url
+          f.technique_scenario_url
             ? `<div style="margin-top:4px;font-size:12px"><a href="${escapeHtml(
-                f.saf_technique_url
+                f.technique_scenario_url
               )}" target="_blank" rel="noopener noreferrer">${escapeHtml(
-                f.saf_technique_id
+                f.technique_id
               )}</a></div>`
             : ""
         }</td>
@@ -491,9 +491,9 @@
         <h4>${escapeHtml(r.title)}</h4>
         <p style="color:var(--muted);margin:0 0 10px">${escapeHtml(r.recommendation)}</p>
         ${
-          r.saf_mitigation_links && r.saf_mitigation_links.length
+          r.mitigation_links && r.mitigation_links.length
             ? `<p style="font-size:12px;margin:0 0 10px">SAF mitigations: ${formatMitigationLinks(
-                r.saf_mitigation_links
+                r.mitigation_links
               )}</p>`
             : ""
         }

@@ -59,7 +59,7 @@ class SupplyChainAnalyzer(BaseAnalyzer):
                                 f"Unpinned npm dependency: {name}",
                                 f"{section}.{name} uses floating version spec {spec!r}",
                                 Severity.MEDIUM,
-                                "SAF-T1002",
+                                "MCTS-T-1014",
                             )
                         )
 
@@ -74,7 +74,7 @@ class SupplyChainAnalyzer(BaseAnalyzer):
                                 f"Suspicious npm lifecycle script: {script_name}",
                                 "Lifecycle scripts can execute code on install.",
                                 Severity.HIGH,
-                                "SAF-T1003",
+                                "MCTS-T-1015",
                                 evidence={"script": body[:200]},
                             )
                         )
@@ -95,7 +95,7 @@ class SupplyChainAnalyzer(BaseAnalyzer):
                             "Unpinned Python dependency",
                             line.strip(),
                             Severity.MEDIUM,
-                            "SAF-T1002",
+                            "MCTS-T-1014",
                             line=line_no,
                         )
                     )
@@ -117,7 +117,7 @@ class SupplyChainAnalyzer(BaseAnalyzer):
                                 "Unpinned requirements entry",
                                 stripped,
                                 Severity.MEDIUM,
-                                "SAF-T1002",
+                                "MCTS-T-1014",
                                 line=line_no,
                             )
                         )
@@ -139,7 +139,7 @@ class SupplyChainAnalyzer(BaseAnalyzer):
                             "Docker base image not digest-pinned",
                             f"FROM {image}",
                             Severity.HIGH,
-                            "SAF-T1003",
+                            "MCTS-T-1015",
                         )
                     )
         return findings
@@ -162,12 +162,12 @@ def _finding(
     title: str,
     description: str,
     severity: Severity,
-    saf_technique: str,
+    technique_scenario: str,
     *,
     line: int | None = None,
     evidence: dict[str, str] | None = None,
 ) -> Finding:
-    technique = "MCTS-T-1014" if saf_technique == "SAF-T1002" else "MCTS-T-1015"
+    technique = "MCTS-T-1014" if technique_scenario == "MCTS-T-1014" else "MCTS-T-1015"
     return Finding(
         id=finding_id,
         analyzer="supply_chain",
@@ -175,10 +175,9 @@ def _finding(
         description=description,
         severity=severity,
         recommendation=(
-            "Pin dependencies with exact versions or digests; verify package provenance (SAF-M-6, SAF-M-24)."
+            "Pin dependencies with exact versions or digests; verify package provenance (MCTS-M-008, MCTS-M-018)."
         ),
         technique_id=technique,
-        saf_technique_id=saf_technique,
         confidence=0.75,
         location=SourceLocation(file=str(path), line=line),
         evidence=evidence or {},

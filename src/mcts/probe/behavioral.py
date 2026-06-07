@@ -1,4 +1,4 @@
-"""Behavioral extraction probe events for live MCP sessions (SAF-T1603)."""
+"""Behavioral extraction probe events for live MCP sessions (MCTS-T-1026)."""
 
 from __future__ import annotations
 

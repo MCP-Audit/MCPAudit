@@ -1,4 +1,4 @@
-"""Rug pull / behavioral change detection (SAF-T1201)."""
+"""Rug pull / behavioral change detection (MCTS-T-1013)."""
 
 from __future__ import annotations
 
@@ -36,7 +36,7 @@ FILE_PATTERNS = frozenset(
 
 
 def detect_rug_pull_event(log_entry: dict[str, Any]) -> bool:
-    """Detect SAF-T1201 rug-pull indicators in tool execution telemetry."""
+    """Detect MCTS-T-1013 rug-pull indicators in tool execution telemetry."""
     if log_entry.get("event_type") != "tool_execution":
         return False
     if any(log_entry.get(flag) for flag in LEGITIMATE_FLAGS):

@@ -1,4 +1,4 @@
-"""OAuth Authorization Server mix-up detection (SAF-T1009)."""
+"""OAuth Authorization Server mix-up detection (MCTS-T-1012)."""
 
 from __future__ import annotations
 
@@ -12,7 +12,7 @@ _ISSUER_MISMATCH = re.compile(r"failed|mismatch", re.I)
 
 
 def detect_oauth_mixup_event(event: dict[str, Any]) -> bool:
-    """Detect SAF-T1009 indicators in OAuth telemetry events."""
+    """Detect MCTS-T-1012 indicators in OAuth telemetry events."""
     payload = event.get("event", event)
     oauth = payload.get("oauth") if isinstance(payload.get("oauth"), dict) else {}
 

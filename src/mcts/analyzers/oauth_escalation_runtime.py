@@ -1,4 +1,4 @@
-"""Runtime OAuth telemetry detectors (SAF-T1306, SAF-T1307, SAF-T1308)."""
+"""Runtime OAuth telemetry detectors (MCTS-T-1017, MCTS-T-1018, MCTS-T-1019)."""
 
 from __future__ import annotations
 
@@ -65,7 +65,7 @@ def _scope_text(event: dict[str, Any]) -> str:
 
 
 def detect_rogue_as_event(event: dict[str, Any]) -> bool:
-    """SAF-T1306 — rogue AS, PoP bypass, key substitution, super-token issuance."""
+    """MCTS-T-1017 — rogue AS, PoP bypass, key substitution, super-token issuance."""
     action = _event_action(event)
     host = _issuer_host(event)
 
@@ -97,7 +97,7 @@ def detect_rogue_as_event(event: dict[str, Any]) -> bool:
 
 
 def detect_confused_deputy_event(event: dict[str, Any]) -> bool:
-    """SAF-T1307 — token forwarding across users, tenants, or audiences."""
+    """MCTS-T-1018 — token forwarding across users, tenants, or audiences."""
     event_type = str(event.get("event_type") or event.get("event.action") or "")
 
     owner = event.get("token_owner_id")
@@ -182,7 +182,7 @@ def detect_confused_deputy_event(event: dict[str, Any]) -> bool:
 
 
 def detect_scope_substitution_event(event: dict[str, Any]) -> bool:
-    """SAF-T1308 — elevated or substituted OAuth scopes at runtime."""
+    """MCTS-T-1019 — elevated or substituted OAuth scopes at runtime."""
     log = event.get("log_entry", event)
     if not isinstance(log, dict):
         return False

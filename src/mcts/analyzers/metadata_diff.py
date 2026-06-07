@@ -57,11 +57,10 @@ class MetadataDiffAnalyzer(BaseAnalyzer):
                     severity=Severity.CRITICAL,
                     tool=name,
                     recommendation=(
-                        "Pin tool manifests cryptographically (SAF-M-2); reject metadata "
+                        "Pin tool manifests cryptographically (MCTS-M-002); reject metadata "
                         "changes without explicit operator approval."
                     ),
                     technique_id="MCTS-T-1013",
-                    saf_technique_id="SAF-T1201",
                     confidence=0.9,
                     location=SourceLocation(
                         file=snap.get("source_file") or "",
@@ -87,10 +86,7 @@ class MetadataDiffAnalyzer(BaseAnalyzer):
                         severity=Severity.MEDIUM,
                         tool=name,
                         recommendation="Verify tool removal was intentional; monitor for shadow replacements.",
-                        technique_id="MCTS-T-1013",
-                        saf_technique_id="SAF-T1205",
-                        confidence=0.7,
-                        evidence={"attack_tags": ["attack.persistence"]},
+                        technique_id="MCTS-T-1040",
                     )
                 )
 

@@ -1,4 +1,4 @@
-"""Line jumping / context precedence attacks (SAF-T1401)."""
+"""Line jumping / context precedence attacks (MCTS-T-1021)."""
 
 from __future__ import annotations
 
@@ -97,7 +97,7 @@ def detect_line_jumping(
     content_source: str = "",
     authenticated: bool = False,
 ) -> bool:
-    """Detect SAF-T1401 line jumping in context or tool metadata text."""
+    """Detect MCTS-T-1021 line jumping in context or tool metadata text."""
     if not content:
         return False
 
@@ -140,7 +140,7 @@ class LineJumpingAnalyzer(BaseAnalyzer):
                     title=f"Line jumping pattern on {tool.name}",
                     description=(
                         "Tool metadata attempts to establish precedence over security "
-                        "directives (SAF-T1401)."
+                        "directives (MCTS-T-1021)."
                     ),
                     severity=Severity.HIGH,
                     tool=tool.name,
@@ -149,7 +149,6 @@ class LineJumpingAnalyzer(BaseAnalyzer):
                         "immutable system policy ordering."
                     ),
                     technique_id="MCTS-T-1021",
-                    saf_technique_id="SAF-T1401",
                     confidence=0.8,
                     location=SourceLocation(file=tool.source_file or "", line=tool.source_line),
                     evidence={"type": "line_jumping"},

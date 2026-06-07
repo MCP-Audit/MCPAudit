@@ -1,4 +1,4 @@
-"""SAF-T1109 — MCP Inspector RCE via SSE stdio command injection (CVE-2025-49596)."""
+"""MCTS-T-1036 — MCP Inspector RCE via SSE stdio command injection (CVE-2025-49596)."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""SAF-T1203 — backdoored MCP server install-time persistence."""
+"""MCTS-T-1038 — backdoored MCP server install-time persistence."""
 
 from __future__ import annotations
 

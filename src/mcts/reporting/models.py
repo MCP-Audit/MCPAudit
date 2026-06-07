@@ -42,9 +42,7 @@ class Finding(BaseModel):
     tool: str | None = None
     evidence: dict[str, Any] = Field(default_factory=dict)
     technique_id: str | None = None
-    saf_technique_id: str | None = None
     mitigation_ids: list[str] = Field(default_factory=list)
-    saf_mitigation_ids: list[str] = Field(default_factory=list)
     cwe_id: str | None = None
     confidence: float = Field(default=1.0, ge=0.0, le=1.0)
     location: SourceLocation | None = None

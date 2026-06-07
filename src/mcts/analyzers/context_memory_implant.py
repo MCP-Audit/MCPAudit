@@ -1,4 +1,4 @@
-"""SAF-T1204 — context memory implants in MCP vector stores."""
+"""MCTS-T-1039 — context memory implants in MCP vector stores."""
 
 from __future__ import annotations
 

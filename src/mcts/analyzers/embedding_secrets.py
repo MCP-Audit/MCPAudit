@@ -1,4 +1,4 @@
-"""Optional semantic credential detection (SAF-M-63 / SAF-T1505)."""
+"""Optional semantic credential detection (MCTS-M-025 / MCTS-T-1022)."""
 
 from __future__ import annotations
 
@@ -99,9 +99,8 @@ def _finding(tool: Any, mode: str, confidence: float) -> Finding:
         description="Tool metadata resembles embedded secrets or credential harvesting instructions.",
         severity=Severity.HIGH,
         tool=tool.name,
-        recommendation="Remove secrets from tool metadata; sanitize embeddings before storage (SAF-M-63).",
+        recommendation="Remove secrets from tool metadata; sanitize embeddings before storage (MCTS-M-025).",
         technique_id="MCTS-T-1022",
-        saf_technique_id="SAF-T1505",
         confidence=confidence,
         location=SourceLocation(file=tool.source_file or "", line=tool.source_line),
         evidence={"mode": mode},

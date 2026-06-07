@@ -1,4 +1,4 @@
-"""Prompt injection in MCP tool outputs (SAF-T1102)."""
+"""Prompt injection in MCP tool outputs (MCTS-T-1007)."""
 
 from __future__ import annotations
 
@@ -27,7 +27,7 @@ _TAG_RE = re.compile(r"(?i)(system\s*:|ignore\s+previous|override\s+system)")
 
 
 def detect_tool_output_injection(*, tool_output: str = "", tool_name: str = "") -> bool:
-    """Detect SAF-T1102 indicators in tool response content."""
+    """Detect MCTS-T-1007 indicators in tool response content."""
     del tool_name
     text = tool_output or ""
     if not text.strip():

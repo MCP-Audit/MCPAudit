@@ -1,4 +1,4 @@
-"""DNS / mDNS poisoning indicators (SAF-T1004)."""
+"""DNS / mDNS poisoning indicators (MCTS-T-1028)."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ from typing import Any
 
 
 def detect_dns_poisoning_event(event: dict[str, Any]) -> bool:
-    """Detect SAF-T1004 indicators in DNS/TLS telemetry events."""
+    """Detect MCTS-T-1028 indicators in DNS/TLS telemetry events."""
     message = str(event.get("Message", "")).lower()
     event_id = event.get("EventID")
     provider = str(event.get("Provider_Name", ""))

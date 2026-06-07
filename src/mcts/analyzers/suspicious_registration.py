@@ -1,4 +1,4 @@
-"""Suspicious MCP tool registration (SAF-T1006)."""
+"""Suspicious MCP tool registration (MCTS-T-1031)."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ _SUSPICIOUS_MANIFEST = ("attacker", "typo", "malicious")
 
 
 def detect_suspicious_tool_registration(event: dict[str, Any]) -> bool:
-    """Detect SAF-T1006 indicators in tool.register telemetry."""
+    """Detect MCTS-T-1031 indicators in tool.register telemetry."""
     payload = event.get("event", event)
     event_type = str(payload.get("event_type", ""))
     if event_type == "tool_execution":

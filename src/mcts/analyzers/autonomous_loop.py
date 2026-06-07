@@ -1,4 +1,4 @@
-"""SAF-T1106 — repeated identical MCP tool invocations (autonomous loop exploit)."""
+"""MCTS-T-1035 — repeated identical MCP tool invocations (autonomous loop exploit)."""
 
 from __future__ import annotations
 

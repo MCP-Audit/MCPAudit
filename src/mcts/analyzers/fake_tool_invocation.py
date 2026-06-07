@@ -1,4 +1,4 @@
-"""Fake or spoofed MCP tool invocation (SAF-T1103)."""
+"""Fake or spoofed MCP tool invocation (MCTS-T-1032)."""
 
 from __future__ import annotations
 
@@ -27,7 +27,7 @@ _SUSPICIOUS_ARGUMENTS = (
 
 
 def detect_fake_tool_invocation(event: dict[str, Any]) -> bool:
-    """Detect SAF-T1103 indicators in tools/call telemetry."""
+    """Detect MCTS-T-1032 indicators in tools/call telemetry."""
     payload = event.get("event", event)
     action = str(payload.get("event.action") or payload.get("action", ""))
     if action and action != "tools/call":

@@ -54,7 +54,6 @@ class RuntimeEventsAnalyzer(BaseAnalyzer):
                     "Repeated identical MCP tool invocations (loop exploit)",
                     None,
                     "MCTS-T-1035",
-                    "SAF-T1106",
                     Severity.HIGH,
                     {"type": "autonomous_loop", "event_count": len(server.runtime_events)},
                 )
@@ -77,7 +76,6 @@ class RuntimeEventsAnalyzer(BaseAnalyzer):
                     "Command injection pattern in tool invocation",
                     tool_name,
                     "MCTS-T-1023",
-                    "SAF-T1101",
                     Severity.CRITICAL,
                     {"event_index": index, "type": "command_injection"},
                 )
@@ -91,7 +89,6 @@ class RuntimeEventsAnalyzer(BaseAnalyzer):
                     f"Rug pull behavioral change on {log.get('tool_name', 'tool')}",
                     str(log.get("tool_name", tool_name)),
                     "MCTS-T-1013",
-                    "SAF-T1201",
                     Severity.HIGH,
                     {"event_index": index, "type": "rug_pull"},
                 )
@@ -104,7 +101,6 @@ class RuntimeEventsAnalyzer(BaseAnalyzer):
                     "OAuth Authorization Server mix-up indicator",
                     None,
                     "MCTS-T-1012",
-                    "SAF-T1009",
                     Severity.CRITICAL,
                     {"event_index": index, "type": "oauth_mixup"},
                 )
@@ -117,7 +113,6 @@ class RuntimeEventsAnalyzer(BaseAnalyzer):
                     "Sampling API abuse pattern",
                     str(event.get("server_name", tool_name)),
                     "MCTS-T-1016",
-                    "SAF-T1112",
                     Severity.HIGH,
                     {"event_index": index, "type": "sampling_abuse"},
                 )
@@ -131,7 +126,6 @@ class RuntimeEventsAnalyzer(BaseAnalyzer):
                     f"Sensitive credential file access: {file_path}",
                     tool_name,
                     "MCTS-T-1024",
-                    "SAF-T1502",
                     Severity.CRITICAL,
                     {"event_index": index, "path": file_path},
                 )
@@ -143,8 +137,7 @@ class RuntimeEventsAnalyzer(BaseAnalyzer):
                     f"runtime-tool-redef-{index}",
                     "MCP tool definition file modification",
                     None,
-                    "MCTS-T-1013",
-                    "SAF-T1205",
+                    "MCTS-T-1040",
                     Severity.HIGH,
                     {"event_index": index, "path": file_path or event.get("name")},
                 )
@@ -160,8 +153,7 @@ class RuntimeEventsAnalyzer(BaseAnalyzer):
                     f"runtime-tool-baseline-{index}",
                     "Tool manifest differs from saved baseline",
                     None,
-                    "MCTS-T-1013",
-                    "SAF-T1205",
+                    "MCTS-T-1040",
                     Severity.HIGH,
                     {"event_index": index, "type": "baseline_diff"},
                 )
@@ -174,7 +166,6 @@ class RuntimeEventsAnalyzer(BaseAnalyzer):
                     "Over-privileged MCP tool process activity",
                     tool_name,
                     "MCTS-T-1006",
-                    "SAF-T1104",
                     Severity.CRITICAL,
                     {"event_index": index, "type": "over_privileged"},
                 )
@@ -187,7 +178,6 @@ class RuntimeEventsAnalyzer(BaseAnalyzer):
                     "System prompt extraction attempt",
                     None,
                     "MCTS-T-1026",
-                    "SAF-T1603",
                     Severity.HIGH,
                     {"event_index": index, "type": "behavioral_extraction"},
                 )
@@ -200,7 +190,6 @@ class RuntimeEventsAnalyzer(BaseAnalyzer):
                     "Exposed MCP endpoint access pattern",
                     None,
                     "MCTS-T-1027",
-                    "SAF-T1005",
                     Severity.CRITICAL,
                     {"event_index": index, "type": "exposed_endpoint"},
                 )
@@ -213,7 +202,6 @@ class RuntimeEventsAnalyzer(BaseAnalyzer):
                     "DNS or certificate poisoning indicator",
                     None,
                     "MCTS-T-1028",
-                    "SAF-T1004",
                     Severity.HIGH,
                     {"event_index": index, "type": "dns_poisoning"},
                 )
@@ -227,7 +215,6 @@ class RuntimeEventsAnalyzer(BaseAnalyzer):
                     "Prompt injection pattern in tool output",
                     tool_name,
                     "MCTS-T-1007",
-                    "SAF-T1102",
                     Severity.HIGH,
                     {"event_index": index, "type": "tool_output_injection"},
                 )
@@ -240,7 +227,6 @@ class RuntimeEventsAnalyzer(BaseAnalyzer):
                     "Cross-server tool shadowing registration",
                     str(event.get("tool_name")),
                     "MCTS-T-1029",
-                    "SAF-T1301",
                     Severity.HIGH,
                     {"event_index": index, "type": "cross_server_shadowing"},
                 )
@@ -253,7 +239,6 @@ class RuntimeEventsAnalyzer(BaseAnalyzer):
                     "High-privilege MCP tool execution",
                     str(event.get("tool_name", tool_name)),
                     "MCTS-T-1030",
-                    "SAF-T1302",
                     Severity.CRITICAL,
                     {"event_index": index, "type": "privilege_tool_abuse"},
                 )
@@ -266,7 +251,6 @@ class RuntimeEventsAnalyzer(BaseAnalyzer):
                     "Suspicious MCP tool registration",
                     None,
                     "MCTS-T-1031",
-                    "SAF-T1006",
                     Severity.HIGH,
                     {"event_index": index, "type": "suspicious_registration"},
                 )
@@ -279,7 +263,6 @@ class RuntimeEventsAnalyzer(BaseAnalyzer):
                     "Fake or spoofed MCP tool invocation",
                     str(event.get("tool_name", tool_name)),
                     "MCTS-T-1032",
-                    "SAF-T1103",
                     Severity.HIGH,
                     {"event_index": index, "type": "fake_tool_invocation"},
                 )
@@ -292,7 +275,6 @@ class RuntimeEventsAnalyzer(BaseAnalyzer):
                     "Container sandbox escape via runc exec",
                     None,
                     "MCTS-T-1033",
-                    "SAF-T1303",
                     Severity.CRITICAL,
                     {"event_index": index, "type": "sandbox_escape"},
                 )
@@ -305,7 +287,6 @@ class RuntimeEventsAnalyzer(BaseAnalyzer):
                     "Rogue OAuth Authorization Server indicator",
                     None,
                     "MCTS-T-1017",
-                    "SAF-T1306",
                     Severity.CRITICAL,
                     {"event_index": index, "type": "rogue_authorization_server"},
                 )
@@ -318,7 +299,6 @@ class RuntimeEventsAnalyzer(BaseAnalyzer):
                     "OAuth confused deputy / token forwarding",
                     None,
                     "MCTS-T-1018",
-                    "SAF-T1307",
                     Severity.HIGH,
                     {"event_index": index, "type": "confused_deputy"},
                 )
@@ -331,7 +311,6 @@ class RuntimeEventsAnalyzer(BaseAnalyzer):
                     "OAuth token scope substitution pattern",
                     None,
                     "MCTS-T-1019",
-                    "SAF-T1308",
                     Severity.HIGH,
                     {"event_index": index, "type": "scope_substitution"},
                 )
@@ -345,7 +324,6 @@ class RuntimeEventsAnalyzer(BaseAnalyzer):
                     "Hidden instructions in tool metadata",
                     tool,
                     "MCTS-T-1001",
-                    "SAF-T1402",
                     Severity.HIGH,
                     {"event_index": index, "type": "instruction_steganography"},
                 )
@@ -358,7 +336,6 @@ class RuntimeEventsAnalyzer(BaseAnalyzer):
                     "Vector store embedding metadata contamination",
                     None,
                     "MCTS-T-1034",
-                    "SAF-T2106",
                     Severity.HIGH,
                     {"event_index": index, "type": "vector_poisoning"},
                 )
@@ -371,7 +348,6 @@ class RuntimeEventsAnalyzer(BaseAnalyzer):
                     "MCP Inspector remote code execution attempt",
                     None,
                     "MCTS-T-1036",
-                    "SAF-T1109",
                     Severity.CRITICAL,
                     {"event_index": index, "type": "inspector_rce"},
                 )
@@ -384,7 +360,6 @@ class RuntimeEventsAnalyzer(BaseAnalyzer):
                     "OAuth token persistence after logout or rotation",
                     None,
                     "MCTS-T-1037",
-                    "SAF-T1202",
                     Severity.HIGH,
                     {"event_index": index, "type": "oauth_token_persistence"},
                 )
@@ -397,7 +372,6 @@ class RuntimeEventsAnalyzer(BaseAnalyzer):
                     "Install-time persistence during MCP package setup",
                     None,
                     "MCTS-T-1038",
-                    "SAF-T1203",
                     Severity.HIGH,
                     {"event_index": index, "type": "backdoored_install"},
                 )
@@ -410,7 +384,6 @@ class RuntimeEventsAnalyzer(BaseAnalyzer):
                     "Context memory implant in vector store",
                     None,
                     "MCTS-T-1039",
-                    "SAF-T1204",
                     Severity.HIGH,
                     {"event_index": index, "type": "context_memory_implant"},
                 )
@@ -430,7 +403,6 @@ class RuntimeEventsAnalyzer(BaseAnalyzer):
                 f"Command injection pattern in {tool.name} schema defaults",
                 tool.name,
                 "MCTS-T-1023",
-                "SAF-T1101",
                 Severity.HIGH,
                 {"type": "schema_default_injection", "defaults": defaults},
                 tool=tool,
@@ -458,7 +430,6 @@ def _finding(
     title: str,
     tool: str | None,
     technique_id: str,
-    saf_id: str,
     severity: Severity,
     evidence: dict[str, Any],
     *,
@@ -477,7 +448,6 @@ def _finding(
         tool=tool,
         recommendation="Review runtime telemetry and tighten tool input validation.",
         technique_id=technique_id,
-        saf_technique_id=saf_id,
         confidence=0.85,
         location=loc,
         evidence=evidence,

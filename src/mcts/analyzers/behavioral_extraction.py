@@ -1,4 +1,4 @@
-"""Multi-turn system prompt extraction detection (SAF-T1603)."""
+"""Multi-turn system prompt extraction detection (MCTS-T-1026)."""
 
 from __future__ import annotations
 
@@ -46,7 +46,7 @@ _JAILBREAK = ("dan mode", "developer mode", "unrestricted mode", "bypass restric
 
 
 def detect_behavioral_extraction(event: dict[str, Any]) -> bool:
-    """Detect SAF-T1603 indicators in conversation telemetry."""
+    """Detect MCTS-T-1026 indicators in conversation telemetry."""
     log = event.get("log_entry", event)
     if not isinstance(log, dict):
         return False

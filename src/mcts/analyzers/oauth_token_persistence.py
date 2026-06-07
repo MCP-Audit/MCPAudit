@@ -1,4 +1,4 @@
-"""SAF-T1202 — OAuth token persistence / reuse after logout or credential rotation."""
+"""MCTS-T-1037 — OAuth token persistence / reuse after logout or credential rotation."""
 
 from __future__ import annotations
 

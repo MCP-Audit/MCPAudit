@@ -1,4 +1,4 @@
-"""Full-schema poisoning detection (SAF-T1501)."""
+"""Full-schema poisoning detection (MCTS-T-1001.002)."""
 
 from __future__ import annotations
 
@@ -55,7 +55,7 @@ FSP_MARKERS: tuple[str, ...] = (
 
 
 def detect_schema_fsp(input_schema: dict[str, Any] | None) -> bool:
-    """Return True when schema JSON matches SAF-T1501 poisoning markers."""
+    """Return True when schema JSON matches MCTS-T-1001.002 poisoning markers."""
     if not input_schema:
         return False
     blob = json.dumps(input_schema, sort_keys=True).lower()

@@ -73,9 +73,9 @@ def _collect_taxa(findings: list[Finding]) -> list[dict[str, str]]:
                     continue
                 seen.add(tag)
                 taxa.append({"id": tag, "name": tag.replace("attack.", "").replace(".", " / ")})
-        if finding.saf_technique_id and finding.saf_technique_id not in seen:
-            seen.add(finding.saf_technique_id)
-            taxa.append({"id": finding.saf_technique_id, "name": finding.saf_technique_id})
+        if finding.technique_id and finding.technique_id not in seen:
+            seen.add(finding.technique_id)
+            taxa.append({"id": finding.technique_id, "name": finding.technique_id})
     return taxa
 
 
@@ -94,7 +94,6 @@ def _build_rules(findings: list[Finding]) -> dict[str, dict[str, Any]]:
             "properties": {
                 "analyzer": finding.analyzer,
                 "technique_id": finding.technique_id,
-                "saf_technique_id": finding.saf_technique_id,
             },
         }
     return rules
@@ -120,10 +119,8 @@ def _finding_to_result(finding: Finding, rules: dict[str, dict[str, Any]]) -> di
         result["properties"]["tool"] = finding.tool
     if finding.technique_id:
         result["properties"]["technique_id"] = finding.technique_id
-    if finding.saf_technique_id:
-        result["properties"]["saf_technique_id"] = finding.saf_technique_id
-    if finding.saf_mitigation_ids:
-        result["properties"]["saf_mitigation_ids"] = finding.saf_mitigation_ids
+    if finding.mitigation_ids:
+        result["properties"]["mitigation_ids"] = finding.mitigation_ids
     if finding.location:
         result["locations"] = [
             {
@@ -148,6 +145,6 @@ def _result_taxa(finding: Finding) -> list[str]:
     attack_tags = finding.evidence.get("attack_tags")
     if isinstance(attack_tags, list):
         tags.extend(str(tag) for tag in attack_tags if isinstance(tag, str))
-    if finding.saf_technique_id:
-        tags.append(finding.saf_technique_id)
+    if finding.technique_id:
+        tags.append(finding.technique_id)
     return tags

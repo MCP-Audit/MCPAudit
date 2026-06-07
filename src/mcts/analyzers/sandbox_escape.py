@@ -1,4 +1,4 @@
-"""Container sandbox escape via runc exec (SAF-T1303)."""
+"""Container sandbox escape via runc exec (MCTS-T-1033)."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ _CWD_TRAVERSAL = re.compile(r"""(^|\s)--cwd(?:=|\s+)["']?\.\.(?:[/\\])""")
 
 
 def detect_sandbox_escape(event: dict[str, Any]) -> bool:
-    """Detect SAF-T1303 indicators in process creation telemetry."""
+    """Detect MCTS-T-1033 indicators in process creation telemetry."""
     log = event.get("log_entry", event)
     if not isinstance(log, dict):
         return False

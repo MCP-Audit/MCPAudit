@@ -26,9 +26,9 @@ mcts scan <target> [--output report.json] [--fail-on-critical] [--theme cyber]
 | `--config`, `--server` | ✅ | Scan server entry from client MCP config |
 | `--i-understand-live-risk` | ✅ | Consent for live MCP probing (or `MCTS_LIVE_OK=1` in CI) |
 | `--runtime-events` | ✅ | JSON telemetry file for runtime analyzers |
-| `--behavioral-probe` | ✅ | Multi-turn SAF-T1603 probe events (on by default with `--live`) |
-| `--semantic-secrets` | ✅ | Opt-in semantic credential detection (SAF-T1505) |
-| `--sigma-rules-path` | ✅ | Extra SAF-MCP Sigma YAML directory |
+| `--behavioral-probe` | ✅ | Multi-turn MCTS-T-1026 probe events (on by default with `--live`) |
+| `--semantic-secrets` | ✅ | Opt-in semantic credential detection (MCTS-T-1022) |
+| `--sigma-rules-path` | ✅ | Extra Sigma YAML directory (`MCTS-T-*/detection-rule.yml`) |
 | `--baseline` / `--save-baseline` | ✅ | Rug-pull baseline compare/snapshot |
 | `--languages` | ✅ | Discovery languages: `python`, `typescript` |
 | `--profile` | 📋 | Policy profile: `strict`, `balanced`, `dev` |

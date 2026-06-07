@@ -1,4 +1,4 @@
-"""Over-privileged MCP tool abuse detection (SAF-T1104)."""
+"""Over-privileged MCP tool abuse detection (MCTS-T-1006)."""
 
 from __future__ import annotations
 
@@ -60,7 +60,7 @@ _SENSITIVE_CMD = (
 
 
 def detect_over_privileged_process(event: dict[str, Any]) -> bool:
-    """Detect SAF-T1104 indicators in process creation telemetry."""
+    """Detect MCTS-T-1006 indicators in process creation telemetry."""
     log = event.get("log_entry", event)
     if not isinstance(log, dict):
         return False

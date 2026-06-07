@@ -1,4 +1,4 @@
-"""Supply-chain parity helpers (SAF-T1002 / SAF-T1003)."""
+"""Supply-chain parity helpers (MCTS-T-1014 / MCTS-T-1015)."""
 
 from __future__ import annotations
 
@@ -24,8 +24,8 @@ def detect_supply_chain_manifest(entry: dict[str, Any]) -> bool:
     else:
         return False
 
-    saf = str(entry.get("saf_technique", "")).upper()
-    if saf == "SAF-T1003":
+    saf = str(entry.get("technique_scenario", "")).upper()
+    if saf == "MCTS-T-1015":
         return _detect_t1003(manifest_type, manifest)
     return _detect_t1002(manifest_type, manifest)
 

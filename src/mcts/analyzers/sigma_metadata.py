@@ -1,4 +1,4 @@
-"""Apply bundled SAF-MCP Sigma rules to tool metadata."""
+"""Apply bundled MCTS Sigma rules to tool metadata."""
 
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ _LEVEL_TO_SEVERITY = {
 
 _TEXT_FIELDS = frozenset({"tool_description", "description", "tool_name", "name"})
 _SCHEMA_VALUE_FIELDS = frozenset({"path", "query", "command", "url", "message", "filename", "file"})
-_NAME_ONLY_TECHNIQUES = frozenset({"SAF-T1008"})
+_NAME_ONLY_TECHNIQUES = frozenset({"MCTS-T-1020"})
 _COMMENT_POISON_MARKERS = (
     "system:",
     "ignore",
@@ -39,7 +39,7 @@ _COMMENT_POISON_MARKERS = (
 
 
 class SigmaMetadataAnalyzer(BaseAnalyzer):
-    """Match SAF-MCP Sigma metadata patterns against discovered MCP tools."""
+    """Match MCTS Sigma metadata patterns against discovered MCP tools."""
 
     name = "sigma_metadata"
 
@@ -76,17 +76,16 @@ class SigmaMetadataAnalyzer(BaseAnalyzer):
                                 analyzer=self.name,
                                 title=f"Sigma rule match on {tool.name}: {rule.title}",
                                 description=(
-                                    f"SAF-MCP Sigma pattern matched in {corpus_field} "
+                                    f"MCTS Sigma pattern matched in {corpus_field} "
                                     f"({rule.technique_id})."
                                 ),
                                 severity=_LEVEL_TO_SEVERITY.get(rule.level.lower(), Severity.MEDIUM),
                                 tool=tool.name,
                                 recommendation=(
-                                    "Review matched metadata against SAF-MCP guidance and "
+                                    "Review matched metadata against MCTS guidance and "
                                     "sanitize tool definitions before deployment."
                                 ),
-                                technique_id="MCTS-T-1010",
-                                saf_technique_id=rule.technique_id,
+                                technique_id=rule.technique_id,
                                 confidence=0.8,
                                 location=SourceLocation(
                                     file=tool.source_file or "",

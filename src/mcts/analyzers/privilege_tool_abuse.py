@@ -1,4 +1,4 @@
-"""High-privilege MCP tool execution abuse (SAF-T1302)."""
+"""High-privilege MCP tool execution abuse (MCTS-T-1030)."""
 
 from __future__ import annotations
 
@@ -20,7 +20,7 @@ _PRIVILEGED_ARG_MARKERS = (
 
 
 def detect_privilege_tool_abuse(event: dict[str, Any]) -> bool:
-    """Detect SAF-T1302 indicators in tool execution telemetry."""
+    """Detect MCTS-T-1030 indicators in tool execution telemetry."""
     tool_name = str(event.get("tool_name", ""))
     if tool_name not in _PRIVILEGED_TOOLS:
         return False

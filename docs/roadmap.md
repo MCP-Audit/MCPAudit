@@ -42,10 +42,10 @@ Today, MCTS identifies security issues across permissions, prompt injection, too
 | Protocol fuzzing (`mcts fuzz`) | ✅ Shipped |
 | SARIF output (`--format sarif`) | ✅ Shipped |
 | CI score thresholds (`--min-score`, `--max-critical`) | ✅ Shipped |
-| SAF-MCP parity harness (34 techniques) | ✅ Shipped |
+| Technique regression harness (34 techniques) | ✅ Shipped |
 | Runtime telemetry analyzers (`--runtime-events`) | ✅ Shipped |
 | CLI category breakdown + `--fail-on-category` | ✅ Shipped |
-| GitHub Action (JSON + SARIF + HTML artifacts) | 🚧 Ready — `@v1` tag pending publish |
+| GitHub Action (JSON + SARIF + HTML artifacts) | ✅ Shipped — `@v1` tag published |
 | Agent pentest (`mcts pentest`) | 📋 Planned |
 | SSE/HTTP live transports | 📋 Planned |
 
@@ -55,7 +55,7 @@ See [Building in Public](blog-building-mcp-security-in-public.md) and [Feature E
 
 - Multi-file repo discovery shipped; jailbreak analyzer still uses weighted tool-count heuristic
 - `mcts pentest` remains a stub
-- ~34 / ~75 SAF-MCP techniques covered by parity fixtures (~45%)
+- ~34 / ~75 external-framework techniques covered by regression fixtures (~45%)
 
 ---
 
@@ -83,12 +83,12 @@ See [Building in Public](blog-building-mcp-security-in-public.md) and [Feature E
 | # | Deliverable | Status |
 |---|-------------|--------|
 | 1.1 | CI score thresholds (`--min-score`, `--max-critical`) | ✅ |
-| 1.2 | GitHub Action (JSON + SARIF + HTML) | 🚧 Ready — `@v1` tag pending |
+| 1.2 | GitHub Action (JSON + SARIF + HTML) | ✅ `@v1` published |
 | 1.3 | SARIF output (`--format sarif`) | ✅ |
 | 1.4 | Live MCP probing (`--live`, stdio) | ✅ |
 | 1.5 | Config inventory (`mcts inventory`) | ✅ |
 | 1.6 | Runtime telemetry analyzers (`--runtime-events`) | ✅ |
-| 1.7 | SAF-MCP parity harness (34 techniques, ≥80% gate) | ✅ |
+| 1.7 | Technique regression harness (34 techniques, ≥80% gate) | ✅ |
 | 1.8 | CLI category breakdown + `--fail-on-category` gates | ✅ |
 
 ### 1. Security Risk Score (Category Breakdown in CLI) — ✅ Shipped

@@ -1,4 +1,4 @@
-"""SAF-T1402 — hidden instructions in MCP tool metadata (Unicode / HTML steganography)."""
+"""MCTS-T-1041 — hidden instructions in MCP tool metadata (Unicode / HTML steganography)."""
 
 from __future__ import annotations
 

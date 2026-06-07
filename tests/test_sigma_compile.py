@@ -9,7 +9,7 @@ from pathlib import Path
 from mcts.taxonomy.sigma.loader import _load_bundled_rules
 
 ROOT = Path(__file__).resolve().parents[1]
-FIXTURES_SIGMA = ROOT / "tests" / "fixtures" / "saf_sigma"
+FIXTURES_SIGMA = ROOT / "tests" / "fixtures" / "sigma_fixtures"
 COMPILE_SCRIPT = ROOT / "scripts" / "compile_sigma_rules.py"
 
 

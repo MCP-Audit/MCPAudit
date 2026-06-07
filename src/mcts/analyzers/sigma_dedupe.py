@@ -8,16 +8,16 @@ _METADATA_ANALYZERS = frozenset({"prompt_injection", "metadata_integrity", "sche
 _PATH_ANALYZERS = frozenset({"path_validation", "tool_abuse"})
 _COMMAND_ANALYZERS = frozenset({"command_execution"})
 
-_TPA_SAF_TECHNIQUES = frozenset(
+_TPA_TECHNIQUES = frozenset(
     {
-        "SAF-T1001",
-        "SAF-T1401",
-        "SAF-T1402",
-        "SAF-T1501",
+        "MCTS-T-1001",
+        "MCTS-T-1021",
+        "MCTS-T-1041",
+        "MCTS-T-1001.002",
     }
 )
-_PATH_SAF_TECHNIQUES = frozenset({"SAF-T1105", "SAF-T1606"})
-_COMMAND_SAF_TECHNIQUES = frozenset({"SAF-T1101"})
+_PATH_TECHNIQUES = frozenset({"MCTS-T-1002"})
+_COMMAND_TECHNIQUES = frozenset({"MCTS-T-1023"})
 
 _TEXT_CORPUS_MARKERS = ("description", ".name", "tool_name")
 
@@ -56,22 +56,22 @@ def _sigma_is_redundant(
     if not tool:
         return False
 
-    saf_id = finding.saf_technique_id or ""
+    rule_technique = finding.technique_id or ""
     corpus = str(finding.evidence.get("corpus_field", ""))
 
     if tool in tools_with_path and finding.analyzer == "sigma_metadata":
         return True
 
     if tool in tools_with_metadata:
-        if saf_id in _TPA_SAF_TECHNIQUES:
+        if rule_technique in _TPA_TECHNIQUES:
             return True
         if any(marker in corpus for marker in _TEXT_CORPUS_MARKERS):
             return True
 
-    if tool in tools_with_path and saf_id in _PATH_SAF_TECHNIQUES:
+    if tool in tools_with_path and rule_technique in _PATH_TECHNIQUES:
         return True
 
-    if tool in tools_with_command and saf_id in _COMMAND_SAF_TECHNIQUES:
+    if tool in tools_with_command and rule_technique in _COMMAND_TECHNIQUES:
         return True
 
     return False

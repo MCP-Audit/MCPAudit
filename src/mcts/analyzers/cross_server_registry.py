@@ -1,4 +1,4 @@
-"""Cross-server tool shadowing via registry events (SAF-T1301)."""
+"""Cross-server tool shadowing via registry events (MCTS-T-1029)."""
 
 from __future__ import annotations
 
@@ -19,7 +19,7 @@ _ADMIN_OPS = ("write", "delete", "execute", "admin", "root", "system")
 
 
 def detect_cross_server_shadowing(event: dict[str, Any]) -> bool:
-    """Detect SAF-T1301 indicators in tool registration telemetry."""
+    """Detect MCTS-T-1029 indicators in tool registration telemetry."""
     log = event.get("log_entry", event)
     if not isinstance(log, dict):
         return False

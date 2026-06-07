@@ -1,4 +1,4 @@
-"""Path traversal payload catalog and runtime path detection (SAF-T1105)."""
+"""Path traversal payload catalog and runtime path detection (MCTS-T-1002)."""
 
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ FILE_TOOL_NAMES = frozenset(
     }
 )
 
-# Representative traversal and encoding variants from SAF-T1105 detection-rule.yml
+# Representative traversal and encoding variants from MCTS-T-1002 detection-rule.yml
 TRAVERSAL_PAYLOADS: tuple[str, ...] = (
     "../../etc/passwd",
     "../../../.env",
@@ -106,7 +106,7 @@ def is_file_tool_name(tool_name: str) -> bool:
 
 
 def is_traversal_path(path: str) -> bool:
-    """Return True when a path matches SAF-T1105 traversal or sensitive targets."""
+    """Return True when a path matches MCTS-T-1002 traversal or sensitive targets."""
     if not path:
         return False
     normalized = path.replace("\\", "/")
@@ -126,7 +126,7 @@ def detect_path_traversal_event(
     result: str | None = None,
     treat_blocked_as_benign: bool = True,
 ) -> bool:
-    """Detect path traversal in MCP file-access log events (SAF-T1105 parity shape)."""
+    """Detect path traversal in MCP file-access log events (MCTS-T-1002 parity shape)."""
     if not is_file_tool_name(tool_name):
         return False
     if treat_blocked_as_benign and result == "error":

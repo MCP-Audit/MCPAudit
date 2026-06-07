@@ -1,13 +1,15 @@
 # Script-to-Script Comparison: SAF-MCP vs MCTS
 
+> **Last synced:** 2025-06 — MCTS uses first-party `MCTS-T-*` / `MCTS-M-*` IDs only (no `saf_technique_id` on findings). Regression fixtures live under `tests/fixtures/regression/`; CI gate via `regression_harness.py`.
+
 **Sources analyzed**
 
 | Project | Path | Role |
 |---------|------|------|
-| **SAF-MCP** | `/Users/arghyadeep_nfal/CODE_ARGS/mcp_audit_competitor/saf-mcp-main` | OpenSSF threat-intelligence framework (markdown TTPs + reference detection artifacts) |
-| **MCTS** | `/Users/arghyadeep_nfal/CODE_ARGS/contributions/MCTS` | Model Context Threat Scanner — executable CLI audit pipeline |
+| **SAF-MCP** | `competitors/saf-mcp-main/` (upstream reference) | OpenSSF threat-intelligence framework (markdown TTPs + reference detection artifacts) |
+| **MCTS** | Repository root | Model Context Threat Scanner — executable CLI audit pipeline |
 
-This document compares **executable Python** in both trees: MCTS analyzers, fuzz/probe/discovery modules, and CLI vs SAF-MCP `test_detection_rule.py` harnesses, `examples/` PoCs, and mitigation reference code. It is written for MCTS maintainers deciding what to adopt, port, or cross-reference.
+This document compares **executable Python** in both trees: MCTS analyzers, fuzz/probe/discovery modules, and CLI vs SAF-MCP `test_detection_rule.py` harnesses, `examples/` PoCs, and mitigation reference code. SAF IDs appear **only when describing upstream artifacts**; MCTS sections use the native taxonomy in `src/mcts/taxonomy/techniques.json` and `docs/taxonomy.md`.
 
 ---
 
@@ -17,21 +19,21 @@ SAF-MCP and MCTS solve **different problems** with **different script shapes**:
 
 | | SAF-MCP scripts | MCTS scripts |
 |---|-----------------|--------------|
-| **Count** | 44 Python files (~9.5k LOC), 72 Sigma YAML, 78 technique READMEs | ~60 Python modules under `src/mcts/` (~5.5k LOC in core scan path) |
+| **Count** | 44 Python files (~9.5k LOC), 72 Sigma YAML, 78 technique READMEs | 60+ Python modules under `src/mcts/`; **41** `MCTS-T-*` techniques, **25** `MCTS-M-*` mitigations |
 | **Purpose** | Validate Sigma rules, demonstrate attacks/defenses, teach detection patterns | Discover MCP servers, statically analyze source/metadata, optionally live-probe, score, report |
-| **Input** | NDJSON log fixtures (`test-logs.json`), sample tool JSON, synthetic conversations | Repo paths, MCP configs, live stdio servers |
-| **Output** | Pass/fail test summaries, demo prints | `Finding` objects → JSON / SARIF / HTML dashboard |
+| **Input** | NDJSON log fixtures (`test-logs.json`), sample tool JSON, synthetic conversations | Repo paths, MCP configs, live stdio servers, bundled regression fixtures |
+| **Output** | Pass/fail test summaries, demo prints | `Finding` objects → JSON / SARIF / HTML dashboard (`technique_id`, `mitigation_ids`) |
 | **Runtime** | None required (offline scripts) | Full CLI with discovery, consent gates, CI exit codes |
 
 **Overlap is conceptual, not architectural.** The closest apples-to-apples comparison is:
 
 ```
-SAF-T1001/examples/tpa-detector.py  ↔  MCTS prompt_injection.py + metadata_integrity.py + schema_surface.py
-SAF-T1105/test_detection_rule.py    ↔  MCTS path_validation.py + tool_abuse.py (+ fuzz payloads)
-SAF-M-63/embedding_sanitization.py  ↔  MCTS data_leakage.py (regex-only today)
+SAF-T1001/examples/tpa-detector.py  ↔  MCTS tpa_patterns.py + prompt_injection + metadata_integrity + sigma_metadata
+SAF-T1105/test_detection_rule.py    ↔  MCTS path_traversal.py + path_validation + tool_abuse (+ fuzz payloads)
+SAF-M-63/embedding_sanitization.py  ↔  MCTS embedding_secrets.py (opt-in via --semantic-secrets)
 ```
 
-MCTS currently maps findings to **34+ internal `MCTS-T-*` IDs** in `src/mcts/taxonomy/techniques.json`. SAF-MCP documents **85 `SAF-T-*` techniques** across 14 MITRE-aligned tactics. MCTS operationalizes roughly **45% of the SAF technique catalog** via the parity harness (34 techniques, ≥80% gate in CI); the rest is roadmap surface informed by SAF dossiers and Sigma patterns.
+MCTS ships **41 internal `MCTS-T-*` IDs** and **25 `MCTS-M-*` mitigations** in `src/mcts/taxonomy/techniques.json`. SAF-MCP documents **~85 `SAF-T-*` techniques**. MCTS regression-gates **34 techniques at ≥80%** detector accuracy in CI (`tests/fixtures/regression/MCTS-T-*/`, `src/mcts/testing/regression_harness.py`) — roughly **45%** of the upstream catalog by technique count, with broader static/live coverage than the matrix below suggests for un-gated IDs.
 
 ---
 
@@ -77,18 +79,22 @@ All other SAF techniques ship Sigma + optional test harness only — **no runnab
 src/mcts/
 ├── cli/main.py                 # Typer CLI: scan, inventory, fuzz, report
 ├── core/scanner.py             # Orchestrates analyzers → enrich → score → report
-├── analyzers/*.py              # 11 static analyzers (see §4)
+├── analyzers/*.py              # 30+ static + runtime analyzers (see §4)
 ├── discovery/*.py              # Static Python/JS tool discovery from repos
 ├── inventory/*.py              # Client config discovery (Cursor, Claude Desktop, …)
 ├── fuzz/*.py                   # Live MCP protocol fuzz (consent-gated)
-├── probe/*.py                  # Live stdio MCP session probing
+├── probe/*.py                  # Live stdio MCP session + behavioral probe
+├── testing/regression_harness.py  # 34-technique fixture evaluator (≥80% CI gate)
 ├── mcp/client.py               # MCP discovery client
-├── taxonomy/mapper.py          # MCTS-T / MCTS-M enrichment
-├── reporting/sarif.py          # SARIF export with technique_id
+├── taxonomy/
+│   ├── techniques.json         # MCTS-T-* + MCTS-M-* catalog
+│   ├── mapper.py               # technique_id / mitigation_ids enrichment
+│   └── sigma/metadata_rules.json  # Bundled metadata Sigma patterns
+├── reporting/sarif.py          # SARIF export with technique_id + mitigation_ids
 └── scoring/engine.py           # Risk scoring
 ```
 
-MCTS has **no equivalent** to per-technique Sigma YAML or NDJSON log validators. Its test suite lives in `tests/` (pytest), not co-located with technique dossiers.
+MCTS has **no equivalent** to per-technique Sigma YAML co-located with dossiers. Regression fixtures are vendored under `tests/fixtures/regression/MCTS-T-*/` (neutral IDs); pytest lives in `tests/test_technique_regression.py`.
 
 ---
 
@@ -109,11 +115,13 @@ flowchart TB
     subgraph MCTS["MCTS (scanner pipeline)"]
         CLI[mcts scan / fuzz / inventory]
         DISC[discovery + MCPClient]
-        AN[11 analyzers]
+        AN[30+ analyzers]
         TAX[taxonomy/mapper.py]
+        REG[regression_harness.py]
         SC[scoring + compliance]
         RPT[JSON / SARIF / HTML]
         CLI --> DISC --> AN --> TAX --> SC --> RPT
+        REG -.->|fixtures| AN
     end
 
     SAF -.->|"patterns, fixtures, mitigations"| MCTS
@@ -266,67 +274,105 @@ These modules have **no SAF script counterpart** — they are MCTS differentiato
 
 ## 5. Full Technique Coverage Matrix
 
-Legend: **●** MCTS static/live detection today · **◐** partial / related · **○** SAF documents only · **★** SAF has Sigma + test script
+Legend: **●** MCTS regression-gated (≥80% in CI) · **◐** partial / related · **○** SAF documents only · **★** SAF has Sigma + test script
 
-| SAF ID | Technique (short) | MCTS | SAF scripts | MCTS analyzer / note |
-|--------|-------------------|------|-------------|----------------------|
-| SAF-T1001 | Tool Poisoning Attack | ● | ★ `tpa-detector.py` | `prompt_injection`, `metadata_integrity` |
-| SAF-T1001.002 / T1501 | Full-Schema Poisoning | ◐ | ★ | `schema_surface` |
-| SAF-T1002 | Supply Chain Compromise | ◐ | ★ T1004 | `data_leakage` in source; no package provenance |
-| SAF-T1003 | Malicious MCP Server Distribution | ◐ | ★ T1005 | No install-script analysis |
-| SAF-T1004 | Server Impersonation | ◐ | ★ | `cross_server` name similarity only |
-| SAF-T1005 | Exposed Endpoint | ○ | ★ | No network exposure scan |
-| SAF-T1006 | Social Engineering Install | ○ | ◐ | Human factor — out of scope |
-| SAF-T1007 | OAuth Authorization Phishing | ○ | ◐ T1009 | No OAuth flow analysis |
-| SAF-T1008 | Tool Shadowing | ● | ★ | `cross_server` |
-| SAF-T1009 | Authorization Server Mix-up | ○ | ★ | No OAuth config parser |
-| SAF-T1101 | Command Injection | ● | ○ | `command_execution` |
-| SAF-T1102 | Prompt Injection | ◐ | ○ | `prompt_injection` (metadata only, not content vectors) |
-| SAF-T1103 | Fake Tool Invocation | ○ | ○ | `fuzz` partial |
-| SAF-T1104 | Over-Privileged Tool Abuse | ◐ | ★ | `permissions` |
-| SAF-T1105 | Path Traversal via File Tool | ● | ★ | `tool_abuse`, `path_validation` |
-| SAF-T1106 | Autonomous Loop Exploit | ○ | ★ | Not implemented |
-| SAF-T1109 | Debugging Tool Exploitation | ○ | ★ | Not implemented (CVE-class) |
-| SAF-T1110 | Multimodal Prompt Injection | ○ | ★ | Not implemented |
-| SAF-T1111 | AI Agent CLI Weaponization | ○ | ◐ | Not implemented |
-| SAF-T1112 | Sampling Request Abuse | ○ | ★ | Fuzz roadmap |
-| SAF-T1201 | MCP Rug Pull | ○ | ★ | Needs version diff / monitoring |
-| SAF-T1202–1207 | Persistence variants | ○ | ★ partial | Not implemented |
-| SAF-T2106 | Context Memory Poisoning | ○ | ★ examples | Demo only in SAF |
-| SAF-T1301–1309 | Privilege / OAuth escalation | ◐ | ★ partial | `cross_server`, `permissions` |
-| SAF-T1401–1408 | Defense evasion | ◐ | ★ partial | Unicode/HTML partial |
-| SAF-T1501–1507 | Credential access | ◐ | ★ partial | `data_leakage`, `schema_surface` |
-| SAF-T1601–1606 | Discovery | ◐ | ★ partial | `fuzz`, discovery |
-| SAF-T1603 | System Prompt Disclosure | ○ | ★ behavioral | No multi-turn analyzer |
+| Upstream SAF ID | Technique (short) | MCTS ID | MCTS | SAF scripts | MCTS analyzer / note |
+|-----------------|-------------------|---------|------|-------------|----------------------|
+| SAF-T1001 | Tool Poisoning Attack | MCTS-T-1001 | ● | ★ `tpa-detector.py` | `prompt_injection`, `metadata_integrity`, `sigma_metadata`, `tpa_patterns` |
+| SAF-T1501 / T1001.002 | Full-Schema Poisoning | MCTS-T-1001.002 | ● | ★ | `schema_surface`, `schema_fsp` |
+| SAF-T1002 | Supply Chain Compromise | MCTS-T-1014 | ● | ★ | `supply_chain`, `supply_chain_signals` |
+| SAF-T1003 | Malicious MCP Server Distribution | MCTS-T-1015 | ● | ★ | `supply_chain`, `supply_chain_signals` |
+| SAF-T1004 | Server Impersonation | MCTS-T-1028 | ● | ★ | `dns_poisoning`, `runtime_events` |
+| SAF-T1005 | Exposed Endpoint | MCTS-T-1027 | ● | ★ | `exposed_endpoint`, `runtime_events` |
+| SAF-T1006 | Suspicious Tool Registration | MCTS-T-1031 | ● | ◐ | `suspicious_registration`, `runtime_events` |
+| SAF-T1007 | OAuth Authorization Phishing | MCTS-T-1011 | ● | ◐ | `oauth_config`, `oauth_phishing` |
+| SAF-T1008 | Tool Shadowing | MCTS-T-1020 | ● | ★ | `tool_shadowing`, `cross_server` |
+| SAF-T1009 | Authorization Server Mix-up | MCTS-T-1012 | ● | ★ | `oauth_config`, `oauth_mixup`, `runtime_events` |
+| SAF-T1101 | Command Injection | MCTS-T-1023 | ● | ○ | `command_injection`, `command_execution`, `runtime_events` |
+| SAF-T1102 | Tool Output Prompt Injection | MCTS-T-1007 | ● | ○ | `tool_output_injection`, `jailbreak`, `runtime_events` |
+| SAF-T1103 | Fake Tool Invocation | MCTS-T-1032 | ● | ○ | `fake_tool_invocation`, `runtime_events` |
+| SAF-T1104 | Over-Privileged Tool Abuse | MCTS-T-1006 | ● | ★ | `over_privileged`, `permissions`, `runtime_events` |
+| SAF-T1105 | Path Traversal via File Tool | MCTS-T-1002 | ● | ★ | `path_traversal`, `path_validation`, `tool_abuse` |
+| SAF-T1106 | Autonomous Loop Exploit | MCTS-T-1035 | ● | ★ | `autonomous_loop`, `runtime_events` |
+| SAF-T1109 | MCP Inspector RCE | MCTS-T-1036 | ● | ★ | `inspector_rce`, `runtime_events` |
+| SAF-T1110 | Multimodal Prompt Injection | — | ○ | ★ | Not implemented |
+| SAF-T1111 | AI Agent CLI Weaponization | — | ○ | ◐ | Not implemented |
+| SAF-T1112 | Sampling Request Abuse | MCTS-T-1016 | ● | ★ | `sampling_abuse`, `fuzz`, `runtime_events` |
+| SAF-T1201 | MCP Rug Pull | MCTS-T-1013 | ● | ★ | `rug_pull`, `metadata_diff`, `runtime_events` |
+| SAF-T1202 | OAuth Token Persistence | MCTS-T-1037 | ● | ★ | `oauth_token_persistence`, `runtime_events` |
+| SAF-T1203 | Backdoored Install | MCTS-T-1038 | ● | ★ | `backdoored_install`, `runtime_events` |
+| SAF-T1204 | Context Memory Implant | MCTS-T-1039 | ● | ★ | `context_memory_implant`, `runtime_events` |
+| SAF-T1205 | Persistent Tool Redefinition | MCTS-T-1040 | ● | ★ | `tool_redefinition`, `metadata_diff`, `runtime_events` |
+| SAF-T1206–1207 | Other persistence | — | ○ | ★ partial | Not implemented |
+| SAF-T1301 | Cross-Server Shadowing | MCTS-T-1029 | ● | ★ | `cross_server_registry`, `cross_server`, `runtime_events` |
+| SAF-T1302 | High-Privilege Tool Abuse | MCTS-T-1030 | ● | ★ | `privilege_tool_abuse`, `runtime_events` |
+| SAF-T1303 | Container Sandbox Escape | MCTS-T-1033 | ● | ★ | `sandbox_escape`, `runtime_events` |
+| SAF-T1306 | Rogue Authorization Server | MCTS-T-1017 | ● | ★ | `oauth_escalation_runtime`, `oauth_config` |
+| SAF-T1307 | OAuth Confused Deputy | MCTS-T-1018 | ● | ★ | `oauth_escalation_runtime`, `oauth_config` |
+| SAF-T1308 | Token Scope Substitution | MCTS-T-1019 | ● | ★ | `oauth_escalation_runtime`, `oauth_config` |
+| SAF-T1309 | Other OAuth escalation | — | ◐ | ★ partial | Partially covered by OAuth cluster |
+| SAF-T1401 | Line Jumping | MCTS-T-1021 | ● | ★ | `line_jumping` |
+| SAF-T1402 | Instruction Steganography | MCTS-T-1041 | ● | ★ | `instruction_steganography`, `tpa_patterns`, `runtime_events` |
+| SAF-T1403–1408 | Other defense evasion | — | ◐ | ★ partial | Unicode/HTML partial via `tpa_patterns` |
+| SAF-T1502 | Credential File Access | MCTS-T-1024 | ● | ★ | `credential_access`, `runtime_events` |
+| SAF-T1505 | Semantic Credential Exposure | MCTS-T-1022 | ◐ | ★ examples | `embedding_secrets` (opt-in `--semantic-secrets`) |
+| SAF-T1501–1507 (other) | Credential access | ◐ | ★ partial | `data_leakage`, `schema_surface` |
+| SAF-T1603 | System Prompt Disclosure | MCTS-T-1026 | ● | ★ behavioral | `behavioral_extraction`, `probe/behavioral`, `runtime_events` |
+| SAF-T1601–1602, T1604–1606 | Discovery | ◐ | ★ partial | `fuzz`, discovery |
 | SAF-T1701–1707 | Lateral movement | ◐ | ★ partial | `attack_chains` |
 | SAF-T1801–1805 | Collection | ◐ | ◐ | `data_leakage`, `tool_abuse` |
 | SAF-T1901–1904 | C2 | ○ | ◐ | Not implemented |
-| SAF-T1910–1915 | Exfiltration | ○ | ★ T1910 | Not implemented |
+| SAF-T1910–1915 | Exfiltration | ○ | ★ | Not implemented |
+| SAF-T2106 | Vector Store Poisoning | MCTS-T-1034 | ● | ★ examples | `vector_poisoning`, `runtime_events` |
 | SAF-T2101–2105, T3001 | Impact / RAG backdoor | ○ | ★ partial | Not implemented |
 | SAF-T2107 | AI Model Poisoning | ○ | ★ examples | Demo only in SAF |
 
-**Scorecard:** MCTS directly addresses ~**11–13** SAF techniques with executable logic; **partial** overlap on ~**15–20** more; **~50+** SAF techniques remain documentation/Sigma-only from MCTS's perspective.
+**Scorecard (updated):** **34** techniques regression-gated in CI at ≥80%; **41** `MCTS-T-*` entries in taxonomy; **~50+** upstream SAF techniques still without regression fixtures or dedicated analyzers.
 
 ---
 
-## 6. Taxonomy Bridge: MCTS-T ↔ SAF-T
+## 6. MCTS Taxonomy (first-party)
 
-MCTS uses internal IDs in analyzers; `taxonomy/mapper.py` enriches from `techniques.json`. Recommended explicit mapping for reports:
+MCTS findings expose **`technique_id`** (`MCTS-T-*`) and **`mitigation_ids`** (`MCTS-M-*`) only. Enrichment runs via `taxonomy/mapper.py` from `techniques.json`. Reports link to `docs/taxonomy.md` — not upstream dossier URLs.
 
-| MCTS-T ID | MCTS analyzer(s) | SAF-T equivalent | SAF mitigations (from dossiers) |
-|-----------|------------------|------------------|--------------------------------|
-| MCTS-T-1001 | `prompt_injection`, `metadata_integrity` | SAF-T1001, SAF-T1402 | SAF-M-4, M-5, M-7, M-37 |
-| MCTS-T-1001.002 | `schema_surface` | SAF-T1501 / SAF-T1001.002 | SAF-M-38, M-4 |
-| MCTS-T-1002 | `path_validation`, `tool_abuse` | SAF-T1105, SAF-T1606 | SAF-M-1, M-38 |
-| MCTS-T-1003 | `command_execution` | SAF-T1101 | SAF-M-2, M-12 |
-| MCTS-T-1004 | `data_leakage` | SAF-T1502, SAF-T1503, SAF-T1910 | SAF-M-24, M-63 |
-| MCTS-T-1005 | `attack_chains` | SAF-T1701, SAF-T1703 | SAF-M-3, M-11 |
-| MCTS-T-1006 | `permissions` | SAF-T1104, SAF-T1302 | SAF-M-1, M-6 |
-| MCTS-T-1007 | `jailbreak` | SAF-T1102, SAF-T1309 | SAF-M-3, M-11 |
-| MCTS-T-1008 | `cross_server` | SAF-T1008, SAF-T1301 | SAF-M-6, M-2 |
-| MCTS-T-1009 | `fuzz` | SAF-T1601, SAF-T1112 | SAF-M-10, M-11 |
+### 6.1 Regression-gated techniques (34)
 
-Adding `saf_technique_id` and `saf_mitigation_ids[]` fields to `Finding` (alongside existing `technique_id`) would let HTML/SARIF reports link directly to upstream dossiers without breaking MCTS's internal taxonomy.
+These IDs have bundled fixtures under `tests/fixtures/regression/MCTS-T-*/` and must stay ≥80% accurate in CI:
+
+`MCTS-T-1001`, `1001.002`, `1002`, `1006`, `1007`, `1011`, `1012`, `1013`, `1014`, `1015`, `1016`, `1017`, `1018`, `1019`, `1020`, `1021`, `1023`, `1024`, `1026`, `1027`, `1028`, `1029`, `1030`, `1031`, `1032`, `1033`, `1034`, `1035`, `1036`, `1037`, `1038`, `1039`, `1040`, `1041`
+
+### 6.2 Core catalog sample (technique → mitigations)
+
+| MCTS-T ID | Primary analyzer(s) | MCTS-M mitigations (from catalog) |
+|-----------|-------------------|-----------------------------------|
+| MCTS-T-1001 | `prompt_injection`, `metadata_integrity` | MCTS-M-004, M-007, M-020 |
+| MCTS-T-1001.002 | `schema_surface` | MCTS-M-021 |
+| MCTS-T-1002 | `path_validation`, `path_traversal`, `tool_abuse` | MCTS-M-001, M-021 |
+| MCTS-T-1003 | `command_execution` | MCTS-M-002, M-013 |
+| MCTS-T-1007 | `tool_output_injection`, `jailbreak`, `runtime_events` | MCTS-M-004, M-012 |
+| MCTS-T-1010 | `sigma_metadata` | MCTS-M-020 |
+| MCTS-T-1011–1019 | `oauth_config`, `runtime_events` | MCTS-M-014–M-019 |
+| MCTS-T-1013 | `rug_pull`, `metadata_diff` | MCTS-M-022, M-024 |
+| MCTS-T-1014 / 1015 | `supply_chain` | MCTS-M-008, M-010, M-018 |
+| MCTS-T-1022 | `embedding_secrets` | MCTS-M-025 |
+| MCTS-T-1040 | `tool_redefinition`, `metadata_diff` | MCTS-M-022 |
+| MCTS-T-1041 | `instruction_steganography` | MCTS-M-007, M-009 |
+
+Full table: `src/mcts/taxonomy/techniques.json` (41 techniques, 25 mitigations).
+
+### 6.3 Optional upstream cross-reference (research only)
+
+When comparing to SAF-MCP dossiers for gap analysis, use this **informal** mapping — not emitted in scan output:
+
+| MCTS-T ID | Informative upstream peer |
+|-----------|---------------------------|
+| MCTS-T-1001 | SAF-T1001, SAF-T1402 |
+| MCTS-T-1002 | SAF-T1105 |
+| MCTS-T-1013 | SAF-T1201 |
+| MCTS-T-1040 | SAF-T1205 |
+| MCTS-T-1034 | SAF-T2106 |
+
+Do **not** reintroduce `saf_technique_id` fields on `Finding`; external frameworks belong in competitor docs or optional `evidence` tags, not the product taxonomy.
 
 ---
 
@@ -336,30 +382,30 @@ Organized by **effort** and **impact**.
 
 ### 7.1 Quick wins (hours — port patterns & fixtures)
 
-| # | Take from SAF | Port into MCTS | Source file |
-|---|---------------|----------------|-------------|
-| 1 | TPA Sigma pattern list | Add to `metadata_integrity.POISON_PATTERNS` | `SAF-T1001/detection-rule.yml` |
-| 2 | HTML / template injection regex | Extend `prompt_injection.py` | `SAF-T1001/examples/tpa-detector.py` lines 25–34 |
-| 3 | Homoglyph + mixed-script detection | New helper in `metadata_integrity.py` | `tpa-detector.py` lines 65–71, 135–151 |
-| 4 | Unicode tag block scan (U+E0000–E007F) | Extend `HIDDEN_CHAR_PATTERN` | `tpa-detector.py` lines 62–63, 127–133 |
-| 5 | Recursive schema walker | Merge into `schema_surface.py` | `tpa-detector.py` `_scan_schema()` |
-| 6 | Expanded credential regex set | Extend `data_leakage.SECRET_PATTERNS` | `SAF-M-63/embedding_sanitization.py` `CredentialType` enum |
-| 7 | Path traversal encoding payloads | Extend `tool_abuse.TRAVERSAL_PAYLOADS` + fuzz | `SAF-T1105/test_detection_rule.py` |
-| 8 | NDJSON test fixtures | New `tests/fixtures/saf_mcp/` directory | Each technique `test-logs.json` |
-| 9 | Sigma wildcard → regex converter | Shared test utility | `SAF-T1001/test_detection_rule.py` `convert_sigma_pattern_to_regex()` |
-| 10 | False-positive negative cases | Pytest parametrized tests | `SAF-T1105` NEGATIVE_TEST_CASES |
+| # | Take from SAF | Port into MCTS | Status |
+|---|---------------|----------------|--------|
+| 1 | TPA Sigma pattern list | `tpa_patterns.py` + `sigma_metadata` | ✅ Shipped |
+| 2 | HTML / template injection regex | `tpa_patterns.py`, `prompt_injection.py` | ✅ Shipped |
+| 3 | Homoglyph + mixed-script detection | `tpa_patterns.find_homoglyphs()` | ✅ Shipped |
+| 4 | Unicode tag block scan (U+E0000–E007F) | `tpa_patterns.has_control_chars()` | ✅ Shipped |
+| 5 | Recursive schema walker | `schema_fsp.py`, `schema_surface.py` | ✅ Partial |
+| 6 | Expanded credential regex set | `data_leakage.py`, `embedding_secrets.py` | ✅ Shipped |
+| 7 | Path traversal encoding payloads | `path_traversal.py` + fuzz | ✅ Shipped |
+| 8 | NDJSON test fixtures | `tests/fixtures/regression/MCTS-T-*/` | ✅ Shipped (34 IDs) |
+| 9 | Sigma wildcard → regex converter | `taxonomy/sigma/matcher.py` | ✅ Shipped |
+| 10 | False-positive negative cases | `tests/test_technique_regression.py` | ✅ Shipped |
 
 ### 7.2 Medium effort (days — new analyzers or modules)
 
 | # | Take from SAF | MCTS module to add/extend | Rationale |
 |---|---------------|---------------------------|-----------|
-| 11 | Sigma rule corpus (72 YAML) | `analyzers/sigma_metadata.py` or rule import layer | Apply SAF patterns to `MCPTool.description` at scan time |
-| 12 | OAuth technique dossiers T1007/T1009/T1306–1308 | `analyzers/oauth_config.py` | Parse MCP client JSON for redirect URI / AS URL issues |
-| 13 | SAF-T1112 sampling abuse patterns | `fuzz/payloads.py` | Live probe for `sampling/createMessage` misuse |
-| 14 | Rug pull / persistent redefinition (T1201/T1205) | `analyzers/metadata_diff.py` | Requires baseline + re-scan; aligns with SAF-M-2 integrity |
-| 15 | Supply chain (T1002/T1003) | Extend `inventory` + package lockfile scan | Check npm/pypi/docker references against allowlists |
-| 16 | Per-finding mitigation links | `report/data.py`, HTML dashboard | Map `MCTS-T-*` → `SAF-M-*` URLs in remediation text |
-| 17 | MITRE ATT&CK tags from SAF Sigma | SARIF `taxa` field | Already partially in SAF YAML `tags:` |
+| 11 | Sigma rule corpus (72 YAML) | `analyzers/sigma_metadata.py` + `taxonomy/sigma/metadata_rules.json` | ✅ Shipped — compile via `scripts/compile_sigma_rules.py` |
+| 12 | OAuth technique dossiers | `analyzers/oauth_config.py` + runtime OAuth cluster | ✅ MCTS-T-1011–1019 |
+| 13 | Sampling abuse patterns | `fuzz/payloads.py`, `sampling_abuse.py` | ✅ MCTS-T-1016 |
+| 14 | Rug pull / persistent redefinition | `metadata_diff.py`, `tool_redefinition.py` | ✅ MCTS-T-1013, MCTS-T-1040 |
+| 15 | Supply chain | `supply_chain.py`, `supply_chain_signals.py` | ✅ MCTS-T-1014, MCTS-T-1015 |
+| 16 | Per-finding mitigation links | `report/data.py`, HTML dashboard | ✅ `MCTS-M-*` via `mitigation_urls.py` → `docs/taxonomy.md` |
+| 17 | ATT&CK tags | SARIF `taxa` field | ✅ `evidence.attack_tags` + `technique_id` |
 
 ### 7.3 Strategic adoption (weeks — differentiated capability)
 
@@ -433,25 +479,24 @@ SchemaSurfaceAnalyzer._analyze_tool
   └─ optional dangerous params (non-recursive)
 ```
 
-**Concrete merge plan:** extract SAF's `suspicious_patterns`, `invisible_chars`, and `_scan_schema` into `src/mcts/analyzers/tpa_patterns.py` (shared module), call from all three analyzers to eliminate duplication and close the coverage gap.
+**Status:** ✅ Implemented via shared `src/mcts/analyzers/tpa_patterns.py`, consumed by `prompt_injection`, `metadata_integrity`, `schema_surface`, and `sigma_metadata` (with dedupe in `sigma_dedupe.py`).
 
 ---
 
 ## 9. Test Harness Comparison
 
-| Aspect | SAF `test_detection_rule.py` | MCTS `tests/` |
-|--------|------------------------------|---------------|
-| Location | Co-located per technique | Centralized pytest tree |
-| Input | `detection-rule.yml` + `test-logs.json` | Python factories + example servers in `examples/bench/` |
-| Assertion | Hardcoded `expected_detections` dict | `assert finding.analyzer == …` |
-| CI | Manual / contributor-run | Project CI pipeline |
-| Pattern converter | `convert_sigma_pattern_to_regex()` | Not present — opportunity to shared-lib |
+| Aspect | SAF `test_detection_rule.py` | MCTS regression harness |
+|--------|------------------------------|-------------------------|
+| Location | Co-located per technique | `src/mcts/testing/regression_harness.py` |
+| Fixtures | `techniques/SAF-TXXXX/test-logs.json` | `tests/fixtures/regression/MCTS-T-*/` |
+| Pytest entry | Manual / contributor-run | `tests/test_technique_regression.py` |
+| Input | Sigma YAML + NDJSON logs | Same log shapes, neutral directory names |
+| Assertion | Hardcoded `expected.json` per case | `RegressionCase.expect` vs detector bool |
+| CI gate | Optional per-technique script | `.github/workflows/ci.yml` — all 34 IDs ≥80% |
+| Artifact | stdout | `regression-report.json` (uploaded from CI) |
+| Pattern converter | `convert_sigma_pattern_to_regex()` | `taxonomy/sigma/matcher.py` |
 
-**Recommendation:** add `tests/test_saf_mcp_parity.py` that:
-
-1. Vendors selected `test-logs.json` files into `tests/fixtures/saf_mcp/`
-2. Runs MCTS metadata analyzers against synthetic `MCPTool` objects built from log fields
-3. Tracks parity percentage per SAF-T ID (regression dashboard)
+**Status:** ✅ Shipped. Do not rename fixtures back to `SAF-T*` paths — keep MCTS-first IDs for product de-identification.
 
 ---
 
@@ -459,68 +504,74 @@ SchemaSurfaceAnalyzer._analyze_tool
 
 | SAF-MCP content | License | MCTS adoption |
 |-----------------|---------|---------------|
-| Technique READMEs | CC-BY-4.0 | Cite SAF-MCP; link to technique URL in reports |
-| `detection-rule.yml`, test scripts | Apache-2.0 | Can adapt regex/logic; preserve copyright header if copying substantial blocks |
-| `examples/` PoCs | Apache-2.0 | Prefer reimplementing patterns over copy-paste; use demos as spec |
-| Sigma rules | Apache-2.0 | Import as data files with attribution |
+| Technique READMEs | CC-BY-4.0 | Cite upstream when publishing comparisons; MCTS product output uses `MCTS-T-*` only |
+| `detection-rule.yml`, test scripts | Apache-2.0 | Adapt patterns into MCTS-owned modules; do not vendor upstream paths/IDs in fixtures |
+| `examples/` PoCs | Apache-2.0 | Use as specification for `tpa_patterns` / regression cases |
+| Sigma rules | Apache-2.0 | Compile into `metadata_rules.json` with sanitized tags (`scripts/compile_sigma_rules.py`) |
 
-When contributing findings or fixtures **back** to SAF-MCP SIG, use their PR template and DCO sign-off — positions MCTS as a framework consumer **and** contributor.
+When contributing detection improvements **back** to the OpenSSF SIG, use their PR template — MCTS can remain an independent consumer with its own taxonomy.
 
 ---
 
-## 11. Suggested MCTS Roadmap Informed by This Comparison
+## 11. MCTS Roadmap Informed by This Comparison
 
-**Phase 1 — Pattern parity (1–2 sprints)**
+**Phase 1 — Pattern parity** ✅
 
-- [x] Shared `tpa_patterns.py` from SAF-T1001 PoC
-- [x] Credential regex expansion from SAF-M-63
-- [x] Path encoding payloads from SAF-T1105
-- [x] `saf_technique_id` on `Finding` model
-- [x] SAF fixture regression tests (34 techniques, CI ≥80% gate)
+- [x] Shared `tpa_patterns.py` (metadata poisoning patterns)
+- [x] Credential regex expansion + opt-in `embedding_secrets` (`MCTS-T-1022`)
+- [x] Path encoding payloads in `path_traversal.py`
+- [x] First-party `technique_id` / `mitigation_ids` on `Finding` (no upstream ID fields)
+- [x] Technique regression harness (34 IDs, CI ≥80% gate)
 
-**Batch 4 — OAuth runtime + steganography + vector poisoning**
+**Batch 4 — OAuth runtime + steganography + vector poisoning** ✅
 
-- [x] SAF-T1306/T1307/T1308 runtime OAuth escalation (`oauth_escalation_runtime.py`)
-- [x] SAF-T1402 instruction steganography in tool metadata (`instruction_steganography.py`)
-- [x] SAF-T2106 vector store contamination (`vector_poisoning.py`)
+- [x] `MCTS-T-1017` / `1018` / `1019` — OAuth escalation runtime
+- [x] `MCTS-T-1041` — instruction steganography
+- [x] `MCTS-T-1034` — vector store contamination
 
-**Batch 5 — Execution + persistence cluster**
+**Batch 5 — Execution + persistence cluster** ✅
 
-- [x] SAF-T1106 autonomous loop exploit (`autonomous_loop.py`)
-- [x] SAF-T1109 MCP Inspector RCE / CVE-2025-49596 (`inspector_rce.py`)
-- [x] SAF-T1202 OAuth token persistence (`oauth_token_persistence.py`)
-- [x] SAF-T1203 backdoored install persistence (`backdoored_install.py`)
-- [x] SAF-T1204 context memory implant (`context_memory_implant.py`)
+- [x] `MCTS-T-1035` — autonomous loop exploit
+- [x] `MCTS-T-1036` — MCP Inspector RCE (CVE-2025-49596)
+- [x] `MCTS-T-1037` — OAuth token persistence
+- [x] `MCTS-T-1038` — backdoored install persistence
+- [x] `MCTS-T-1039` — context memory implant
 
-**Phase 2 — Rule import (2–4 sprints)**
+**Phase 2 — Rule import** ✅
 
-- [x] Sigma YAML loader for tool metadata fields
-- [x] OAuth config analyzer (SAF-T1007/T1009/T1306–1308)
-- [x] Rug-pull diff scanner (SAF-T1201/T1205)
-- [x] HTML report links to `SAF-M-*` mitigations
-- [x] Runtime telemetry analyzers (T1101/T1104/T1603/T1004/T1005/T1102 + batch 4–5 runtime IDs)
+- [x] Sigma metadata loader + bundled `metadata_rules.json` (27 rules)
+- [x] OAuth config analyzer (`MCTS-T-1011`, `1012`, …)
+- [x] Rug-pull / redefinition diff (`MCTS-T-1013`, `MCTS-T-1040`)
+- [x] HTML/SARIF links to `MCTS-M-*` mitigations
+- [x] Runtime telemetry analyzers (full batch 4–5 + path/OAuth/credential cluster)
 
-**Phase 3 — Advanced detection (optional)**
+**Phase 3 — Advanced detection** ✅ (baseline)
 
-- [x] Embedding analyzer opt-in (SAF-M-63 / SAF-T1505)
-- [x] Behavioral probe mode for SAF-T1603 (multi-turn live sessions via `--behavioral-probe`)
-- [x] CLI category breakdown in terminal + `--fail-on-category` CI gates
-- [x] Sampling abuse fuzz (SAF-T1112)
+- [x] Embedding analyzer opt-in (`--semantic-secrets`, `MCTS-T-1022`)
+- [x] Behavioral probe (`--behavioral-probe`, `MCTS-T-1026`)
+- [x] CLI category breakdown + `--fail-on-category` CI gates
+- [x] Sampling abuse fuzz (`MCTS-T-1016`)
+
+**Next — expand regression coverage**
+
+- [ ] Add fixtures for remaining high-priority upstream techniques (multimodal, exfiltration, C2 cluster)
+- [ ] Promote selected `MCTS-S-*` sigma-only IDs to full `MCTS-T-*` dossiers in `techniques.json`
+- [ ] Publish `docs/taxonomy.md` sections per technique (optional narrative layer)
 
 ---
 
 ## 12. Conclusion
 
-SAF-MCP is the **authoritative MCP threat vocabulary** and a **pattern library** shipped as Sigma YAML, NDJSON fixtures, and ~44 reference Python scripts. MCTS is an **operational scanner** with discovery, static analysis, live fuzz, scoring, and reporting — with **~45% direct technique coverage** of SAF's 85-entry catalog (34 parity-gated techniques in CI).
+SAF-MCP remains the **authoritative upstream MCP threat vocabulary** and a **pattern library** (Sigma YAML, NDJSON fixtures, ~44 reference Python scripts). MCTS is an **operational scanner** with discovery, static analysis, live fuzz, runtime telemetry, scoring, and reporting — with **34 regression-gated techniques** and **41 catalogued `MCTS-T-*` IDs**.
 
-The highest-value imports are not "run SAF scripts inside MCTS" but:
+The highest-value relationship is not "run SAF scripts inside MCTS" but:
 
-1. **Port detection patterns** from `tpa-detector.py`, `SAF-T1105`, and `SAF-M-63` into existing analyzers
-2. **Consume test fixtures** for regression parity
-3. **Map findings** to `SAF-T*` / `SAF-M*` for compliance-ready reports
-4. **Prioritize roadmap** using SAF tactic density (Initial Access + Execution + Privilege Escalation = 28 techniques)
+1. **Mine detection patterns** from upstream PoCs and Sigma YAML into MCTS-owned modules (`tpa_patterns`, `path_traversal`, `embedding_secrets`)
+2. **Maintain neutral regression fixtures** under `tests/fixtures/regression/MCTS-T-*/`
+3. **Report in MCTS taxonomy** (`MCTS-T-*`, `MCTS-M-*`) for compliance-ready output without upstream ID coupling
+4. **Prioritize roadmap** using upstream tactic density while tracking gaps in §5
 
-MCTS already exceeds SAF-MCP on repo discovery, multi-file static analysis, inventory scanning, CI integration, and attack-chain graphs. SAF-MCP exceeds MCTS on threat breadth, MITRE mapping, mitigation depth, runtime Sigma rules, and behavioral/embedding reference implementations. Together they form a **spec + enforcement** pair — not competitors.
+MCTS exceeds SAF-MCP on repo discovery, multi-file static analysis, inventory scanning, CI integration, attack-chain graphs, and unified CLI reporting. SAF-MCP exceeds MCTS on threat breadth, MITRE mapping depth, and behavioral/embedding reference implementations. Together they form a **spec + enforcement** pair — documented here for maintainers, not as a runtime dependency.
 
 ---
 

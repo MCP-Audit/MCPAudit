@@ -1,4 +1,4 @@
-"""Sampling API abuse detection (SAF-T1112)."""
+"""Sampling API abuse detection (MCTS-T-1016)."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ SENSITIVE_FOLLOW_ON_MARKERS = (
 
 
 def detect_sampling_abuse(event: dict[str, Any]) -> bool:
-    """Detect SAF-T1112 quota drain / unapproved nested tool abuse."""
+    """Detect MCTS-T-1016 quota drain / unapproved nested tool abuse."""
     if event.get("method") != "sampling/createMessage":
         return False
 

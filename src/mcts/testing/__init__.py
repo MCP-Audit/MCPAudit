@@ -1,3 +1,3 @@
-"""SAF-MCP fixture parity evaluation."""
+"""Technique regression fixture evaluation."""
 
 from __future__ import annotations

@@ -1,4 +1,4 @@
-"""Sensitive credential file access detection (SAF-T1502)."""
+"""Sensitive credential file access detection (MCTS-T-1024)."""
 
 from __future__ import annotations
 

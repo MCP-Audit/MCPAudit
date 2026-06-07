@@ -111,7 +111,7 @@ def classify_response(
 
 def finding_from_classification(probe: FuzzProbe, classified: ClassifiedResponse) -> Finding:
     technique_id = "MCTS-T-1016" if probe.id.startswith("sampling-") else "MCTS-T-1009"
-    saf_technique_id = "SAF-T1112" if probe.id.startswith("sampling-") else "SAF-T1601"
+    technique_id = "MCTS-T-1016" if probe.id.startswith("sampling-") else "MCTS-T-1009"
     return Finding(
         id=f"fuzz-{probe.id}-{classified.signal.value}",
         analyzer="fuzz",
@@ -120,7 +120,6 @@ def finding_from_classification(probe: FuzzProbe, classified: ClassifiedResponse
         severity=classified.severity,
         recommendation=_recommendation(classified.signal, probe),
         technique_id=technique_id,
-        saf_technique_id=saf_technique_id,
         confidence=0.75 if classified.signal == ResponseSignal.CLEAN_REJECTION else 0.85,
         evidence={
             "probe_id": probe.id,
@@ -136,7 +135,7 @@ def _recommendation(signal: ResponseSignal, probe: FuzzProbe) -> str:
     if probe.id.startswith("sampling-"):
         return (
             "Require explicit approval for sampling/createMessage; cap token budgets "
-            "and block nested tool requests in sampling flows (SAF-T1112)."
+            "and block nested tool requests in sampling flows (MCTS-T-1016)."
         )
     mapping = {
         ResponseSignal.STACK_TRACE: "Harden error handling; return generic JSON-RPC errors only.",

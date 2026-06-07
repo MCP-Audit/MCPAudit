@@ -1,4 +1,4 @@
-"""Tool shadowing detection (SAF-T1008)."""
+"""Tool shadowing detection (MCTS-T-1020)."""
 
 from __future__ import annotations
 
@@ -70,7 +70,7 @@ def detect_tool_shadowing(
     server_name: str = "",
     input_schema: dict | None = None,
 ) -> bool:
-    """Return True when description/metadata matches SAF-T1008 shadowing indicators."""
+    """Return True when description/metadata matches MCTS-T-1020 shadowing indicators."""
     text = (description or "").lower()
     name = (tool_name or "").lower()
     server = (server_name or "").lower()
@@ -137,7 +137,7 @@ class ToolShadowingAnalyzer(BaseAnalyzer):
                     title=f"Tool shadowing pattern on {tool.name}",
                     description=(
                         "Tool metadata instructs the agent to alter, bypass, or hijack "
-                        "other tools — consistent with SAF-T1008."
+                        "other tools — consistent with MCTS-T-1020."
                     ),
                     severity=Severity.HIGH,
                     tool=tool.name,
@@ -146,7 +146,6 @@ class ToolShadowingAnalyzer(BaseAnalyzer):
                         "against a signed baseline."
                     ),
                     technique_id="MCTS-T-1020",
-                    saf_technique_id="SAF-T1008",
                     confidence=0.85,
                     location=SourceLocation(file=tool.source_file or "", line=tool.source_line),
                     evidence={"type": "tool_shadowing"},

@@ -1,4 +1,4 @@
-"""Exposed MCP endpoint / NeighborJack detection (SAF-T1005)."""
+"""Exposed MCP endpoint / NeighborJack detection (MCTS-T-1027)."""
 
 from __future__ import annotations
 
@@ -10,7 +10,7 @@ _MCP_QUERY_MARKERS = ("transporttype=stdio", "jsonrpc=2.0", "method=tools", "met
 
 
 def detect_exposed_endpoint(event: dict[str, Any]) -> bool:
-    """Detect SAF-T1005 indicators in HTTP access logs."""
+    """Detect MCTS-T-1027 indicators in HTTP access logs."""
     log = event.get("log_entry", event)
     if not isinstance(log, dict):
         return False

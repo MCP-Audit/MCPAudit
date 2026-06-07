@@ -1,4 +1,4 @@
-"""Load SAF-MCP Sigma rules applicable to static metadata scanning."""
+"""Load MCTS Sigma rules applicable to static metadata scanning."""
 
 from __future__ import annotations
 
@@ -71,13 +71,13 @@ def _load_rules_from_directory(root: Path) -> list[MetadataSigmaRule]:
 
     rules: list[MetadataSigmaRule] = []
     search_roots = [root]
-    if root.name == "techniques" or any(root.glob("SAF-T*/detection-rule.yml")):
+    if root.name == "techniques" or any(root.glob("MCTS-T*/detection-rule.yml")):
         search_roots = [root]
     elif (root / "techniques").exists():
         search_roots = [root / "techniques"]
 
     for base in search_roots:
-        for rule_path in sorted(base.glob("SAF-T*/detection-rule.yml")):
+        for rule_path in sorted(base.glob("MCTS-T*/detection-rule.yml")):
             rules.extend(_parse_rule_file(rule_path))
     return rules
 
@@ -138,7 +138,7 @@ def _rule_from_dict(row: dict[str, Any]) -> MetadataSigmaRule:
         and is_substantive_pattern(str(item["pattern"]))
     ]
     return MetadataSigmaRule(
-        technique_id=str(row.get("technique_id", "SAF-T0000")),
+        technique_id=str(row.get("technique_id", "MCTS-T-0000")),
         rule_id=str(row.get("rule_id", row.get("technique_id", "unknown"))),
         title=str(row.get("title", "Sigma rule")),
         level=str(row.get("level", "medium")),

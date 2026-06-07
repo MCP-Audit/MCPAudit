@@ -39,7 +39,7 @@ def test_oauth_escalation_rogue_authorization_server(tmp_path: Path) -> None:
         encoding="utf-8",
     )
     findings = OAuthConfigAnalyzer(target=tmp_path).analyze(_server([]))
-    assert any(f.saf_technique_id == "SAF-T1306" for f in findings)
+    assert any(f.technique_id == "MCTS-T-1017" for f in findings)
 
 
 def test_oauth_escalation_broad_scopes(tmp_path: Path) -> None:
@@ -56,7 +56,7 @@ def test_oauth_escalation_broad_scopes(tmp_path: Path) -> None:
         encoding="utf-8",
     )
     findings = OAuthConfigAnalyzer(target=tmp_path).analyze(_server([]))
-    assert any(f.saf_technique_id == "SAF-T1308" for f in findings)
+    assert any(f.technique_id == "MCTS-T-1019" for f in findings)
 
 
 def test_oauth_escalation_confused_deputy_redirect(tmp_path: Path) -> None:
@@ -73,7 +73,7 @@ def test_oauth_escalation_confused_deputy_redirect(tmp_path: Path) -> None:
         encoding="utf-8",
     )
     findings = OAuthConfigAnalyzer(target=tmp_path).analyze(_server([]))
-    assert any(f.saf_technique_id == "SAF-T1307" for f in findings)
+    assert any(f.technique_id == "MCTS-T-1018" for f in findings)
 
 
 def test_sigma_dedupe_keeps_unique_sigma_when_no_path_hit() -> None:
@@ -103,5 +103,5 @@ def test_combined_pipeline_dedupes_tpa_sigma(tmp_path: Path) -> None:
     deduped = dedupe_sigma_findings(findings)
     assert any(f.analyzer in {"prompt_injection", "metadata_integrity"} for f in deduped)
     assert not any(
-        f.analyzer == "sigma_metadata" and f.saf_technique_id == "SAF-T1001" for f in deduped
+        f.analyzer == "sigma_metadata" and f.technique_id == "MCTS-T-1001" for f in deduped
     )

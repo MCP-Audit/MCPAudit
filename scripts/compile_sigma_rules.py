@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compile SAF-MCP Sigma YAML fixtures into metadata_rules.json."""
+"""Compile MCTS Sigma YAML fixtures into metadata_rules.json."""
 
 from __future__ import annotations
 
@@ -11,20 +11,48 @@ from pathlib import Path
 from mcts.taxonomy.sigma.loader import MetadataSigmaRule, load_metadata_rules
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_SOURCE = ROOT / "tests" / "fixtures" / "saf_sigma"
+DEFAULT_SOURCE = ROOT / "tests" / "fixtures" / "sigma_fixtures"
 DEFAULT_OUTPUT = ROOT / "src" / "mcts" / "taxonomy" / "sigma" / "metadata_rules.json"
+
+_SKIP_TAGS = frozenset({"saf-mcp", "safemcp", "mcts-mcp"})
+
+
+def _sanitize_rule_row(row: dict) -> dict:
+    tags: list[str] = []
+    for tag in row.get("tags", []):
+        lowered = str(tag).lower()
+        if lowered in _SKIP_TAGS or lowered.startswith("saf-t") or lowered.startswith("safe.t"):
+            continue
+        tags.append(str(tag))
+    row["tags"] = tags
+
+    rule_id = str(row.get("rule_id", ""))
+    if rule_id.startswith("saf-"):
+        row["rule_id"] = "mcts-" + rule_id[4:]
+
+    technique_id = str(row.get("technique_id", ""))
+    if technique_id.startswith("SAF-T"):
+        row["technique_id"] = "MCTS-S-" + technique_id.split("-T", 1)[1]
+
+    title = str(row.get("title", ""))
+    for prefix in ("SAF-T", "SAF-"):
+        title = title.replace(prefix, "MCTS-")
+    row["title"] = title
+    return row
 
 
 def rules_to_json(rules: list[MetadataSigmaRule]) -> str:
     payload = [
-        {
-            "technique_id": rule.technique_id,
-            "rule_id": rule.rule_id,
-            "title": rule.title,
-            "level": rule.level,
-            "tags": list(rule.tags),
-            "patterns": [{"field": field, "pattern": pattern} for field, pattern in rule.patterns],
-        }
+        _sanitize_rule_row(
+            {
+                "technique_id": rule.technique_id,
+                "rule_id": rule.rule_id,
+                "title": rule.title,
+                "level": rule.level,
+                "tags": list(rule.tags),
+                "patterns": [{"field": field, "pattern": pattern} for field, pattern in rule.patterns],
+            }
+        )
         for rule in rules
     ]
     return json.dumps(payload, indent=2, sort_keys=True) + "\n"

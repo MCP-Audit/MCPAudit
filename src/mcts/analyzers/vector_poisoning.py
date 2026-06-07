@@ -1,4 +1,4 @@
-"""SAF-T2106 — vector store / embedding metadata contamination."""
+"""MCTS-T-1034 — vector store / embedding metadata contamination."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""Persistent tool redefinition detection (SAF-T1205)."""
+"""Persistent tool redefinition detection (MCTS-T-1040)."""
 
 from __future__ import annotations
 
@@ -28,7 +28,7 @@ def detect_tool_redefinition_baseline(
     current_tools: list[str],
     metadata_changed: bool = False,
 ) -> bool:
-    """Detect removed tools or changed metadata since baseline (SAF-T1205)."""
+    """Detect removed tools or changed metadata since baseline (MCTS-T-1040)."""
     removed = set(baseline_tools) - set(current_tools)
     if removed:
         return True

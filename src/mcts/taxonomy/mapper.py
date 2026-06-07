@@ -33,19 +33,6 @@ def enrich_finding(finding: Finding) -> Finding:
                     finding.cwe_id = meta["cwe"]
                 break
 
-    if finding.technique_id:
-        meta = techniques.get(finding.technique_id, {})
-        if finding.saf_technique_id is None and meta.get("saf_technique_id"):
-            finding.saf_technique_id = meta["saf_technique_id"]
-        if not finding.saf_mitigation_ids and meta.get("saf_mitigation_ids"):
-            finding.saf_mitigation_ids = list(meta["saf_mitigation_ids"])
-
-    if finding.saf_technique_id and not finding.saf_mitigation_ids:
-        for meta in techniques.values():
-            if meta.get("saf_technique_id") == finding.saf_technique_id:
-                finding.saf_mitigation_ids = list(meta.get("saf_mitigation_ids", []))
-                break
-
     if not finding.mitigation_ids and finding.technique_id:
         finding.mitigation_ids = [
             mid
