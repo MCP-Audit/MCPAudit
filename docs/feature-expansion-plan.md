@@ -1,6 +1,6 @@
 # MCTS Feature Expansion Plan
 
-Detailed gap analysis and implementation guide for evolving MCTS from alpha static scanner to a full MCP security platform. This plan is **original MCTS architecture** — informed by the competitive landscape under `competitors/`, but not a copy of any third-party tool.
+Detailed gap analysis and implementation guide for evolving MCTS from alpha static scanner to a full MCP security platform. This plan is **original MCTS architecture** — informed by the [competitive landscape](competitive-landscape.md) and [external frameworks](external-frameworks.md), but not a copy of any third-party tool.
 
 **Related:** [Product Roadmap](roadmap.md) · [Architecture](architecture.md) · [CLI Reference](cli.md)
 

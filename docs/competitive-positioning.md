@@ -1,6 +1,8 @@
 # Competitive Positioning — MCTS vs MCP Security Tools
 
-How **MCTS** (Model Context Threat Scanner) compares to tools audited under `mcp_audit_competitor/`.  
+How **MCTS** (Model Context Threat Scanner) compares to peer MCP security tools.  
+See [Competitive Landscape](competitive-landscape.md) for upstream links and [External Frameworks](external-frameworks.md) for SAF-MCP relationship.
+
 Last updated after Phase 0/1 foundation work (live stdio probe, inventory, fuzz, SARIF, taxonomy).
 
 ---
@@ -106,7 +108,7 @@ Last updated after Phase 0/1 foundation work (live stdio probe, inventory, fuzz,
 
 ### 6. saf-mcp (framework)
 
-Not a scanner — taxonomy corpus. MCTS **links** via `technique_id` / optional external refs without vendoring the full corpus (**by design**).
+Not a scanner — OpenSSF threat taxonomy. MCTS maps to first-party `MCTS-T-*` IDs without vendoring the corpus. See [External Frameworks](external-frameworks.md).
 
 ---
 
@@ -126,9 +128,9 @@ Not a scanner — taxonomy corpus. MCTS **links** via `technique_id` / optional 
 
 ---
 
-### 8. mcp-fortress (snapshot)
+### 8. mcp-fortress
 
-No auditable source in competitor folder — **not a code peer**. MCTS exceeds any claims verifiable from docs alone.
+Marketing-heavy snapshot; verify claims against source before comparison. MCTS leads on auditable CI/reporting for MCP server authors.
 
 ---
 
@@ -164,14 +166,14 @@ No auditable source in competitor folder — **not a code peer**. MCTS exceeds a
 
 ## Honest gaps (roadmap)
 
-| Gap | Best peer | MCTS phase |
-|-----|-----------|------------|
-| SSE/HTTP live transports | mcp-scanner | Phase 2+ |
-| Protocol fuzzing (safe defaults) | mcp-guard (broader aggressive) | Yes — Phase 2.1 |
-| TypeScript discovery | Yes `registerTool`, `server.tool`, `setRequestHandler` | Yes — Multi-language static |
-| Semgrep optional layer | MCPScan / agent-security | Optional extra |
-| MCP server mode (`mcts-mcp`) | agent-security | Phase 3.3 |
-| Package vetting (`mcts vet`) | agent-scan / mcp-scanner | Phase 3.1 |
+| Gap | Best peer | MCTS status |
+|-----|-----------|-------------|
+| SSE/HTTP live transports | mcp-scanner | Planned (Phase 2+) |
+| Aggressive fuzz breadth | mcp-guard | Shipped with consent tiers (`mcts fuzz`) |
+| TypeScript discovery | — | Shipped (`registerTool`, `server.tool`, `setRequestHandler`) |
+| Semgrep optional layer | MCPScan / agent-security | Optional extra (roadmap) |
+| MCP server mode (`mcts-mcp`) | agent-security | Planned (Phase 3.3) |
+| Package vetting (`mcts vet`) | agent-scan / mcp-scanner | Planned (Phase 3.1) |
 
 ---
 
@@ -192,3 +194,5 @@ No auditable source in competitor folder — **not a code peer**. MCTS exceeds a
 **MCTS is the best choice when:** you need offline MCP server scanning, PR gates, executive reports, and attack-chain intelligence without cloud or LLM dependency.
 
 **Choose a peer when:** you need live multi-transport probing (mcp-scanner), unbounded destructive fuzzing without consent tiers (mcp-guard), or full-stack SAST+SBOM (agent-security).
+
+See also: [Competitive Landscape](competitive-landscape.md) · [External Frameworks](external-frameworks.md)
