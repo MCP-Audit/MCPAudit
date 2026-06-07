@@ -1,0 +1,38 @@
+name: Validate Action
+
+on:
+  pull_request:
+    paths:
+      - action/**
+      - src/**
+      - pyproject.toml
+  push:
+    paths:
+      - action/**
+      - src/**
+      - pyproject.toml
+
+permissions:
+  contents: read
+
+jobs:
+  action-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          python-version: "3.12"
+
+      - uses: ./action
+        with:
+          target: examples/vulnerable-mcp-server/server.py
+          fail-on-critical: "false"
+
+      - run: |
+          test -s mcts-report.json
+          test -s mcts-report.sarif
+          test -s mcts-report.html
+          python -c "import json; p=json.load(open('mcts-report.json')); assert 'findings' in p or 'score' in p"
