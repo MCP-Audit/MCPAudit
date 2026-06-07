@@ -5,11 +5,11 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from mcpaudit.core.config import ScanConfig
-from mcpaudit.core.scanner import Scanner
-from mcpaudit.report.data import build_dashboard_payload, risk_rating, security_grade
-from mcpaudit.report.generators.html_report import write_html_report
-from mcpaudit.reporting.html import write_html_report as write_via_reporting
+from mcts.core.config import ScanConfig
+from mcts.core.scanner import Scanner
+from mcts.report.data import build_dashboard_payload, risk_rating, security_grade
+from mcts.report.generators.html_report import write_html_report
+from mcts.reporting.html import write_html_report as write_via_reporting
 
 
 def test_build_dashboard_payload_from_scan(example_server_path: Path) -> None:
@@ -34,9 +34,9 @@ def test_write_html_report_is_self_contained(example_server_path: Path, tmp_path
     write_html_report(report, out)
 
     html = out.read_text(encoding="utf-8")
-    assert "MCPAudit Security Report" in html
+    assert "MCTS Security Report" in html
     assert "data:image/png;base64," in html
-    assert 'alt="MCPAudit logo"' in html
+    assert 'alt="MCTS logo"' in html
     assert "&#34;use strict&#34;" not in html
     assert '"use strict"' in html
     assert "Security Posture Summary" in html
@@ -47,11 +47,11 @@ def test_write_html_report_is_self_contained(example_server_path: Path, tmp_path
     assert "severity-card--critical" in html
     assert "chart.js" in html
     assert "Inter" in html
-    assert 'id="mcpaudit-report-data"' in html
+    assert 'id="mcts-report-data"' in html
     assert "Overall Risk Score" in html
     assert str(report.score.overall) in html
 
-    start = html.index('id="mcpaudit-report-data">') + len('id="mcpaudit-report-data">')
+    start = html.index('id="mcts-report-data">') + len('id="mcts-report-data">')
     end = html.index("</script>", start)
     embedded = json.loads(html[start:end])
     assert embedded["score"]["overall"] == report.score.overall

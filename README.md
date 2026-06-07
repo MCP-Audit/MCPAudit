@@ -1,16 +1,18 @@
-# MCPAudit
+# MCTS
+
+**Model Context Threat Scanner**
 
 ![Python](https://img.shields.io/badge/python-3.11+-blue)
 ![License](https://img.shields.io/badge/license-Apache%202.0-green)
 ![Status](https://img.shields.io/badge/status-alpha-orange)
 ![Security](https://img.shields.io/badge/focus-MCP%20Security-red)
 
-**Offensive security testing framework for Model Context Protocol (MCP) servers.**
+Security analysis purpose-built for Model Context Protocol (MCP) servers — permissions, injection, attack chains, and risk scoring.
 
-Make MCP security testing as easy as running a linter.
+Make MCP threat scanning as easy as running a linter.
 
 ```bash
-mcpaudit scan ./server.py
+mcts scan ./server.py
 ```
 
 ## Demo
@@ -18,17 +20,17 @@ mcpaudit scan ./server.py
 Scan the included vulnerable MCP server:
 
 ```bash
-uv run mcpaudit scan examples/vulnerable-mcp-server/server.py
+uv run mcts scan examples/vulnerable-mcp-server/server.py
 ```
 
 ```
-$ mcpaudit scan examples/vulnerable-mcp-server/server.py
+$ mcts scan examples/vulnerable-mcp-server/server.py
 [✓] Discovering tools...
 [✓] Mapping permissions...
 [✓] Detecting attack chains...
 [✓] Generating report...
 
-==================== MCPAudit Security Report ====================
+==================== MCTS Security Report ====================
 Overall Score:   5/100 (CRITICAL)
 Risk Index:      100/100
 Scoring basis:   3 Critical, 7 High, 2 Medium (12 scorable findings)
@@ -44,7 +46,7 @@ Severity Summary          Top Findings
 
 ## Problem
 
-MCP servers expose databases, APIs, file systems, cloud resources, and SaaS tools to AI agents — often without rigorous security review. MCPAudit helps teams find issues before attackers do.
+MCP servers expose databases, APIs, file systems, cloud resources, and SaaS tools to AI agents — often without rigorous security review. MCTS helps teams find issues before attackers do.
 
 ## Features
 
@@ -61,8 +63,8 @@ MCP servers expose databases, APIs, file systems, cloud resources, and SaaS tool
 | Compliance Checks | ✅ Alpha | OWASP LLM Top 10 & MCP best practices |
 | CI/CD Integration | 🚧 Planned | GitHub Action for pipeline gates |
 | HTML Security Dashboard | ✅ Alpha | Enterprise HTML report — gauge, grades, OWASP, attack chains |
-| MCP Fuzzer | 🔮 Roadmap | `mcpaudit fuzz` |
-| MCPAudit Agent | 🔮 Roadmap | `mcpaudit pentest` |
+| MCP Fuzzer | 🔮 Roadmap | `mcts fuzz` |
+| MCTS Agent | 🔮 Roadmap | `mcts pentest` |
 
 ## Quick Start
 
@@ -74,22 +76,22 @@ MCP servers expose databases, APIs, file systems, cloud resources, and SaaS tool
 ### Install
 
 ```bash
-git clone https://github.com/MCP-Audit/MCPAudit.git
-cd MCPAudit
+git clone https://github.com/MCTS/MCTS.git
+cd MCTS
 uv sync --all-extras
 ```
 
 ### Scan an MCP server
 
 ```bash
-uv run mcpaudit scan examples/vulnerable-mcp-server/server.py
+uv run mcts scan examples/vulnerable-mcp-server/server.py
 ```
 
 Save JSON and generate an executive HTML dashboard:
 
 ```bash
-uv run mcpaudit scan examples/vulnerable-mcp-server/server.py -o report.json
-uv run mcpaudit report report.json -o security-report.html
+uv run mcts scan examples/vulnerable-mcp-server/server.py -o report.json
+uv run mcts report report.json -o security-report.html
 open security-report.html
 ```
 
@@ -98,14 +100,14 @@ The HTML report includes a dark-themed overview (score gauge, letter grade, seve
 ### CI gate (fail on critical)
 
 ```bash
-uv run mcpaudit scan ./server.py --fail-on-critical
+uv run mcts scan ./server.py --fail-on-critical
 ```
 
 ### Themes
 
 ```bash
-uv run mcpaudit scan ./server.py --theme cyber    # default
-uv run mcpaudit scan ./server.py --theme minimal --no-progress
+uv run mcts scan ./server.py --theme cyber    # default
+uv run mcts scan ./server.py --theme minimal --no-progress
 ```
 
 ## Architecture
@@ -117,7 +119,7 @@ uv run mcpaudit scan ./server.py --theme minimal --no-progress
                   │
                   ▼
          ┌─────────────────┐
-         │ MCPAudit Scanner  │
+         │ MCTS Scanner  │
          └─────────────────┘
                   │
      ┌────────────┼────────────┐
@@ -130,7 +132,7 @@ Analyzer      Engine       Scanner
         ┌─────────┴─────────┐
         ▼                   ▼
   Terminal UI          HTML Dashboard
-  (Rich CLI)      (mcpaudit report)
+  (Rich CLI)      (mcts report)
 ```
 
 ## Documentation
@@ -139,12 +141,16 @@ Analyzer      Engine       Scanner
 - [CLI Reference](docs/cli.md)
 - [HTML Security Dashboard](docs/html-report.md)
 - [Architecture](docs/architecture.md)
+- [Feature Expansion Plan](docs/feature-expansion-plan.md) — detailed implementation guide
+- [Product Roadmap](docs/roadmap.md) — phased deliverables
+- [Building in public (blog)](docs/blog-building-mcp-security-in-public.md) — alpha status, gaps, community discussion
+- [Changelog](CHANGELOG.md)
 
 ## Project Structure
 
 ```
-MCPAudit/
-├── src/mcpaudit/          # Main package (src layout)
+MCTS/
+├── src/mcts/          # Main package (src layout)
 │   ├── cli/             # Typer CLI (`scan`, `report`, `fuzz`, `pentest`)
 │   ├── core/            # Scanner orchestration
 │   ├── analyzers/       # Security analyzers
@@ -179,11 +185,16 @@ pre-commit install
 | OWASP ZAP | Web security |
 | Trivy | Container security |
 | Semgrep | Static analysis |
-| **MCPAudit** | **MCP security** |
+| **MCTS** | **MCP security** |
 
 ## Roadmap
 
-See [docs/roadmap.md](docs/roadmap.md) for the phased plan — category risk scoring, GitHub Action, SARIF, attack simulation, and more.
+| Doc | Contents |
+|-----|----------|
+| [Feature Expansion Plan](docs/feature-expansion-plan.md) | Full gap analysis, how to implement each capability, module layout, build order |
+| [Product Roadmap](docs/roadmap.md) | Phased deliverables: foundation → CI adoption → differentiation → platform |
+
+**Next up (Phase 0–1):** repo-wide scanning, source-aware analyzers, SARIF, published GitHub Action, live MCP probing, config inventory, MCTS-T technique taxonomy.
 
 ## Contributing
 

@@ -1,15 +1,15 @@
 # HTML Security Dashboard
 
-MCPAudit generates a **self-contained HTML security dashboard** from any JSON scan report. The UI is designed for security engineers and executives — comparable in density and clarity to products like Wiz, Prisma Cloud, Datadog Security, Snyk, and Microsoft Defender secure score views.
+MCTS generates a **self-contained HTML security dashboard** from any JSON scan report. The UI is designed for security engineers and executives — comparable in density and clarity to products like Wiz, Prisma Cloud, Datadog Security, Snyk, and Microsoft Defender secure score views.
 
 ## Generate a report
 
 ```bash
 # 1. Run a scan and save JSON
-mcpaudit scan examples/vulnerable-mcp-server/server.py -o report.json
+mcts scan examples/vulnerable-mcp-server/server.py -o report.json
 
 # 2. Build the HTML dashboard
-mcpaudit report report.json -o security-report.html
+mcts report report.json -o security-report.html
 
 # 3. Open in a browser
 open security-report.html   # macOS
@@ -62,7 +62,7 @@ Use the header **Export** menu or sidebar **Download JSON Report**:
 ## Implementation
 
 ```
-src/mcpaudit/report/
+src/mcts/report/
 ├── templates/dashboard.html   # Jinja2 shell
 ├── assets/
 │   ├── styles.css           # Enterprise card design system
@@ -71,12 +71,14 @@ src/mcpaudit/report/
 ├── data.py                  # ScanReport → dashboard JSON payload
 └── generators/html_report.py
 
-src/mcpaudit/brand/
-├── logo.png                 # Canonical MCPAudit logo
+src/mcts/brand/
+├── logo.png                 # Canonical MCTS logo
 └── logo-report.png          # Optimized embed for HTML
 ```
 
-Entry point: `mcpaudit report` → `mcpaudit.reporting.html.write_html_report()` → `report.generators.html_report.write_html_report()`.
+Entry point: `mcts report` → `mcts.reporting.html.write_html_report()` → `report.generators.html_report.write_html_report()`.
+
+Tests: `tests/test_html_report.py` (payload builder, self-contained HTML smoke checks, reporting delegation).
 
 ## Design system (cards)
 
@@ -89,8 +91,22 @@ All dashboard cards share:
 
 Severity cards use a **4px top accent**, severity gradients, large numeric counts, and footer risk badges.
 
+## Planned dashboard enhancements
+
+See [Feature Expansion Plan](feature-expansion-plan.md) and [Roadmap](roadmap.md).
+
+| Section | Phase | Data source |
+|---------|-------|-------------|
+| **Capability Matrix** | 1 | Per-tool capability profiles from `capability/inferrer.py` |
+| **Technique Map** (`MCTS-T-*`) | 1 | `technique_id` on findings |
+| **Risk trend chart** (live data) | 2 | `.mcts/history/<target-hash>.jsonl` |
+| **Attack graph** (real edges) | 0 | Capability-graph BFS, not keyword fallback |
+
+---
+
 ## Related docs
 
-- [CLI Reference — `mcpaudit report`](cli.md#mcpaudit-report)
+- [CLI Reference — `mcts report`](cli.md#mcts-report)
 - [Architecture — Reporting](architecture.md#reporting)
+- [Feature Expansion Plan](feature-expansion-plan.md)
 - [Getting Started](getting-started.md)
