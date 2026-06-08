@@ -188,15 +188,52 @@ If source **is** present, static TS discovery still runs in parallel. See [TypeS
 
 ---
 
+## Remote transport (HTTP / SSE)
+
+For hosted MCP servers, use `--url` instead of `--live` subprocess launch:
+
+```bash
+mcts scan . --url https://mcp.example.com/mcp \
+  --bearer-token "$TOKEN" --i-understand-live-risk
+```
+
+See [Remote Scanning](remote-scanning.md) for SSE, OAuth, and `--protocol-probe`.
+
+---
+
+## Env var expansion
+
+IDE configs often use `$HOME` or `%USERPROFILE%` in commands. MCTS expands these by default:
+
+```bash
+mcts scan . --config ~/.cursor/mcp.json --server my-server \
+  --expand-vars auto --live --i-understand-live-risk
+```
+
+Implementation: `discovery/env_expand.py`.
+
+---
+
+## Stderr capture
+
+Debug failing server launches:
+
+```bash
+mcts scan ./server.py --live --i-understand-live-risk \
+  --stderr-file /tmp/mcp-server.stderr
+```
+
+---
+
 ## Limitations (alpha)
 
-| Limitation | Detail | Roadmap |
-|------------|--------|---------|
-| **Stdio only** | No SSE/HTTP transport | Planned |
+| Limitation | Detail | Notes |
+|------------|--------|-------|
 | **Read-only probe** | No `tools/call` during scan | Use `mcts fuzz` |
-| **Consent required** | No silent subprocess | By design |
+| **Consent required** | No silent subprocess/remote | By design |
 | **Single server** | One target per scan | Inventory + cross-server analyzer for multi-config |
 | **Trust boundary** | Only probe servers you authorize | Documented in SECURITY.md |
+| **Fuzz stdio-only** | `mcts fuzz` does not support `--url` yet | Remote fuzz planned |
 
 ---
 
@@ -216,6 +253,7 @@ mcts scan examples/live-mcp-server/server.py \
 
 ## Related
 
+- [Remote Scanning](remote-scanning.md)
 - [CLI Reference — scan flags](../platform/cli.md#mcts-scan)
 - [CI Integration — MCTS_LIVE_OK](../platform/ci-integration.md)
 - [Protocol Fuzzing](fuzzing.md)

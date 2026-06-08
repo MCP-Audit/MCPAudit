@@ -17,8 +17,26 @@ MCTS uses a first-party technique and mitigation catalog. Every scannable findin
 3. Matching mitigations (whose `techniques` array includes the ID) attach as `mitigation_ids`
 4. Missing IDs may be inferred from analyzer name → catalog mapping
 5. URLs generated for HTML/SARIF: `https://github.com/MCP-Audit/MCTS/blob/main/docs/reporting/taxonomy.md`
+6. **Crosswalk** — `taxonomy/crosswalk.json` adds interoperable IDs to `finding.evidence`:
+   - `aitech` / `aisubtech` — Cisco AI Threat Taxonomy
+   - `saf_mcp` — SAF-MCP technique reference
 
 Fuzz and inventory findings go through the same pipeline.
+
+### Crosswalk example
+
+```json
+{
+  "technique_id": "MCTS-T-1001",
+  "evidence": {
+    "aitech": "AITech-PAI",
+    "aisubtech": "AISubtech-PAI-001",
+    "saf_mcp": "SAF-MCP-01"
+  }
+}
+```
+
+Extend `src/mcts/taxonomy/crosswalk.json` when mapping new techniques to external frameworks.
 
 ---
 

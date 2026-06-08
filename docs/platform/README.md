@@ -10,7 +10,8 @@ Operational guides for running MCTS locally, in CI, and via the published GitHub
 
 | Page | Contents |
 |------|----------|
-| [CLI Reference](cli.md) | Complete reference: `scan`, `report`, `inventory`, `fuzz`, all flags, exit codes, env vars, examples |
+| [CLI Reference](cli.md) | Complete reference: `scan`, `report`, `inventory`, `fuzz`, `readiness`, `serve`, all flags |
+| [REST API](rest-api.md) | `mcts serve` — FastAPI `/scan` and `/health` |
 | [CI Integration](ci-integration.md) | GitHub Action, SARIF upload, gate patterns, live/fuzz in CI, inventory audit |
 
 ---
@@ -19,10 +20,12 @@ Operational guides for running MCTS locally, in CI, and via the published GitHub
 
 | Command | Purpose |
 |---------|---------|
-| `mcts scan` | Full security scan |
+| `mcts scan` | Full security scan (static, live, remote, snapshot) |
 | `mcts report` | JSON → HTML dashboard |
 | `mcts inventory` | Local MCP config discovery |
 | `mcts fuzz` | Protocol fuzz probes |
+| `mcts readiness` | Production readiness (non-security) |
+| `mcts serve` | REST API server |
 | `mcts pentest` | Stub (planned) |
 
 ---

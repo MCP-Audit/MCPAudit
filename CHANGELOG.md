@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Multi-surface scanning** — analyze tools, prompts, resources, and server instructions (`--surfaces`); `SurfaceMetadataAnalyzer`, `PromptDefenseAnalyzer`
+- **Remote MCP transport** — `--url` with streamable HTTP and SSE; Bearer tokens, custom headers, OAuth client credentials (`probe/http_session.py`, `probe/auth.py`)
+- **Static JSON snapshot** — air-gapped scan from exported `tools/list` JSON (`--snapshot`)
+- **Env var expansion** — `--expand-vars` for `$VAR` / `%VAR%` in IDE MCP configs
+- **JSON5 config parsing** — commented JSON in Cursor/VS Code configs
+- **Supply chain CVE scanning** — `--pip-audit`, `--npm-audit`
+- **Behavioral static SAST** — description vs Python handler mismatch (`BehavioralStaticAnalyzer`)
+- **Protocol security probes** — `--protocol-probe` for MCPS-style HTTP checks
+- **Optional analyzers** — `--yara`, `--llm-judge`, `--cloud-inspect`, `--virustotal` (all opt-in)
+- **Readiness command** — `mcts readiness` for production heuristics (excluded from security score)
+- **REST API** — `mcts serve` with `/health` and `/scan` (`--extra api`)
+- **Terminal output formats** — `--terminal-format table|by_tool|by_analyzer|by_severity|summary`
+- **Scan filters** — `--tool-filter`, `--analyzer-filter`, `--severity-filter`, `--analyzers`
+- **Taxonomy crosswalk** — AITech / SAF-MCP IDs in finding evidence (`taxonomy/crosswalk.json`)
+- **Stderr capture** — `--stderr-file` for live stdio server debugging
+- Docs: [Remote Scanning](docs/scanning/remote-scanning.md), [Static Snapshot](docs/scanning/static-snapshot.md), [Readiness](docs/scanning/readiness.md), [REST API](docs/platform/rest-api.md)
 - **Repository scanning** — `mcts scan ./repo/` walks Python files, discovers `@tool` handlers across the project (skips `tests/`, venv, `.git`)
 - **Static discovery layer** — `discovery/static.py` parses `input_schema`, handler snippets, source locations, and capability profiles
 - **Source-aware analyzers** — `CommandExecutionAnalyzer`, `PathValidationAnalyzer`, `SchemaSurfaceAnalyzer`; `DataLeakageAnalyzer` scans source files with line-level locations

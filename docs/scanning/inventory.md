@@ -8,6 +8,8 @@ Optional `--scan` runs a lightweight static discovery pass on each entrypoint to
 
 **Implementation:** `inventory/discoverers.py`, `inventory/runner.py`, `analyzers/cross_server.py`
 
+Configs with `//` comments or JSON5-style syntax (common in VS Code `settings.json`) are parsed via `discovery/json5_util.py`.
+
 ---
 
 ## Commands

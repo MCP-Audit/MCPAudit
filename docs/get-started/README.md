@@ -10,7 +10,7 @@ Everything you need to install MCTS, run your first scan, interpret output, and 
 
 | Page | Contents |
 |------|----------|
-| [Install and first scan](getting-started.md) | Prerequisites, install, example servers, JSON/SARIF/HTML, live/fuzz/inventory, CI gate, troubleshooting |
+| [Install and first scan](getting-started.md) | Install, first scan, remote/snapshot modes, JSON/SARIF/HTML, live/fuzz/inventory/readiness, CI gate |
 
 Estimated time: **15 minutes** for install + first scan + HTML report.
 
@@ -22,7 +22,9 @@ Estimated time: **15 minutes** for install + first scan + HTML report.
 |-----------|-------|
 | All CLI flags | [CLI Reference](../platform/cli.md) |
 | Pipeline internals | [Architecture](../analysis/architecture.md) |
+| Remote / snapshot scanning | [Remote Scanning](../scanning/remote-scanning.md) · [Static Snapshot](../scanning/static-snapshot.md) |
 | CI setup | [CI Integration](../platform/ci-integration.md) |
+| REST API | [REST API](../platform/rest-api.md) |
 | Score formula | [Scoring Specification](../reporting/scoring-spec.md) |
 
 ---

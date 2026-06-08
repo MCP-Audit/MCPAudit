@@ -17,16 +17,17 @@ ScanConfig (CLI → core/config.py)
 ┌─────────────────── Discovery ───────────────────┐
 │  StaticDiscovery (Python)  ─┐                   │
 │  JsStaticDiscovery (TS/JS) ─┼─ merge (repo)     │
-│  LiveDiscovery (stdio MCP) ─┘   optional --live │
+│  LiveDiscovery (stdio / HTTP/SSE) ─┘  --live / --url │
+│  StaticJsonLoader ────────────────────  --snapshot    │
 └───────────────────────┬─────────────────────────┘
                         ▼
               MCPServerInfo
-         (tools, schemas, source snippets,
-          runtime_events, discovery_mode)
+         (tools, prompts, resources, instructions,
+          schemas, source snippets, runtime_events)
                         │
         ┌───────────────┼───────────────┐
         ▼               ▼               ▼
-   19 analyzers   ComplianceChecker   enrich_findings
+   25+ analyzers  ComplianceChecker   enrich_findings
    (see table)     (OWASP meta)        (MCTS-T / MCTS-M)
         │               │               │
         └───────────────┴───────────────┘
@@ -132,6 +133,13 @@ Entry point: `Scanner.run()` in `core/scanner.py`. CLI command: `mcts scan` in `
 | `semantic_secrets` | false | Embedding-based secrets |
 | `fail_on_category` | {} | CI category gates |
 | `enable_jailbreak`, `enable_attack_chains` | true | Analyzer toggles |
+| `surfaces` | all four | MCP artifact types to scan |
+| `remote_url`, `remote_transport` | — | HTTP/SSE live probe |
+| `snapshot_path` | — | Static JSON metadata input |
+| `pip_audit`, `npm_audit` | false | Dependency CVE scanning |
+| `enable_yara`, `enable_llm_judge`, `enable_cloud_inspect` | false | Optional analyzers |
+| `protocol_probe` | false | Active MCPS HTTP checks |
+| `expand_vars` | `auto` | Config env var expansion |
 
 ---
 
@@ -143,14 +151,17 @@ Entry point: `Scanner.run()` in `core/scanner.py`. CLI command: `mcts scan` in `
 | `static_js.py` | TS/JS pattern match — see [typescript-discovery](../scanning/typescript-discovery.md) |
 | `static_runner.py` | Orchestrates `languages` list |
 | `static_merge.py` | Merges multi-language tool lists |
-| `live.py` | Stdio MCP `list_*` probe |
+| `live.py` | Stdio or remote MCP `list_*` probe |
 | `live_config.py` | Resolves launch from client JSON |
+| `static_json.py` | Load pre-exported tools/prompts/resources JSON |
+| `env_expand.py` | `$VAR` / `%VAR%` expansion in configs |
+| `json5_util.py` | Commented JSON / JSON5 config parsing |
 | `merge.py` | Static + live `MCPServerInfo` merge |
 | `config.py` | MCP client config parsing helpers |
 
-**Runtime telemetry:** `--runtime-events` JSON, `--live`, `--behavioral-probe`, and `mcts fuzz` output attach rows to `runtime_events` before analyzers run.
+**Runtime telemetry:** `--runtime-events` JSON, `--live`, `--url`, `--behavioral-probe`, and `mcts fuzz` output attach rows to `runtime_events` before analyzers run.
 
-Deep dives: [Live Scanning](../scanning/live-scanning.md) · [Fuzzing](../scanning/fuzzing.md)
+Deep dives: [Live Scanning](../scanning/live-scanning.md) · [Remote Scanning](../scanning/remote-scanning.md) · [Static Snapshot](../scanning/static-snapshot.md) · [Fuzzing](../scanning/fuzzing.md)
 
 ---
 
@@ -158,7 +169,10 @@ Deep dives: [Live Scanning](../scanning/live-scanning.md) · [Fuzzing](../scanni
 
 | Module | Role |
 |--------|------|
-| `session.py` | Async stdio `ProbeSession` (MCP SDK) |
+| `session.py` | Async stdio probe (MCP SDK) |
+| `http_session.py` | Remote SSE / streamable HTTP probe |
+| `auth.py` | Bearer, headers, OAuth client credentials |
+| `protocol_checks.py` | Active MCPS HTTP security probes |
 | `consent.py` | `--i-understand-live-risk` / `MCTS_LIVE_OK=1` |
 | `events.py` | Live listings → runtime event rows |
 | `behavioral.py` | Multi-turn probe patterns |
@@ -187,8 +201,14 @@ Deep dives: [Live Scanning](../scanning/live-scanning.md) · [Fuzzing](../scanni
 | `AttackChainAnalyzer` | `enable_attack_chains` (default on) |
 | `MetadataDiffAnalyzer` | `--baseline` provided |
 | `EmbeddingSecretsAnalyzer` | `--semantic-secrets` |
+| `VulnerablePackageAnalyzer` | `--pip-audit` |
+| `NpmAuditAnalyzer` | `--npm-audit` |
+| `YaraMetadataAnalyzer` | `--yara` |
+| `LlmJudgeAnalyzer` | `--llm-judge` + API key |
+| `CloudInspectAnalyzer` | `--cloud-inspect` + API key |
+| `VirusTotalAnalyzer` | `--virustotal` + API key |
 
-All other analyzers in the registry run on every scan.
+`SurfaceMetadataAnalyzer`, `PromptDefenseAnalyzer`, and `BehavioralStaticAnalyzer` are on by default.
 
 ---
 
@@ -217,6 +237,34 @@ Each analyzer implements `BaseAnalyzer.analyze(server: MCPServerInfo) -> list[Fi
 | `JailbreakAnalyzer` | `jailbreak` | Output manipulation resistance | MCTS-T-1007 |
 | `CrossServerAnalyzer` | `cross_server` | Cross-server name collisions | MCTS-T-1008 |
 | `AttackChainAnalyzer` | `attack_chains` | Multi-step capability graphs | MCTS-T-1005 |
+| `SurfaceMetadataAnalyzer` | `surface_metadata` | Poisoning on all MCP surfaces | MCTS-T-1001 |
+| `PromptDefenseAnalyzer` | `prompt_defense` | Missing defensive prompt language | MCTS-T-1001 |
+| `BehavioralStaticAnalyzer` | `behavioral_static` | Description vs handler mismatch + taint flow | MCTS-T-1001 |
+| `VulnerablePackageAnalyzer` | `vulnerable_package` | pip-audit CVEs | MCTS-T-1014 |
+| `NpmAuditAnalyzer` | `npm_audit` | npm audit CVEs | MCTS-T-1014 |
+| `YaraMetadataAnalyzer` | `yara_metadata` | YARA pattern matches | MCTS-T-1010 |
+| `LlmJudgeAnalyzer` | `llm_judge` | Opt-in LLM semantic review | MCTS-T-1001 |
+| `CloudInspectAnalyzer` | `cloud_inspect` | Opt-in cloud ML API | MCTS-T-1001 |
+| `VirusTotalAnalyzer` | `virustotal` | Binary hash malware lookup | MCTS-T-1038 |
+
+Multi-surface iteration: `analyzers/surfaces.py` — `ScanSurface` abstraction for tools, prompts, resources, instructions.
+
+### Behavioral SAST (`sast/`)
+
+`BehavioralStaticAnalyzer` compares tool descriptions against handler implementations and traces untrusted parameters to security sinks.
+
+| Module | Languages | Role |
+|--------|-----------|------|
+| `sast/python/taint.py` | Python | AST parameter-to-sink flow |
+| `sast/python/crossfile.py` | Python | Expand handlers across `source_files` |
+| `sast/typescript/sinks.py`, `taint.py` | TS/JS | Regex + optional tree-sitter-typescript |
+| `sast/go/sinks.py`, `taint.py` | Go | `exec.Command`, `os.Remove`, HTTP sinks |
+| `sast/rust/sinks.py`, `taint.py` | Rust | `Command::new`, `fs::write`, `reqwest` |
+| `sast/eval.py` | — | Corpus runner for regression metrics |
+
+Eval corpus: `eval/behavioral/cases.json` (13 cases across Python, TypeScript, Go, Rust). Run via `scripts/run_behavioral_eval.py` or `tests/test_behavioral_eval.py`. Install optional tree-sitter parsers with `uv sync --extra sast`.
+
+Taxonomy crosswalk: `taxonomy/crosswalk.json` adds `aitech`, `aisubtech`, `saf_mcp` to finding evidence via `enrich_findings()`.
 
 ### RuntimeEventsAnalyzer sub-detectors
 
@@ -334,6 +382,8 @@ Custom rules: `--sigma-rules-path` pointing at `MCTS-T-*/detection-rule.yml` dir
 | `tests/fixtures/regression/MCTS-T-*/` | 34+ technique fixtures |
 | `testing/regression_harness.py` | CI accuracy gate (≥80%) |
 | `tests/fixtures/sigma_fixtures/` | Sigma rule validation |
+| `eval/behavioral/cases.json` | Behavioral SAST corpus (multi-language) |
+| `scripts/run_behavioral_eval.py` | Malicious-case recall metrics for behavioral SAST |
 
 ---
 
@@ -346,6 +396,9 @@ src/mcts/
 ├── discovery/     # Static (Py/TS), live, merge
 ├── probe/         # Live stdio session, consent, behavioral events
 ├── analyzers/     # Security analyzers + runtime detectors
+├── sast/          # Behavioral static analysis (Python/TS/Go/Rust)
+├── readiness/     # HEUR rules + OPA policies + optional LLM judge
+├── api/           # FastAPI REST surface (`mcts serve`)
 ├── capability/    # Per-tool capability inference (attack chains)
 ├── inventory/     # Client config discovery
 ├── fuzz/          # Protocol fuzz runner
@@ -379,7 +432,9 @@ src/mcts/
 | `mcts audit-config`, `mcts simulate`, `mcts pentest`, `mcts vet` | Planned / stub |
 | Scan history / trends (`.mcts/history/`) | Planned |
 | HTML Capability Matrix + Technique Map | Planned |
-| Tree-sitter depth for TypeScript handlers | Planned |
+| Tree-sitter depth for TypeScript handlers | Partial (`--extra sast`) |
+| Go/Rust behavioral SAST | Shipped (regex; tree-sitter optional) |
+| Full 141-file behavioral eval corpus | Partial (`eval/behavioral/`) |
 
 See [Roadmap](../more/roadmap.md) and [Feature Expansion Plan](../more/feature-expansion-plan.md).
 

@@ -20,8 +20,13 @@ Optional capabilities:
 
 | Capability | Extra | Purpose |
 |------------|-------|---------|
-| Live stdio probing | `mcp` | Connect to real MCP servers via official SDK |
+| Live stdio + remote HTTP/SSE | `mcp` | Connect to MCP servers via official SDK |
 | Protocol fuzzing | `mcp` | Same subprocess transport as live probe |
+| REST API | `api` | `mcts serve` (FastAPI + uvicorn) |
+| YARA metadata rules | `yara` | `--yara` analyzer |
+| LLM-as-judge | `llm` | `--llm-judge` (opt-in) |
+| pip-audit | `supplychain` | `--pip-audit` CVE scanning |
+| Tree-sitter SAST | `sast` | Deeper TypeScript taint; optional Go/Rust parsers |
 | HTML dashboard | Included | `mcts report` (Jinja2 + Chart.js CDN) |
 
 ---
@@ -74,6 +79,8 @@ The repository ships benchmark and demo servers under `examples/`:
 | `examples/live-mcp-server/server.py` | Live probe + fuzz integration tests | Varies |
 | `examples/bench/multi-file-server/` | Multi-file Python discovery | Test fixture |
 | `examples/bench/multi-file-ts-server/` | TypeScript `registerTool` discovery | Test fixture |
+| `examples/behavioral-fixtures/python_mismatch/` | Description vs handler mismatch demo | Behavioral findings |
+| `examples/prompt-only-server/` | Prompt-surface scanning | Multi-surface demo |
 
 Start with the vulnerable server to see a full terminal dashboard and HTML report.
 
@@ -214,6 +221,99 @@ Deep dive: [Live Scanning](../scanning/live-scanning.md).
 
 ---
 
+## Remote HTTP / SSE scanning
+
+Scan hosted MCP servers without local source:
+
+```bash
+uv sync --extra mcp
+
+uv run mcts scan . \
+  --url https://mcp.example.com/mcp \
+  --bearer-token "$TOKEN" \
+  --i-understand-live-risk
+```
+
+Add `--protocol-probe` for active HTTP security checks. See [Remote Scanning](../scanning/remote-scanning.md).
+
+---
+
+## Static JSON snapshot (air-gapped)
+
+Scan exported tool metadata with no network or subprocess:
+
+```bash
+uv run mcts scan . --snapshot ./artifacts/tools-list.json -o report.json
+```
+
+See [Static Snapshot](../scanning/static-snapshot.md).
+
+---
+
+## Multi-surface and supply chain
+
+Analyze prompts, resources, and instructions — not only tools:
+
+```bash
+uv run mcts scan ./repo/ \
+  --surfaces tool,prompt,resource,instruction \
+  --pip-audit --npm-audit
+```
+
+Surface-focused subcommands (tools still use `mcts scan`):
+
+```bash
+uv run mcts scan-prompts examples/prompt-only-server/server.py
+uv run mcts scan-resources ./repo/ --live --i-understand-live-risk
+uv run mcts scan-instructions ./repo/
+```
+
+Export the raw `ScanReport` envelope (no terminal rendering):
+
+```bash
+uv run mcts scan examples/vulnerable-mcp-server/server.py --format raw -o report.json
+```
+
+---
+
+## Behavioral SAST eval
+
+MCTS ships a multi-language behavioral corpus under `eval/behavioral/` for description/code mismatch and taint-flow detection (Python, TypeScript, Go, Rust):
+
+```bash
+uv run python scripts/run_behavioral_eval.py
+uv run python scripts/run_behavioral_eval.py --json
+```
+
+For deeper TypeScript parsing, install the optional SAST extra:
+
+```bash
+uv sync --extra sast
+```
+
+See `examples/behavioral-fixtures/README.md` for fixture scanning examples.
+
+---
+
+## Readiness checks
+
+Separate from security scoring:
+
+```bash
+uv run mcts readiness examples/vulnerable-mcp-server/server.py
+uv run mcts readiness examples/vulnerable-mcp-server/server.py --llm-judge  # requires --extra llm
+```
+
+Start the REST API (requires `--extra api`):
+
+```bash
+uv run mcts serve --host 127.0.0.1 --port 8080
+```
+
+See [Readiness Scanning](../scanning/readiness.md) and [REST API](../platform/rest-api.md).
+
+---
+
 ## Discover local MCP configs
 
 Audit which MCP servers are configured on this machine:
@@ -281,7 +381,9 @@ GitHub Action: [CI Integration](../platform/ci-integration.md) · [action/README
 | No tools discovered | Wrong target or empty repo | Point at server entrypoint; check `--languages` |
 | Score seems wrong | Compliance findings in report | Only scorable analyzers affect score; check `score.basis` |
 | `mcp` import error | Missing extra | `uv sync --extra mcp` |
+| Remote scan fails | Missing consent or auth | `--i-understand-live-risk` + `--bearer-token` or `--header` |
 | TS tools missing | Language filter | Default includes `typescript`; use `--languages typescript` |
+| Config vars not expanded | Literal `$HOME` in command | `--expand-vars auto` (default) |
 
 ---
 

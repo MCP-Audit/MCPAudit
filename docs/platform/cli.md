@@ -32,7 +32,7 @@ mcts scan <target> [options]
 | Flag | Default | Description |
 |------|---------|-------------|
 | `--output`, `-o` | — | Write report to file |
-| `--format`, `-f` | `json` | `json` or `sarif` |
+| `--format`, `-f` | `json` | `json`, `sarif`, or `raw` (envelope with `target` + `scan_results`) |
 
 When `-o` is set, format determines serialization. SARIF uses `reporting/sarif.py` for GitHub Code Scanning compatibility.
 
@@ -60,11 +60,27 @@ Valid category keys: `permissions`, `injection`, `execution`, `data_leakage`, `a
 |------|---------|-------------|
 | `--languages` | `python,typescript` | Comma-separated static discovery backends |
 | `--live` | false | Connect to live stdio MCP server |
+| `--url` | — | Remote MCP URL (streamable HTTP or SSE); implies live |
+| `--transport` | `streamable-http` | Remote transport: `streamable-http` or `sse` |
 | `--command` | — | Custom launch binary for live mode |
 | `--args` | — | Comma-separated args for `--command` |
-| `--config` | — | MCP client config JSON path |
+| `--config` | — | MCP client config JSON path (JSON5/comments supported) |
 | `--server` | — | Server name inside `mcpServers` (requires `--config`) |
-| `--i-understand-live-risk` | false | Consent for live subprocess (or `MCTS_LIVE_OK=1`) |
+| `--expand-vars` | `auto` | Expand `$VAR` / `%VAR%` in config commands: `auto`, `linux`, `mac`, `windows`, `off` |
+| `--snapshot` | — | Static JSON snapshot (`tools/list` export); no live connection |
+| `--surfaces` | all four | Comma-separated: `tool`, `prompt`, `resource`, `instruction` |
+| `--resource-mime` | — | Comma-separated MIME allowlist for resource scanning (e.g. `text/plain`) |
+| `--i-understand-live-risk` | false | Consent for live/remote probe (or `MCTS_LIVE_OK=1`) |
+| `--stderr-file` | — | Capture live server stderr to file |
+
+### Remote auth flags
+
+| Flag | Description |
+|------|-------------|
+| `--bearer-token` | Bearer token for remote MCP |
+| `--header` | Repeatable. `Name: Value` custom HTTP headers |
+
+OAuth client credentials: set via config JSON or env (`oauth_token_url`, `oauth_client_id`, etc.). See [Remote Scanning](../scanning/remote-scanning.md).
 
 ### Advanced analysis flags
 
@@ -75,14 +91,30 @@ Valid category keys: `permissions`, `injection`, `execution`, `data_leakage`, `a
 | `--sigma-rules-path` | — | Directory with extra `MCTS-T-*/detection-rule.yml` Sigma rules |
 | `--semantic-secrets` | false | Enable semantic credential detection (MCTS-T-1022 / MCTS-M-025) |
 | `--runtime-events` | — | JSON file with probe/runtime telemetry rows |
-| `--behavioral-probe` | false | Multi-turn MCTS-T-1026 events (auto-enabled with `--live`) |
+| `--behavioral-probe` | false | Multi-turn MCTS-T-1026 events (auto-enabled with `--live` / `--url`) |
+| `--pip-audit` | false | Run pip-audit on `requirements.txt` / `pyproject.toml` |
+| `--npm-audit` | false | Run `npm audit` when `package.json` present |
+| `--protocol-probe` | false | Active MCPS HTTP checks on `--url` |
+| `--yara` | false | Enable YARA metadata analyzer (`uv sync --extra yara`) |
+| `--llm-judge` | false | Opt-in LLM-as-judge (`MCTS_LLM_API_KEY`, `--extra llm`) |
+| `--cloud-inspect` | false | Opt-in cloud ML API (`MCTS_CLOUD_API_KEY`) |
+| `--virustotal` | false | VirusTotal hash lookup (`MCTS_VT_API_KEY`) |
+
+### Filter and output flags
+
+| Flag | Description |
+|------|-------------|
+| `--terminal-format` | `table`, `by_tool`, `by_analyzer`, `by_severity`, `summary` (instead of Rich dashboard) |
+| `--tool-filter` | Comma-separated tool names |
+| `--analyzer-filter` | Comma-separated analyzer keys |
+| `--severity-filter` | Comma-separated severities |
+| `--analyzers` | Run only listed analyzers (subset mode) |
 
 ### Planned flags (not yet implemented)
 
 | Flag | Purpose |
 |------|---------|
 | `--profile` | Policy profile: `strict`, `balanced`, `dev` |
-| `--llm-review` | Opt-in LLM finding review |
 
 ### Scoring output
 
@@ -132,7 +164,59 @@ mcts scan ./node-server/ --languages typescript
 mcts scan ./repo/ \
   --sigma-rules-path ./custom-rules/ \
   --semantic-secrets
+
+# Remote HTTP MCP server
+mcts scan . --url https://mcp.example.com/mcp \
+  --bearer-token "$TOKEN" --i-understand-live-risk
+
+# Static JSON snapshot (air-gapped CI)
+mcts scan . --snapshot ./artifacts/tools-list.json -o report.json
+
+# All MCP surfaces + supply chain
+mcts scan ./repo/ \
+  --surfaces tool,prompt,resource,instruction \
+  --pip-audit --npm-audit
+
+# Table output with filters
+mcts scan ./server.py --terminal-format by_severity \
+  --severity-filter critical,high
 ```
+
+---
+
+## Surface subcommands
+
+Targeted scans without passing `--surfaces`:
+
+```bash
+mcts scan-prompts <target> [--snapshot path.json]
+mcts scan-resources <target> [--snapshot path.json] [--resource-mime text/plain]
+mcts scan-instructions <target> [--snapshot path.json]
+```
+
+---
+
+## `mcts readiness`
+
+Production readiness checks (separate from security score).
+
+```bash
+mcts readiness <target> [--output, -o] [--opa] [--llm-judge]
+```
+
+See [Readiness Scanning](../scanning/readiness.md).
+
+---
+
+## `mcts serve`
+
+Start the REST API server (requires `uv sync --extra api`).
+
+```bash
+mcts serve [--host 127.0.0.1] [--port 8080] [--reload]
+```
+
+See [REST API](rest-api.md).
 
 ---
 
@@ -216,7 +300,6 @@ See [Protocol Fuzzing](../scanning/fuzzing.md).
 | `mcts vet` | Planned | Pre-install package vetting |
 | `mcts trend` | Planned | Score history from `.mcts/history/` |
 | `mcts badge` | Planned | README certification SVG |
-| `mcts serve` | Planned | Local REST API |
 
 See [Roadmap](../more/roadmap.md).
 
@@ -238,7 +321,13 @@ Gate failures (`scan` only): `--fail-on-critical`, `--min-score`, `--max-critica
 
 | Variable | Effect |
 |----------|--------|
-| `MCTS_LIVE_OK=1` | Grants live/fuzz subprocess consent in CI |
+| `MCTS_LIVE_OK=1` | Grants live/fuzz/remote probe consent in CI |
+| `MCTS_BEARER_TOKEN` | Default bearer token for `--url` scans |
+| `MCTS_LLM_API_KEY` | LiteLLM provider key for `--llm-judge` |
+| `MCTS_LLM_MODEL` | LLM model ID (default `gpt-4o-mini`) |
+| `MCTS_CLOUD_API_KEY` | Cloud inspect API key for `--cloud-inspect` |
+| `MCTS_CLOUD_ENDPOINT` | Cloud inspect API URL |
+| `MCTS_VT_API_KEY` / `VIRUSTOTAL_API_KEY` | VirusTotal API key for `--virustotal` |
 
 ---
 
@@ -267,5 +356,8 @@ GitHub Action: [CI Integration](ci-integration.md) · [`action/action.yml`](../.
 
 - [Architecture](../analysis/architecture.md)
 - [Live Scanning](../scanning/live-scanning.md)
+- [Remote Scanning](../scanning/remote-scanning.md)
+- [Static Snapshot](../scanning/static-snapshot.md)
+- [REST API](rest-api.md)
 - [Scoring Specification](../reporting/scoring-spec.md)
 - [Getting Started](../get-started/getting-started.md)

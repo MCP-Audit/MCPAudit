@@ -10,8 +10,8 @@ This documentation covers installation, every scan mode, the analysis pipeline, 
 
 | Stage | Description |
 |-------|-------------|
-| **Discover** | Python/TS static analysis; optional stdio live probe; client config inventory |
-| **Analyze** | 19+ security analyzers on tool metadata, schemas, handler source, runtime events |
+| **Discover** | Python/TS static analysis; stdio + HTTP/SSE live probe; JSON snapshots; client config inventory |
+| **Analyze** | 25+ security analyzers on tools, prompts, resources, instructions, handlers, runtime events |
 | **Score** | Exponential security score + category breakdown + auditable `ScoreBasis` |
 | **Report** | Rich terminal UI, JSON, SARIF, executive HTML dashboard |
 
@@ -42,9 +42,12 @@ Discovery modes — how MCTS finds MCP servers and collects signal before analys
 | Guide | Description |
 |-------|-------------|
 | [Live Scanning](scanning/live-scanning.md) | Stdio MCP probing, consent, config-based launch, runtime events |
+| [Remote Scanning](scanning/remote-scanning.md) | HTTP/SSE endpoints, Bearer/OAuth, protocol probes |
+| [Static Snapshot](scanning/static-snapshot.md) | Air-gapped scan from exported `tools/list` JSON |
 | [Protocol Fuzzing](scanning/fuzzing.md) | Safe/standard/aggressive fuzz levels; pipe into `--runtime-events` |
 | [TypeScript Discovery](scanning/typescript-discovery.md) | Node MCP servers without npm install |
 | [Config Inventory](scanning/inventory.md) | Cursor, Claude, VS Code, Windsurf; cross-server shadowing |
+| [Readiness Scanning](scanning/readiness.md) | Production readiness heuristics (`mcts readiness`) |
 
 All pages: [scanning/](scanning/README.md)
 
@@ -82,7 +85,8 @@ CLI commands, flags, exit codes, and CI/CD integration.
 
 | Guide | Description |
 |-------|-------------|
-| [CLI Reference](platform/cli.md) | Complete `scan`, `report`, `inventory`, `fuzz` reference |
+| [CLI Reference](platform/cli.md) | Complete `scan`, `report`, `inventory`, `fuzz`, `readiness`, `serve` |
+| [REST API](platform/rest-api.md) | `mcts serve` — FastAPI scan endpoint |
 | [CI Integration](platform/ci-integration.md) | GitHub Action, SARIF, gates, workflow patterns |
 
 All pages: [platform/](platform/README.md)
