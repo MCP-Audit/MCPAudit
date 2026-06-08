@@ -81,13 +81,16 @@ def _tree_sitter_taint(source: str) -> TaintResult:
 
 def _ts_collect_params(node: object, source: str) -> set[str]:
     names: set[str] = set()
-    type_name = getattr(node, "type", "")
-    if type_name in ("function_declaration", "arrow_function", "method_definition"):
+    if getattr(node, "type", "") == "formal_parameters":
         for child in getattr(node, "children", []):
-            if getattr(child, "type", "") in ("formal_parameters", "required_parameter", "identifier"):
-                text = source[child.start_byte : child.end_byte].strip()  # type: ignore[attr-defined]
-                if text and text not in ("(", ")", ","):
-                    names.add(text.split(":")[0].strip())
+            child_type = getattr(child, "type", "")
+            if child_type in ("required_parameter", "optional_parameter"):
+                for sub in getattr(child, "children", []):
+                    if getattr(sub, "type", "") == "identifier":
+                        names.add(source[sub.start_byte : sub.end_byte])  # type: ignore[attr-defined]
+                        break
+            elif child_type == "identifier":
+                names.add(source[child.start_byte : child.end_byte])  # type: ignore[attr-defined]
     for child in getattr(node, "children", []):
         names |= _ts_collect_params(child, source)
     return names
