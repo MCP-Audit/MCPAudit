@@ -48,6 +48,25 @@ semantic = [
 mcp = [
     "mcp>=1.27.2",
 ]
+api = [
+    "fastapi>=0.115.0",
+    "uvicorn>=0.32.0",
+]
+yara = [
+    "yara-python>=4.5.0",
+]
+llm = [
+    "litellm>=1.80.0",
+]
+supplychain = [
+    "pip-audit>=2.9.0",
+]
+sast = [
+    "tree-sitter>=0.24.0",
+    "tree-sitter-typescript>=0.23.0",
+    "tree-sitter-go>=0.23.0",
+    "tree-sitter-rust>=0.23.0",
+]
 
 [project.scripts]
 mcts = "mcts.cli.main:run"
