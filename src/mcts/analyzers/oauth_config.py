@@ -8,6 +8,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from mcts.analyzers.base import BaseAnalyzer
+from mcts.analyzers.oauth_implicit import detect_oauth_implicit_flow
 from mcts.inventory.discoverers import discover_config_paths, parse_config_file
 from mcts.inventory.models import InventoryEntry
 from mcts.mcp.models import MCPServerInfo
@@ -226,6 +227,7 @@ class OAuthConfigAnalyzer(BaseAnalyzer):
                 findings.extend(self._check_rogue_as(source, block_path, block, seen))
                 findings.extend(self._check_broad_scopes(source, block_path, block, seen))
                 findings.extend(self._check_confused_deputy_keys(source, block_path, block, seen))
+                findings.extend(self._check_implicit_flow(source, block_path, block, seen))
 
                 redirect = _string_field(block, ("redirect_uri", "redirectUri"))
                 client_id = _string_field(block, ("client_id", "clientId"))
@@ -404,6 +406,37 @@ class OAuthConfigAnalyzer(BaseAnalyzer):
                     evidence={"key": key, "value": str(value)[:120], "issue": "token_forwarding"},
                 )
             )
+        return findings
+
+    def _check_implicit_flow(
+        self,
+        source: str,
+        block_path: str,
+        block: dict,
+        seen: set[str],
+    ) -> list[Finding]:
+        findings: list[Finding] = []
+        if not detect_oauth_implicit_flow(block):
+            return findings
+        finding_key = f"implicit:{source}:{block_path}"
+        if finding_key in seen:
+            return findings
+        seen.add(finding_key)
+        findings.append(
+            _oauth_finding(
+                finding_id=f"oauth-implicit-{abs(hash(finding_key))}",
+                title="OAuth implicit flow downgrade",
+                description=(
+                    "OAuth configuration uses deprecated implicit flow (response_type token/id_token) "
+                    "instead of authorization code with PKCE."
+                ),
+                severity=Severity.HIGH,
+                source=source,
+                mcts_technique="MCTS-T-1047",
+                technique_scenario="MCTS-T-1047",
+                evidence={"block_path": block_path, "issue": "implicit_flow_downgrade"},
+            )
+        )
         return findings
 
 

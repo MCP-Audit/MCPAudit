@@ -24,8 +24,8 @@ def detect_supply_chain_manifest(entry: dict[str, Any]) -> bool:
     else:
         return False
 
-    saf = str(entry.get("technique_scenario", "")).upper()
-    if saf == "MCTS-T-1015":
+    scenario = str(entry.get("technique_scenario", "")).upper()
+    if scenario == "MCTS-T-1015":
         return _detect_t1003(manifest_type, manifest)
     return _detect_t1002(manifest_type, manifest)
 

@@ -3,6 +3,10 @@
 from __future__ import annotations
 
 SENSITIVE_PATH_MARKERS: tuple[str, ...] = (
+    "/.env",
+    ".env.local",
+    ".env.production",
+    ".env.development",
     ".ssh/id_rsa",
     ".ssh/id_ed25519",
     ".aws/credentials",

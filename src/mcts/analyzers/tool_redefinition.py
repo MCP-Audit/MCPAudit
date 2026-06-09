@@ -22,6 +22,18 @@ MCP_DEFINITION_MARKERS: tuple[str, ...] = (
 )
 
 
+def _tool_names(tools: list[Any]) -> list[str]:
+    names: list[str] = []
+    for item in tools:
+        if isinstance(item, dict):
+            name = item.get("name")
+            if name:
+                names.append(str(name))
+        elif item:
+            names.append(str(item))
+    return names
+
+
 def detect_tool_redefinition_baseline(
     *,
     baseline_tools: list[str],
@@ -29,6 +41,8 @@ def detect_tool_redefinition_baseline(
     metadata_changed: bool = False,
 ) -> bool:
     """Detect removed tools or changed metadata since baseline (MCTS-T-1040)."""
+    baseline_tools = _tool_names(baseline_tools)
+    current_tools = _tool_names(current_tools)
     removed = set(baseline_tools) - set(current_tools)
     if removed:
         return True
