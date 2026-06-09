@@ -57,6 +57,30 @@ def _write_report(
         output.write_text(report.model_dump_json(indent=2))
 
 
+def _print_discovery_warnings(server, stderr_file: str | None) -> None:
+    if not server.discovery_warnings:
+        return
+    console.print("[yellow]Warning:[/yellow] Live MCP discovery was incomplete:")
+    for warning in server.discovery_warnings:
+        console.print(f"  [yellow]•[/yellow] {warning}")
+    if not stderr_file:
+        console.print(
+            "  [dim]Tip: pass --stderr-file PATH when probing stdio servers to capture server stderr.[/dim]"
+        )
+
+
+def _check_strict_live(report, config: ScanConfig) -> None:
+    if not config.strict_live:
+        return
+    warnings = report.server.discovery_warnings
+    if not warnings:
+        return
+    console.print("[red]Error:[/red] --strict-live: live discovery did not complete successfully.")
+    for warning in warnings:
+        console.print(f"  [red]•[/red] {warning}")
+    raise typer.Exit(code=2)
+
+
 def _check_gates(report, config: ScanConfig) -> None:
     if config.fail_on_critical and report.summary.critical > 0:
         raise typer.Exit(code=1)
@@ -262,6 +286,13 @@ def scan(
         str | None,
         typer.Option("--stderr-file", help="Capture live server stderr to file"),
     ] = None,
+    strict_live: Annotated[
+        bool,
+        typer.Option(
+            "--strict-live",
+            help="Exit 2 when live discovery is incomplete (e.g. list_tools failed after initialize)",
+        ),
+    ] = False,
     enable_yara: Annotated[
         bool,
         typer.Option("--yara", help="Enable YARA metadata analyzer"),
@@ -420,6 +451,7 @@ def scan(
         remote_headers=remote_headers,
         protocol_probe=protocol_probe,
         stderr_file=stderr_file,
+        strict_live=strict_live,
         expand_vars=expand_vars,
         snapshot_path=snapshot,
         pip_audit=pip_audit,
@@ -492,6 +524,8 @@ def scan(
         _write_report(report, output, output_format, target=str(scan_target), remote_url=url)
         renderer.render_saved_notice(str(output))
 
+    _print_discovery_warnings(report.server, stderr_file)
+    _check_strict_live(report, config_obj)
     _check_gates(report, config_obj)
 
 

@@ -73,6 +73,7 @@ class ScanConfig(BaseModel):
     oauth_scopes: str | None = None
     protocol_probe: bool = False
     stderr_file: str | None = None
+    strict_live: bool = False
     expand_vars: str = "auto"
     # P1 — static snapshot + supply chain
     snapshot_path: Path | None = None

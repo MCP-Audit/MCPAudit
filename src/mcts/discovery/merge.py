@@ -31,6 +31,8 @@ def merge_server_info(static: MCPServerInfo, live: MCPServerInfo) -> MCPServerIn
         transport="stdio-merged",
         discovery_mode="merged",
         source_files=dict(static.source_files),
+        discovery_warnings=list(live.discovery_warnings),
+        initialize_succeeded=live.initialize_succeeded,
     )
 
 

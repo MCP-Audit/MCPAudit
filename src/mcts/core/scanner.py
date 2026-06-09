@@ -141,6 +141,10 @@ class Scanner:
                 }
             )
         findings: list[Finding] = []
+        if server_info.discovery_warnings:
+            from mcts.probe.discovery_meta import discovery_meta_findings
+
+            findings.extend(discovery_meta_findings(server_info))
 
         for analyzer in self.analyzers:
             if not self._is_enabled(analyzer):

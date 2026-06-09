@@ -9,6 +9,7 @@ from typing import Any
 
 from mcts.capability.inferrer import infer_capability
 from mcts.mcp.models import MCPPrompt, MCPResource, MCPServerInfo, MCPTool
+from mcts.probe.discovery_meta import list_failure_warning
 from mcts.probe.models import LiveServerConfig
 
 logger = logging.getLogger(__name__)
@@ -60,9 +61,22 @@ async def probe_stdio(config: LiveServerConfig, timeout_seconds: int = 120) -> M
                         session.initialize(),
                         timeout=session_timeout,
                     )
-                    tools = await _list_tools(session, session_timeout)
-                    prompts = await _list_prompts(session, session_timeout)
-                    resources = await _list_resources(session, session_timeout)
+                    discovery_warnings: list[str] = []
+                    tools, tools_warning = await _list_tools(
+                        session, session_timeout, stderr_file=config.stderr_file
+                    )
+                    if tools_warning:
+                        discovery_warnings.append(tools_warning)
+                    prompts, prompts_warning = await _list_prompts(
+                        session, session_timeout, stderr_file=config.stderr_file
+                    )
+                    if prompts_warning:
+                        discovery_warnings.append(prompts_warning)
+                    resources, resources_warning = await _list_resources(
+                        session, session_timeout, stderr_file=config.stderr_file
+                    )
+                    if resources_warning:
+                        discovery_warnings.append(resources_warning)
                     from mcts.probe.resources import enrich_resources_with_content
 
                     resources = await enrich_resources_with_content(
@@ -81,6 +95,8 @@ async def probe_stdio(config: LiveServerConfig, timeout_seconds: int = 120) -> M
                         instructions=instructions,
                         transport="stdio-live",
                         discovery_mode="live",
+                        discovery_warnings=discovery_warnings,
+                        initialize_succeeded=True,
                     )
     except TimeoutError as exc:
         raise MCPProbeError(
@@ -92,35 +108,53 @@ async def probe_stdio(config: LiveServerConfig, timeout_seconds: int = 120) -> M
         raise MCPProbeError(f"Live probe failed for '{config.command}': {exc}") from exc
 
 
-async def _list_tools(session: Any, timeout: int) -> list[MCPTool]:
+async def _list_tools(
+    session: Any,
+    timeout: int,
+    *,
+    stderr_file: str | None = None,
+) -> tuple[list[MCPTool], str | None]:
     try:
         result = await asyncio.wait_for(session.list_tools(), timeout=timeout)
     except Exception as exc:
-        logger.warning("list_tools failed: %s", exc)
-        return []
-    return [_tool_from_mcp(tool) for tool in result.tools]
+        warning = list_failure_warning("list_tools", exc, stderr_file)
+        logger.warning("%s", warning)
+        return [], warning
+    return [_tool_from_mcp(tool) for tool in result.tools], None
 
 
-async def _list_prompts(session: Any, timeout: int) -> list[MCPPrompt]:
+async def _list_prompts(
+    session: Any,
+    timeout: int,
+    *,
+    stderr_file: str | None = None,
+) -> tuple[list[MCPPrompt], str | None]:
     if not hasattr(session, "list_prompts"):
-        return []
+        return [], None
     try:
         result = await asyncio.wait_for(session.list_prompts(), timeout=timeout)
     except Exception as exc:
-        logger.warning("list_prompts failed: %s", exc)
-        return []
-    return [_prompt_from_mcp(prompt) for prompt in result.prompts]
+        warning = list_failure_warning("list_prompts", exc, stderr_file)
+        logger.warning("%s", warning)
+        return [], warning
+    return [_prompt_from_mcp(prompt) for prompt in result.prompts], None
 
 
-async def _list_resources(session: Any, timeout: int) -> list[MCPResource]:
+async def _list_resources(
+    session: Any,
+    timeout: int,
+    *,
+    stderr_file: str | None = None,
+) -> tuple[list[MCPResource], str | None]:
     if not hasattr(session, "list_resources"):
-        return []
+        return [], None
     try:
         result = await asyncio.wait_for(session.list_resources(), timeout=timeout)
     except Exception as exc:
-        logger.warning("list_resources failed: %s", exc)
-        return []
-    return [_resource_from_mcp(resource) for resource in result.resources]
+        warning = list_failure_warning("list_resources", exc, stderr_file)
+        logger.warning("%s", warning)
+        return [], warning
+    return [_resource_from_mcp(resource) for resource in result.resources], None
 
 
 def _extract_instructions(init_result: Any) -> str | None:

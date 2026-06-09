@@ -83,3 +83,5 @@ class MCPServerInfo(BaseModel):
     source_files: dict[str, str] = Field(default_factory=dict)
     runtime_events: list[dict[str, Any]] = Field(default_factory=list)
     surface_scan: SurfaceScanOptions | None = None
+    discovery_warnings: list[str] = Field(default_factory=list)
+    initialize_succeeded: bool = False
