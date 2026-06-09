@@ -23,7 +23,7 @@ Plain-language definitions for terms used throughout MCTS documentation. If you 
 | Term | What it means |
 |------|---------------|
 | **Finding** | A security issue MCTS detected — for example, a tool that can delete all users, or a description that tries to trick the AI. Each finding has a severity (Critical, High, Medium, Low). |
-| **Analyzer** | An automated check that looks for a specific type of problem. MCTS runs 20 analyzers by default (25+ with optional flags). Examples: permission checks, secret detection, attack chain detection. |
+| **Analyzer** | An automated check that looks for a specific type of problem. MCTS runs 20+ analyzers by default (30+ with optional flags). Examples: permission checks, secret detection, attack chain detection, Semgrep SAST, LLM triage. |
 | **Attack chain** | A sequence of tool calls that together create a serious risk — for example, one tool reads sensitive data and another sends it over the network. |
 | **Tool shadowing** | When two different MCP servers expose a tool with the same name. The AI may call the wrong server, leading to confusion or abuse. |
 | **Description poisoning** | Malicious or misleading text in a tool's description that tries to manipulate the AI into unsafe behavior. |
@@ -40,7 +40,11 @@ Plain-language definitions for terms used throughout MCTS documentation. If you 
 | **Remote scan** | MCTS connects to a hosted MCP server over HTTP or SSE instead of reading local source code. |
 | **Snapshot scan** | MCTS analyzes a pre-exported JSON file of tool metadata — useful in air-gapped environments with no network access. |
 | **Fuzzing** | MCTS sends test messages to a live server to check how it handles malformed or unexpected input. Default level is read-only and safe. |
-| **Inventory** | MCTS reads MCP config files on your machine (Cursor, Claude, VS Code, Windsurf) and lists which servers are installed. |
+| **Inventory** | MCTS reads MCP config files on your machine (12+ agent clients) and lists which servers are installed. Can scan skills with `--skills`. |
+| **Machine-wide scan** | `mcts scan --machine-wide` — scan all MCP servers discovered in local client configs without specifying a target path. |
+| **Package vetting** | `mcts vet pypi:` / `npm:` / `oci:` — pre-install checks on packages before adding them to an agent environment. |
+| **Pentest mode** | `mcts pentest` — structured report combining static recon, attack-chain review, and optional safe fuzz. |
+| **MCP server mode** | `mcts-mcp` — run MCTS as an MCP server so IDE agents can call scan tools programmatically. |
 
 ---
 
@@ -64,6 +68,10 @@ Plain-language definitions for terms used throughout MCTS documentation. If you 
 | **MCTS-M-*** | MCTS mitigation IDs — recommended fixes linked to specific techniques. |
 | **OWASP LLM Top 10** | A standard list of the most critical security risks for LLM applications. MCTS maps findings to these categories for compliance reporting. |
 | **Sigma rules** | YAML-based detection rules used in security monitoring. MCTS includes bundled rules that match against tool metadata. |
+| **Semgrep SAST** | Optional static analysis via `--semgrep` — runs bundled Semgrep rules (Python, JS/TS, Java) against the scan target. Requires the `semgrep` CLI on PATH. |
+| **LLM metadata triage** | Optional `--llm-triage` analyzer that classifies MCP metadata as malicious, safe, or suspect using an LLM (requires `MCTS_LLM_API_KEY`). |
+| **Toxic flow** | Cross-server capability combination where multiple tools together create elevated risk (W015–W020 issue codes). Enable with `--full-toxic-flows`. |
+| **SKILL.md** | Agent skill definition files scanned by `mcts inventory --skills` for prompt injection and credential patterns (W007–W014). |
 
 ---
 

@@ -2,425 +2,393 @@
 
 > [Documentation](../index.md) → [Analysis](README.md)
 
-This document explains how MCTS works internally — from reading your source code to producing a scored security report. Read this if you want to understand the pipeline, extend MCTS with new analyzers, or debug unexpected scan results.
+How MCTS works internally: discovery → analyzers → scoring → report.
 
-> **Just want to use MCTS?** You don't need this doc. Start with [Getting Started](../get-started/getting-started.md).
-> **Unfamiliar with terms?** See the [Glossary](../glossary.md).
+| Read this if you… | Jump to |
+|-------------------|---------|
+| Just want to scan | [Getting started](../get-started/getting-started.md) — skip this doc |
+| Need to understand a finding | [Security checks](security-checks.md) |
+| Are contributing code | [Quick start for contributors](../../CONTRIBUTING.md#quick-start-for-first-time-contributors) + [Extension points](#extension-points) |
+| Are debugging a scan | [Scan lifecycle](#scan-lifecycle) + [Debugging](#debugging-scans) |
+
+> Terms: [Glossary](../glossary.md)
 
 ---
 
-## In plain English
+## On this page
 
-When you run `mcts scan ./server.py`, MCTS does four things:
+1. [At a glance](#at-a-glance)
+2. [End-to-end pipeline](#end-to-end-pipeline)
+3. [Entry points](#entry-points)
+4. [Scan lifecycle](#scan-lifecycle)
+5. [Core data models](#core-data-models)
+6. [Layers](#layers)
+7. [Analyzers](#analyzers)
+8. [Scoring and reporting](#scoring-and-reporting)
+9. [Supporting commands](#supporting-commands)
+10. [Package layout](#package-layout)
+11. [Extension points](#extension-points)
+12. [Debugging scans](#debugging-scans)
 
-1. **Discover** — Find all MCP tools, prompts, resources, and handler source code (from files, a running server, or exported JSON)
-2. **Analyze** — Run 20+ automated security checks on what was discovered
-3. **Score** — Convert findings into a 0–100 security score using a transparent formula
-4. **Report** — Show results in your terminal, or export as JSON, SARIF, or HTML
+Roadmap and planned work: [Product roadmap](../more/roadmap.md) (not covered here).
 
-Each step is a separate module in the codebase, connected by shared data models. The sections below describe each layer in detail.
+---
 
-**Planning docs:** [Feature Expansion Plan](../more/feature-expansion-plan.md) · [Roadmap](../more/roadmap.md)
+## At a glance
+
+When you run `mcts scan ./server.py`:
+
+1. **Discover** — Build an `MCPServerInfo` snapshot (tools, prompts, resources, handler source, optional live schemas)
+2. **Analyze** — Run security analyzers; each returns `Finding` objects
+3. **Post-process** — Dedupe, enrich with MCTS-T IDs, append OWASP compliance meta-findings
+4. **Score** — Compute 0–100 score (compliance findings excluded from score)
+5. **Report** — Terminal UI, JSON, SARIF, or HTML via `mcts report`
+
+**Orchestrator:** `Scanner` in `src/mcts/core/scanner.py`  
+**Config:** `ScanConfig` in `src/mcts/core/config.py`  
+**CLI:** `mcts scan` in `src/mcts/cli/main.py`
 
 ---
 
 ## End-to-end pipeline
 
-```
-ScanConfig (CLI → core/config.py)
-        │
-        ▼
-┌─────────────────── Discovery ───────────────────┐
-│  StaticDiscovery (Python)  ─┐                   │
-│  JsStaticDiscovery (TS/JS) ─┼─ merge (repo)     │
-│  LiveDiscovery (stdio / HTTP/SSE) ─┘  --live / --url │
-│  StaticJsonLoader ────────────────────  --snapshot    │
-└───────────────────────┬─────────────────────────┘
-                        ▼
-              MCPServerInfo
-         (tools, prompts, resources, instructions,
-          schemas, source snippets, runtime_events)
-                        │
-        ┌───────────────┼───────────────┐
-        ▼               ▼               ▼
-   25+ analyzers  ComplianceChecker   enrich_findings
-   (20 default)
-   (see table)     (OWASP meta)        (MCTS-T / MCTS-M)
-        │               │               │
-        └───────────────┴───────────────┘
-                        ▼
-         dedupe_sigma_findings → RiskScoringEngine
-                        ▼
-                  ScanReport
-                        │
-        ┌───────────────┼───────────────┐
-        ▼               ▼               ▼
-  Terminal UI      JSON / SARIF    mcts report → HTML
-  (Rich dashboard)
+```mermaid
+flowchart LR
+  subgraph input [Input]
+    CLI["CLI / API"]
+    CFG["ScanConfig"]
+  end
+
+  subgraph discover [Discovery]
+    STATIC["Static Py/TS"]
+    LIVE["Live stdio / HTTP"]
+    SNAP["JSON snapshot"]
+    STATIC --> MERGE["MCPServerInfo"]
+    LIVE --> MERGE
+    SNAP --> MERGE
+  end
+
+  subgraph analyze [Analysis]
+    ANA["Analyzers"]
+    DEDUPE["Dedupe + enrich"]
+    COMP["Compliance OWASP"]
+    ANA --> DEDUPE --> COMP
+  end
+
+  subgraph output [Output]
+    SCORE["RiskScoringEngine"]
+    REP["ScanReport"]
+    OUT["Terminal · JSON · SARIF · HTML"]
+    SCORE --> REP --> OUT
+  end
+
+  CLI --> CFG --> STATIC
+  CFG --> LIVE
+  CFG --> SNAP
+  MERGE --> ANA
+  COMP --> SCORE
 ```
 
-Entry point: `Scanner.run()` in `core/scanner.py`. CLI command: `mcts scan` in `cli/main.py`.
+ASCII equivalent:
+
+```
+ScanConfig ──► Discovery (static / live / snapshot) ──► MCPServerInfo
+                              │
+                              ▼
+                    Analyzers (parallel, sequential loop)
+                              │
+                              ▼
+              filters → dedupe → enrich (MCTS-T) → compliance
+                              │
+                              ▼
+                    RiskScoringEngine → ScanReport → outputs
+```
 
 ---
 
-## Target resolution
+## Entry points
 
-`core/target.py` classifies scan targets:
+| Surface | Module | Typical use |
+|---------|--------|-------------|
+| **CLI** | `cli/main.py` | `mcts scan`, `inventory`, `fuzz`, `vet`, `pentest` |
+| **REST API** | `api/app.py` | `mcts serve` — same `Scanner`, JSON in/out |
+| **Python API** | `core/scanner.py` | `Scanner(ScanConfig).run()` or `.analyze_server(info)` |
+| **MCP server mode** | `mcp_server/` | `mcts-mcp` tools for IDE agents |
 
-| Kind | Example | Discovery behavior |
-|------|---------|-------------------|
-| **File** | `./server.py`, `./src/index.ts` | Single-language static on file + neighbors |
-| **Directory** | `./my-mcp-repo/` | Walk tree; Python + TS merge |
-| **Config** | `.` + `--config` + `--server` | Launch from client MCP JSON; static empty if no source |
+All scan paths converge on `Scanner.analyze_server(MCPServerInfo)`.
 
-`MCPClient.discover()` in `mcp/client.py` chooses static-only, live-only, or merged paths based on `ScanConfig.live` and `merge_static_live`.
+---
+
+## Scan lifecycle
+
+`Scanner.run()` discovers first; `Scanner.analyze_server()` runs the analysis pipeline (also used by API and tests with pre-built snapshots).
+
+### 1. Discovery (`MCPClient.discover()`)
+
+| Source | When | Module |
+|--------|------|--------|
+| Python static AST | Default repo/file scan | `discovery/static.py` |
+| TypeScript/JS patterns | `--languages typescript` | `discovery/static_js.py` |
+| Live stdio MCP | `--live` | `discovery/live.py`, `probe/session.py` |
+| Remote HTTP/SSE | `--url` | `probe/http_session.py` |
+| Exported JSON | `--snapshot` | `discovery/static_json.py` |
+| Client config launch | `--config` + `--server` | `discovery/live_config.py` |
+
+Static + live can merge when `merge_static_live` is true (default). See [Scanning overview](../scanning/README.md).
+
+### 2. Attach runtime context
+
+- Merge `--runtime-events` file rows with live / behavioral probe events
+- Attach `surface_scan` options (`--surfaces`, MIME allowlist)
+- Emit `discovery_meta` findings if live discovery was incomplete
+
+### 3. Run analyzers
+
+Loop registered analyzers; skip disabled or filtered ones (`--analyzers`, config toggles). See [Analyzers](#analyzers).
+
+Optional: `probe_protocol_security()` when `--protocol-probe` + `--url`.
+
+### 4. Post-process findings
+
+| Step | Function | Purpose |
+|------|----------|---------|
+| Filter | `_apply_filters()` | `--tool-filter`, `--analyzer-filter`, `--severity-filter`, `--technique` |
+| Metadata dedupe | `dedupe_metadata_findings()` | Collapse duplicate metadata hits |
+| Sigma dedupe | `dedupe_sigma_findings()` | Collapse duplicate Sigma matches |
+| Enrich | `enrich_findings()` | Attach `technique_id`, `mitigation_ids`, crosswalk evidence |
+| Compliance | `ComplianceChecker.check()` | OWASP LLM + MCP meta-findings (**non-scoring**) |
+
+### 5. Score and verify
+
+`RiskScoringEngine.score()` → `ScoreBasis`; `verify()` asserts score matches findings (regression guard).
+
+### 6. Build `ScanReport`
+
+Includes `attack_graph` from `AttackChainAnalyzer`, partitioned `score_breakdown`, scan scope notes, and `analyzers_executed` audit list.
+
+Optional: `--save-baseline` writes tool metadata snapshot for rug-pull detection on future scans.
 
 ---
 
 ## Core data models
 
-### MCPServerInfo (`mcp/models.py`)
+Defined in `mcp/models.py` and `reporting/models.py`.
 
-| Field | Type | Purpose |
-|-------|------|---------|
-| `name` | string | Server identifier |
-| `version` | string | Declared version when known |
-| `tools` | `MCPTool[]` | Discovered tools with schemas and source |
-| `prompts` | `MCPPrompt[]` | From live probe |
-| `resources` | `MCPResource[]` | From live probe |
-| `instructions` | string? | Server system instructions when exposed |
-| `transport` | string | Default `stdio` |
-| `discovery_mode` | string | `static`, `live`, `merged`, `empty` |
-| `source_files` | dict | Path → content cache for SAST |
-| `runtime_events` | dict[] | Telemetry for runtime analyzers |
+### MCPServerInfo
 
-### MCPTool
+The **single input** every analyzer receives.
 
 | Field | Purpose |
 |-------|---------|
-| `name`, `description` | Tool metadata |
-| `input_schema` | Parsed JSON Schema object |
-| `source_file`, `source_line` | Static discovery location |
-| `handler_snippet` | Source excerpt for SAST analyzers |
+| `tools`, `prompts`, `resources` | MCP surfaces with schemas and text |
+| `instructions` | Server system instructions when exposed |
+| `source_files` | Path → content cache for SAST |
+| `runtime_events` | Telemetry rows for runtime analyzers |
+| `discovery_mode` | `static`, `live`, `merged`, `config-static`, etc. |
+| `surface_scan` | Per-scan surface and MIME options |
+
+### MCPTool (key fields)
+
+| Field | Purpose |
+|-------|---------|
+| `name`, `description`, `input_schema` | Tool metadata |
+| `handler_snippet`, `source_file`, `source_line` | Static SAST context |
 | `capability` | `CapabilityProfile` for attack chains |
-| `discovered_via` | `static`, `live`, etc. |
 
-### Finding (`reporting/models.py`)
+### Finding
 
 | Field | Purpose |
 |-------|---------|
-| `id` | Stable finding identifier |
-| `analyzer` | Source analyzer key (e.g. `permission_analyzer`) |
-| `title`, `description`, `recommendation` | Human-readable content |
-| `severity` | `critical`, `high`, `medium`, `low` |
+| `analyzer` | Source check (e.g. `permission_analyzer`) |
+| `severity` | `critical` / `high` / `medium` / `low` |
+| `technique_id` | MCTS-T-* (after enrichment) |
+| `evidence`, `location` | Proof and source line |
 | `tool` | Related tool name when applicable |
-| `evidence` | Structured proof (snippets, matched patterns) |
-| `technique_id` | MCTS-T-* after enrichment |
-| `mitigation_ids` | MCTS-M-* list |
-| `cwe_id`, `confidence` | Optional classification |
-| `location` | `SourceLocation` file + line |
 
 ### ScanReport
 
 | Field | Purpose |
 |-------|---------|
-| `version` | MCTS release version |
-| `target`, `scanned_at` | Scan metadata |
-| `server` | Full `MCPServerInfo` snapshot |
-| `findings` | All analyzer + compliance findings |
-| `summary` | Severity counts |
-| `score` | `RiskScore` with auditable `basis` |
-| `attack_graph` | Capability-graph structure for HTML/CLI |
+| `findings`, `summary` | All issues and severity counts |
+| `score` | Overall score + auditable `basis` |
+| `server` | Full discovery snapshot |
+| `attack_graph` | Capability-graph paths for UI |
+| `analyzers_executed` | Which checks ran |
+
+Full field lists: source models in `reporting/models.py`.
 
 ---
 
-## ScanConfig highlights (`core/config.py`)
+## Layers
 
-| Field | Default | Role |
-|-------|---------|------|
-| `languages` | `python`, `typescript` | Static discovery backends |
-| `exclude_dirs` | `.git`, `node_modules`, venv, caches | Walk pruning |
-| `max_file_bytes` | 500_000 | Per-file read cap |
-| `live`, `live_command`, `live_args` | false | Live probe |
-| `config_path`, `config_server` | — | Client config launch |
-| `runtime_events` | [] | Injected telemetry |
-| `behavioral_probe` | false (true with `--live`) | MCTS-T-1026 events |
-| `baseline_path`, `save_baseline_path` | — | Rug-pull detection |
-| `sigma_rules_path` | — | Extra Sigma YAML dirs |
-| `semantic_secrets` | false | Embedding-based secrets |
-| `fail_on_category` | {} | CI category gates |
-| `enable_jailbreak`, `enable_attack_chains` | true | Analyzer toggles |
-| `surfaces` | all four | MCP artifact types to scan |
-| `remote_url`, `remote_transport` | — | HTTP/SSE live probe |
-| `snapshot_path` | — | Static JSON metadata input |
-| `pip_audit`, `npm_audit` | false | Dependency CVE scanning |
-| `enable_yara`, `enable_llm_judge`, `enable_cloud_inspect` | false | Optional analyzers |
-| `protocol_probe` | false | Active MCPS HTTP checks |
-| `expand_vars` | `auto` | Config env var expansion |
+### Discovery (`discovery/`, `mcp/client.py`)
 
----
-
-## Discovery layer (`discovery/`)
+Turns a filesystem path, live process, or JSON file into `MCPServerInfo`.
 
 | Module | Role |
 |--------|------|
-| `static.py` | Python AST: `@tool`, schemas, handler snippets |
-| `static_js.py` | TS/JS pattern match — see [typescript-discovery](../scanning/typescript-discovery.md) |
-| `static_runner.py` | Orchestrates `languages` list |
-| `static_merge.py` | Merges multi-language tool lists |
-| `live.py` | Stdio or remote MCP `list_*` probe |
-| `live_config.py` | Resolves launch from client JSON |
-| `static_json.py` | Load pre-exported tools/prompts/resources JSON |
-| `env_expand.py` | `$VAR` / `%VAR%` expansion in configs |
-| `json5_util.py` | Commented JSON / JSON5 config parsing |
-| `merge.py` | Static + live `MCPServerInfo` merge |
-| `config.py` | MCP client config parsing helpers |
+| `static.py` | Python `@tool` AST, schemas, handler snippets |
+| `static_js.py` | TS/JS registerTool / handler patterns |
+| `static_merge.py`, `static_runner.py` | Multi-language repo walks |
+| `live.py`, `live_config.py` | Stdio / config-based live probe |
+| `static_json.py` | Air-gapped snapshot load |
+| `merge.py` | Static + live merge |
+| `env_expand.py`, `json5_util.py` | IDE config parsing |
 
-**Runtime telemetry:** `--runtime-events` JSON, `--live`, `--url`, `--behavioral-probe`, and `mcts fuzz` output attach rows to `runtime_events` before analyzers run.
+Guides: [Live](../scanning/live-scanning.md) · [Remote](../scanning/remote-scanning.md) · [Snapshot](../scanning/static-snapshot.md) · [TypeScript](../scanning/typescript-discovery.md)
 
-Deep dives: [Live Scanning](../scanning/live-scanning.md) · [Remote Scanning](../scanning/remote-scanning.md) · [Static Snapshot](../scanning/static-snapshot.md) · [Fuzzing](../scanning/fuzzing.md)
+### Probe (`probe/`)
 
----
-
-## Probe layer (`probe/`)
+Transport, consent, and event extraction for live modes.
 
 | Module | Role |
 |--------|------|
-| `session.py` | Async stdio probe (MCP SDK) |
-| `http_session.py` | Remote SSE / streamable HTTP probe |
+| `session.py` | Async stdio MCP session |
+| `http_session.py` | Streamable HTTP / SSE |
 | `auth.py` | Bearer, headers, OAuth client credentials |
-| `protocol_checks.py` | Active MCPS HTTP security probes |
-| `consent.py` | `--i-understand-live-risk` / `MCTS_LIVE_OK=1` |
-| `events.py` | Live listings → runtime event rows |
-| `behavioral.py` | Multi-turn probe patterns |
+| `consent.py` | `--i-understand-live-risk` / `MCTS_LIVE_OK` |
+| `behavioral.py`, `events.py` | Runtime event rows for analyzers |
+| `protocol_checks.py` | Active MCPS HTTP checks |
+
+### Orchestration (`core/scanner.py`)
+
+Builds analyzer list in `_build_analyzers()`, runs lifecycle above. Filters and technique mode applied after analyzers complete.
+
+### Analyzers (`analyzers/`)
+
+See [Analyzers](#analyzers) below.
+
+### Taxonomy (`taxonomy/`)
+
+| Asset | Role |
+|-------|------|
+| `techniques.json` | MCTS-T catalog |
+| `mapper.py` | `enrich_findings()` |
+| `crosswalk.json` | External framework IDs in evidence |
+| `sigma/metadata_rules.json` | Bundled metadata Sigma rules |
+
+### Scoring (`scoring/`)
+
+Exponential decay formula; compliance excluded. Details: [Scoring spec](../reporting/scoring-spec.md).
+
+### Reporting (`reporting/`, `report/`, `ui/`)
+
+| Output | Path |
+|--------|------|
+| JSON / SARIF | `reporting/models.py`, `reporting/sarif.py` |
+| Terminal | `ui/dashboard.py`, themes in `ui/theme.py` |
+| HTML | `report/generators/html_report.py` |
 
 ---
 
-## Scanner orchestration (`core/scanner.py`)
+## Analyzers
 
-`Scanner.run()` steps:
+All analyzers implement `BaseAnalyzer.analyze(server: MCPServerInfo) -> list[Finding]` (`analyzers/base.py`).
 
-1. **`MCPClient.discover()`** → `MCPServerInfo`
-2. **Merge runtime events** from config file, live probe, behavioral probe
-3. **Run analyzers** — each returns `list[Finding]`
-4. **`dedupe_sigma_findings()`** — collapse duplicate Sigma matches
-5. **`enrich_findings()`** — attach `technique_id`, `mitigation_ids`, URLs
-6. **`ComplianceChecker.check()`** — OWASP LLM meta-findings (non-scoring)
-7. **`RiskScoringEngine.score()`** — with `verify()` integrity check
-8. **Optional `save_baseline()`** when `--save-baseline` set
-9. **Build `ScanReport`** with attack graph from `AttackChainAnalyzer`
+Registered in `Scanner._build_analyzers()`. User-facing descriptions: [Security checks](security-checks.md).
 
-### Conditional analyzers
+### Always registered (core)
 
-| Analyzer | Enabled when |
-|----------|--------------|
-| `JailbreakAnalyzer` | `enable_jailbreak` (default on) |
-| `AttackChainAnalyzer` | `enable_attack_chains` (default on) |
-| `MetadataDiffAnalyzer` | `--baseline` provided |
-| `EmbeddingSecretsAnalyzer` | `--semantic-secrets` |
-| `VulnerablePackageAnalyzer` | `--pip-audit` |
-| `NpmAuditAnalyzer` | `--npm-audit` |
-| `YaraMetadataAnalyzer` | `--yara` |
-| `LlmJudgeAnalyzer` | `--llm-judge` + API key |
-| `CloudInspectAnalyzer` | `--cloud-inspect` + API key |
-| `VirusTotalAnalyzer` | `--virustotal` + API key |
+Run unless disabled by `_is_enabled()` or `--analyzers` subset.
 
-`SurfaceMetadataAnalyzer`, `PromptDefenseAnalyzer`, and `BehavioralStaticAnalyzer` are on by default.
+| Key | Focus |
+|-----|-------|
+| `permission_analyzer` | Destructive / high-risk tool names and descriptions |
+| `metadata_integrity` | Description poisoning patterns |
+| `prompt_injection` | Injection heuristics in metadata |
+| `tool_shadowing` | Duplicate tool names within server |
+| `line_jumping` | Context precedence attacks |
+| `tool_abuse` | Path traversal in metadata |
+| `schema_surface` | Full schema poisoning (FSP) |
+| `data_leakage` | Secrets in source + metadata |
+| `command_execution` | Shell/exec in handlers |
+| `path_validation` | Missing path checks |
+| `runtime_events` | Telemetry cluster (delegates to sub-detectors) |
+| `sigma_metadata` | Bundled + custom Sigma YAML |
+| `oauth_config` | OAuth misconfiguration |
+| `supply_chain` | Dependency posture heuristics |
 
----
+### Default-on (config toggles)
 
-## Analyzer registry
+| Key | Toggle | Focus |
+|-----|--------|-------|
+| `surface_metadata` | `enable_surface_metadata` (default on) | Multi-surface poisoning |
+| `prompt_defense` | `enable_prompt_defense` (default on) | Missing defensive language |
+| `behavioral_static` | `enable_behavioral_static` (default on) | Description vs handler + taint |
+| `jailbreak` | `enable_jailbreak` (default on) | Manipulation resistance |
+| `attack_chains` | `enable_attack_chains` (default on) | Capability-graph BFS |
 
-Each analyzer implements `BaseAnalyzer.analyze(server: MCPServerInfo) -> list[Finding]`.
+### Conditional on inputs
 
-| Analyzer | Key | Focus | Example techniques |
-|----------|-----|-------|-------------------|
-| `PermissionAnalyzer` | `permission_analyzer` | Destructive / over-privileged tools | MCTS-T-1006 |
-| `MetadataIntegrityAnalyzer` | `metadata_integrity` | Description poisoning | MCTS-T-1001 |
-| `PromptInjectionAnalyzer` | `prompt_injection` | Injection in metadata | MCTS-T-1001 |
-| `ToolShadowingAnalyzer` | `tool_shadowing` | Duplicate/shadow tool names | MCTS-T-1020 |
-| `LineJumpingAnalyzer` | `line_jumping` | Context precedence attacks | MCTS-T-1021 |
-| `ToolAbuseAnalyzer` | `tool_abuse` | Path traversal in metadata | MCTS-T-1002 |
-| `SchemaSurfaceAnalyzer` | `schema_surface` | Full Schema Poisoning (FSP) | MCTS-T-1001.002 |
-| `DataLeakageAnalyzer` | `data_leakage` | Secrets in source + metadata | MCTS-T-1004 |
-| `CommandExecutionAnalyzer` | `command_execution` | Shell/exec in handlers | MCTS-T-1003 |
-| `PathValidationAnalyzer` | `path_validation` | Missing path checks | MCTS-T-1002 |
-| `RuntimeEventsAnalyzer` | `runtime_events` | Telemetry cluster | MCTS-T-1023+ |
-| `SigmaMetadataAnalyzer` | `sigma_metadata` | Bundled + custom Sigma YAML | MCTS-T-1010 |
-| `OAuthConfigAnalyzer` | `oauth_config` | OAuth misconfiguration | MCTS-T-1011–1019 |
-| `SupplyChainAnalyzer` | `supply_chain` | Dependency posture | — |
-| `EmbeddingSecretsAnalyzer` | `embedding_secrets` | Semantic credentials (opt-in) | MCTS-T-1022 |
-| `MetadataDiffAnalyzer` | `metadata_diff` | Baseline diff / rug-pull | MCTS-T-1013, MCTS-T-1040 |
-| `JailbreakAnalyzer` | `jailbreak` | Output manipulation resistance | MCTS-T-1007 |
-| `CrossServerAnalyzer` | `cross_server` | Cross-server name collisions | MCTS-T-1008 |
-| `AttackChainAnalyzer` | `attack_chains` | Multi-step capability graphs | MCTS-T-1005 |
-| `SurfaceMetadataAnalyzer` | `surface_metadata` | Poisoning on all MCP surfaces | MCTS-T-1001 |
-| `PromptDefenseAnalyzer` | `prompt_defense` | Missing defensive prompt language | MCTS-T-1001 |
-| `BehavioralStaticAnalyzer` | `behavioral_static` | Description vs handler mismatch + taint flow | MCTS-T-1001 |
-| `VulnerablePackageAnalyzer` | `vulnerable_package` | pip-audit CVEs | MCTS-T-1014 |
-| `NpmAuditAnalyzer` | `npm_audit` | npm audit CVEs | MCTS-T-1014 |
-| `YaraMetadataAnalyzer` | `yara_metadata` | YARA pattern matches | MCTS-T-1010 |
-| `LlmJudgeAnalyzer` | `llm_judge` | Opt-in LLM semantic review | MCTS-T-1001 |
-| `CloudInspectAnalyzer` | `cloud_inspect` | Opt-in cloud ML API | MCTS-T-1001 |
-| `VirusTotalAnalyzer` | `virustotal` | Binary hash malware lookup | MCTS-T-1038 |
+| Key | Enabled when |
+|-----|--------------|
+| `metadata_diff` | `--baseline` provided |
+| `embedding_secrets` | `--semantic-secrets` |
+| `cross_server` | Inventory with ≥2 servers (e.g. `inventory --scan`) |
+| `toxic_flows` | Inventory with ≥2 servers + `--full-toxic-flows` |
 
-Multi-surface iteration: `analyzers/surfaces.py` — `ScanSurface` abstraction for tools, prompts, resources, instructions.
+### Opt-in (flags / extras)
+
+| Key | Flag | Notes |
+|-----|------|-------|
+| `vulnerable_package` | `--pip-audit` | Requires `supplychain` extra |
+| `npm_audit` | `--npm-audit` | npm audit subprocess |
+| `yara_metadata` | `--yara` | Requires `yara` extra |
+| `llm_judge` | `--llm-judge` | Requires `MCTS_LLM_API_KEY` |
+| `llm_metadata_triage` | `--llm-triage` | malicious / safe / suspect |
+| `semgrep_sast` | `--semgrep` | Requires `semgrep` CLI on PATH |
+| `cloud_inspect` | `--cloud-inspect` | Requires cloud API key |
+| `virustotal` | `--virustotal` | Hash lookup |
+
+### Multi-surface iteration
+
+`analyzers/surfaces.py` defines `ScanSurface` for tools, prompts, resources, and instructions. Surface-aware analyzers iterate via `scan_surfaces(server)`.
 
 ### Behavioral SAST (`sast/`)
 
-`BehavioralStaticAnalyzer` compares tool descriptions against handler implementations and traces untrusted parameters to security sinks.
+Used by `behavioral_static`. Python AST taint + optional tree-sitter for TS/Go/Rust. Semgrep rules in `sast/semgrep/rules/`. Install deep parsers: `uv sync --extra sast`.
 
-| Module | Languages | Role |
-|--------|-----------|------|
-| `sast/python/taint.py` | Python | AST parameter-to-sink flow |
-| `sast/python/crossfile.py` | Python | Expand handlers across `source_files` |
-| `sast/typescript/sinks.py`, `taint.py` | TS/JS | Regex + optional tree-sitter-typescript |
-| `sast/go/sinks.py`, `taint.py` | Go | `exec.Command`, `os.Remove`, HTTP sinks |
-| `sast/rust/sinks.py`, `taint.py` | Rust | `Command::new`, `fs::write`, `reqwest` |
-| `sast/eval.py` | — | Corpus runner for regression metrics |
+### Runtime sub-detectors
 
-Eval corpus: `eval/behavioral/cases.json` (22 cases across Python, TypeScript, Go, Rust). Run via `scripts/run_behavioral_eval.py` or `tests/test_behavioral_eval.py`. Install optional tree-sitter parsers with `uv sync --extra sast`.
+`RuntimeEventsAnalyzer` routes telemetry rows to focused modules (e.g. `rug_pull.py`, `command_injection.py`, `tool_redefinition.py`). Technique mapping: [Threat taxonomy](../reporting/taxonomy.md) and `tests/fixtures/regression/MCTS-T-*/`.
 
-Taxonomy crosswalk: `taxonomy/crosswalk.json` adds `aitech`, `aisubtech`, `saf_mcp` to finding evidence via `enrich_findings()`.
+### Attack chains (`capability/`, `analyzers/attack_chains.py`)
 
-### RuntimeEventsAnalyzer sub-detectors
-
-`RuntimeEventsAnalyzer` delegates telemetry rows to focused detector modules under `analyzers/`:
-
-| Module | Technique examples |
-|--------|-------------------|
-| `autonomous_loop.py` | MCTS-T-1035 |
-| `command_injection.py` | MCTS-T-1023 |
-| `oauth_mixup.py` | MCTS-T-1012 |
-| `rug_pull.py` | MCTS-T-1013 |
-| `behavioral_extraction.py` | MCTS-T-1026 |
-| `credential_access.py` | MCTS-T-1024 |
-| `tool_redefinition.py` | MCTS-T-1040 |
-| `over_privileged.py` | MCTS-T-1006 |
-| `exposed_endpoint.py` | MCTS-T-1027 |
-| `dns_poisoning.py` | MCTS-T-1028 |
-| `tool_output_injection.py` | MCTS-T-1007 |
-| `cross_server_registry.py` | MCTS-T-1029 |
-| `privilege_tool_abuse.py` | MCTS-T-1030 |
-| `suspicious_registration.py` | MCTS-T-1031 |
-| `fake_tool_invocation.py` | MCTS-T-1032 |
-| `sandbox_escape.py` | MCTS-T-1033 |
-| `oauth_escalation_runtime.py` | MCTS-T-1017–1019 |
-| `instruction_steganography.py` | MCTS-T-1041 |
-| `vector_poisoning.py` | MCTS-T-1034 |
-| `inspector_rce.py` | MCTS-T-1036 |
-| `oauth_token_persistence.py` | MCTS-T-1037 |
-| `backdoored_install.py` | MCTS-T-1038 |
-| `context_memory_implant.py` | MCTS-T-1039 |
-| `sampling_abuse.py` | MCTS-T-1016 |
-
-See [Threat Taxonomy](../reporting/taxonomy.md) for the full catalog.
+`capability/inferrer.py` assigns per-tool flags (`reads_untrusted_input`, `egresses_network`, `executes_commands`, …). BFS finds paths like read → exfiltrate. Graph stored on `ScanReport.attack_graph`.
 
 ---
 
-## Capability graph and attack chains
+## Scoring and reporting
 
-`capability/inferrer.py` assigns each tool a `CapabilityProfile`:
-
-| Flag | Meaning |
-|------|---------|
-| `reads_untrusted_input` | Accepts user/agent-controlled input |
-| `accesses_sensitive_data` | Files, secrets, PII patterns |
-| `mutates_state` | Writes/deletes data |
-| `egresses_network` | HTTP, API calls |
-| `executes_commands` | subprocess, shell |
-
-`AttackChainAnalyzer` performs BFS on the capability graph to find paths like **read → exfiltrate** or **read → execute**. Results populate `ScanReport.attack_graph` for terminal and HTML visualization.
-
----
-
-## Fuzzing (`fuzz/`)
-
-Separate command path: `FuzzRunner` → protocol probes → findings + `runtime_events` JSON.
-
-```bash
-mcts fuzz ./server.py --i-understand-live-risk -o fuzz.json
-mcts scan ./server.py --runtime-events fuzz.json
-```
-
-See [Protocol Fuzzing](../scanning/fuzzing.md).
-
----
-
-## Inventory (`inventory/`)
-
-`mcts inventory` discovers client configs; `CrossServerAnalyzer.analyze_inventory()` flags tool shadowing.
-
-See [Config Inventory](../scanning/inventory.md).
-
----
-
-## Scoring (`scoring/engine.py`)
-
-| Metric | Formula | Interpretation |
-|--------|---------|----------------|
+| Metric | Formula | Notes |
+|--------|---------|-------|
 | Raw risk | C×25 + H×10 + M×3 + L×1 | Linear weighted sum |
 | Overall score | `round(100 × e^(-raw/50))` | Higher is better |
 | Risk index | `min(100, raw_risk)` | Higher is worse |
 
-Compliance findings (`analyzer: compliance`) excluded via `NON_SCORING_ANALYZERS`.
+`compliance` analyzer findings are **informational only** — they do not affect score.
 
-Full spec: [Scoring Specification](../reporting/scoring-spec.md).
+Outputs:
 
----
-
-## Reporting
-
-### JSON / SARIF (`reporting/`)
-
-- `models.py` — Pydantic schemas
-- `sarif.py` — SARIF 2.1.0 emission for Code Scanning
-
-### Terminal UI (`ui/`)
-
-| Module | Role |
-|--------|------|
-| `theme.py` | `cyber`, `minimal`, `github` |
-| `progress.py` | Pre-scan animation |
-| `dashboard.py` | Metrics grid, category bars |
-| `report_renderer.py` | Full terminal report |
-
-### HTML dashboard (`report/`)
-
-`mcts report` → `report/data.py` (payload) → `generators/html_report.py` (Jinja2 + inline assets).
-
-See [HTML Security Dashboard](../reporting/html-report.md).
+- **Terminal** — Rich dashboard (`ui/`)
+- **JSON** — full `ScanReport` dump
+- **SARIF** — `--format sarif` for GitHub Code Scanning
+- **HTML** — `mcts report` executive dashboard
 
 ---
 
-## Taxonomy (`taxonomy/`)
+## Supporting commands
 
-| Asset | Role |
-|-------|------|
-| `techniques.json` | MCTS-T catalog with CWE/OWASP |
-| `mapper.py` | Post-analyzer enrichment |
-| `sigma/metadata_rules.json` | Bundled metadata Sigma rules |
-| `mitigation_urls.py` | GitHub doc links for HTML/SARIF |
+These share discovery/models but use separate entry paths:
 
-Custom rules: `--sigma-rules-path` pointing at `MCTS-T-*/detection-rule.yml` directories.
-
----
-
-## Compliance (`compliance/checks.py`)
-
-`ComplianceChecker` maps existing findings to **OWASP LLM Top 10** meta-findings. These appear in reports and HTML OWASP section but **do not affect** the security score.
-
----
-
-## Regression testing (`testing/`)
-
-| Asset | Role |
-|-------|------|
-| `tests/fixtures/regression/MCTS-T-*/` | 34+ technique fixtures |
-| `testing/regression_harness.py` | CI accuracy gate (≥80%) |
-| `tests/fixtures/sigma_fixtures/` | Sigma rule validation |
-| `eval/behavioral/cases.json` | Behavioral SAST corpus (multi-language) |
-| `scripts/run_behavioral_eval.py` | Malicious-case recall metrics for behavioral SAST |
+| Command | Module | Role |
+|---------|--------|------|
+| `mcts fuzz` | `fuzz/` | Protocol probes → `runtime_events` JSON |
+| `mcts inventory` | `inventory/` | Client config discovery; feeds cross-server / toxic-flow analyzers |
+| `mcts vet` | `vet/` | Pre-install PyPI/npm/OCI checks |
+| `mcts pentest` | `pentest/` | Structured recon + attack chains |
+| `mcts readiness` | `readiness/` | HEUR-001–020 (separate from security score) |
+| `mcts serve` | `api/` | REST wrapper around `Scanner` |
 
 ---
 
@@ -428,67 +396,101 @@ Custom rules: `--sigma-rules-path` pointing at `MCTS-T-*/detection-rule.yml` dir
 
 ```
 src/mcts/
-├── cli/           # Typer: scan, report, inventory, fuzz, pentest (stub)
-├── core/          # Scanner, ScanConfig, ScanTarget
-├── discovery/     # Static (Py/TS), live, merge
-├── probe/         # Live stdio session, consent, behavioral events
-├── analyzers/     # Security analyzers + runtime detectors
-├── sast/          # Behavioral static analysis (Python/TS/Go/Rust)
-├── readiness/     # HEUR rules + OPA policies + optional LLM judge
-├── api/           # FastAPI REST surface (`mcts serve`)
-├── capability/    # Per-tool capability inference (attack chains)
-├── inventory/     # Client config discovery
-├── fuzz/          # Protocol fuzz runner
-├── scoring/       # RiskScoringEngine
-├── compliance/    # OWASP LLM checks
-├── reporting/     # Models, SARIF, HTML entry
-├── report/        # HTML dashboard templates/assets
-├── taxonomy/      # MCTS-T/M, Sigma rules
-├── testing/       # Regression harness
-└── ui/            # Rich terminal dashboard
+├── cli/           # Typer commands and flag wiring
+├── core/          # Scanner, ScanConfig, target resolution
+├── mcp/           # MCPServerInfo models, MCPClient.discover()
+├── discovery/     # Static, live, snapshot, merge
+├── probe/         # Live transport, consent, behavioral events
+├── analyzers/     # Security checks (subclass BaseAnalyzer)
+├── sast/          # Taint analysis + Semgrep rule pack
+├── capability/    # Tool capability profiles
+├── scoring/       # RiskScoringEngine, category partitions
+├── compliance/    # OWASP mapping (non-scoring)
+├── taxonomy/      # MCTS-T/M, Sigma, crosswalk, enrichment
+├── reporting/     # Pydantic models, SARIF
+├── report/        # HTML dashboard templates
+├── ui/            # Terminal Rich UI
+├── inventory/     # Client config + skills discovery
+├── fuzz/          # Fuzz runner
+├── vet/           # Package vetting
+├── pentest/       # Pentest phases
+├── governance/    # YAML policy gates
+├── readiness/     # Production heuristics + OPA
+├── api/           # FastAPI (mcts serve)
+├── mcp_server/    # mcts-mcp stdio tools
+├── output/        # Analysis dir, history, artifacts
+└── testing/       # Regression harness
 ```
 
 ---
 
-## Adding an analyzer
+## Extension points
 
-1. Subclass `BaseAnalyzer` in `analyzers/`.
-2. Set `name` class attribute and implement `analyze()`.
-3. Register in `Scanner.__init__` analyzer list (`core/scanner.py`).
-4. Add `technique_id` on findings (or rely on mapper catalog lookup).
-5. Add regression fixture under `tests/fixtures/regression/MCTS-T-*/` when applicable.
-6. Update [Threat Taxonomy](../reporting/taxonomy.md) if adding new technique IDs.
+### Add an analyzer
+
+1. Create `src/mcts/analyzers/your_check.py`:
+
+```python
+from mcts.analyzers.base import BaseAnalyzer
+from mcts.mcp.models import MCPServerInfo
+from mcts.reporting.models import Finding, Severity
+
+class YourAnalyzer(BaseAnalyzer):
+    name = "your_check"
+
+    def analyze(self, server: MCPServerInfo) -> list[Finding]:
+        ...
+```
+
+2. Register in `Scanner._build_analyzers()` (`core/scanner.py`).
+3. Add CLI flag in `cli/main.py` + field on `ScanConfig` if opt-in.
+4. Add tests in `tests/`; regression fixture under `tests/fixtures/regression/MCTS-T-*/` when adding a technique.
+5. Document in [Security checks](security-checks.md).
+
+If the check needs inventory context, pass `inventory=` like `OAuthConfigAnalyzer`.
+
+### Add a runtime detector
+
+Add a module under `analyzers/` and wire it from `RuntimeEventsAnalyzer` (`runtime_events.py`) for the relevant event types.
+
+### Add discovery for a language
+
+Extend `discovery/static_runner.py` and add a parser module (see `static_js.py` pattern).
+
+### Add a Semgrep rule
+
+Add YAML under `sast/semgrep/rules/`; map `metadata.technique_id` to MCTS-T.
+
+Contributor quick start: [CONTRIBUTING.md](../../CONTRIBUTING.md#quick-start-for-first-time-contributors)
 
 ---
 
-## Planned evolution
+## Debugging scans
 
-| Feature | Status | Phase |
-|---------|--------|-------|
-| Semgrep SAST + Java (`--semgrep`) | Planned | 2–3 |
-| Skills / `SKILL.md` scanning | Planned | 2 |
-| MCP server mode (`mcts-mcp`) | Planned | 3 |
-| CycloneDX / AI-BOM export | Planned | 2–3 |
-| Interactive attack-graph HTML UI | Planned | 2 |
-| Runtime stdio proxy | Planned | 3 |
-| Remote protocol fuzz (`mcts fuzz --url`) | Planned | 2 |
-| `mcts audit-config`, `mcts simulate`, `mcts pentest`, `mcts vet` | Planned / stub | 2–4 |
-| Scan history / trends (`.mcts/history/`) | Planned | 2 |
-| HTML Capability Matrix + Technique Map | Planned | 2 |
-| Tree-sitter depth for TypeScript handlers | Partial (`--extra sast`) | 2 |
-| Go/Rust behavioral SAST | Shipped (regex; tree-sitter optional) | — |
-| SSE/HTTP live transports | Shipped (`--url`, `--transport`) | — |
-| REST API (`mcts serve`) | Shipped (10 endpoints) | — |
-| Expanded behavioral eval corpus | Partial (22 cases in `eval/behavioral/`) | 3 |
-| Governance YAML + continuous watch | Planned | 2–3 |
+| Symptom | Where to look |
+|---------|---------------|
+| No tools discovered | Discovery logs; try `--auto`; check `--languages`, exclude dirs |
+| Score seems wrong | `score.basis` in JSON; compliance findings are non-scoring |
+| Analyzer missing from report | `analyzers_executed` on `ScanReport`; check `--analyzers` subset and opt-in flags |
+| Live scan incomplete | `discovery_warnings` → `live_discovery` findings; `--strict-live` |
+| False positive | Analyzer module + fixture in `tests/fixtures/regression/` |
+| Technique ID missing | `taxonomy/mapper.py` catalog + `enrich_findings()` |
 
-See [Roadmap](../more/roadmap.md), [Feature Expansion Plan Part 11](../more/feature-expansion-plan.md#part-11--prioritized-backlog), and [Product Positioning](../more/product-positioning.md#known-gaps-roadmap-summary).
+**Useful commands:**
+
+```bash
+uv run mcts scan ./server.py -o /tmp/report.json
+uv run python -c "import json; r=json.load(open('/tmp/report.json')); print(r['analyzers_executed'])"
+uv run pytest tests/test_scanner.py -q
+uv run pytest tests/fixtures/regression/ -q   # if applicable
+```
 
 ---
 
 ## Related
 
-- [CLI Reference](../platform/cli.md)
-- [Live Scanning](../scanning/live-scanning.md)
-- [Scoring Spec](../reporting/scoring-spec.md)
-- [CI Integration](../platform/ci-integration.md)
+- [Security checks reference](security-checks.md) — what each analyzer looks for
+- [Scoring specification](../reporting/scoring-spec.md)
+- [Threat taxonomy](../reporting/taxonomy.md)
+- [CLI reference](../platform/cli.md)
+- [CONTRIBUTING.md](../../CONTRIBUTING.md)

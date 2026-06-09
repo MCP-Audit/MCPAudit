@@ -2,78 +2,57 @@
 
 > [Documentation](../index.md) → **Platform**
 
-Platform docs cover how to **run MCTS** — from the command line, in CI/CD pipelines, or via REST API.
+How to **run MCTS** from the CLI, in CI, or via HTTP API.
 
-> **New user?** Start with [Getting Started](../get-started/getting-started.md) before reading the full CLI reference.
+> **New user?** Complete [Getting started](../get-started/getting-started.md) first — you do not need every flag on day one.
 
 ---
 
-## Commands at a glance
+## Most-used commands
 
-| Command | What it does | When to use |
-|---------|--------------|-------------|
-| `mcts scan` | Full security scan | Default — scan source code, live, remote, or snapshot |
-| `mcts report` | JSON → HTML dashboard | Share results with security teams or leadership |
-| `mcts inventory` | List local MCP configs | Audit which servers are installed on your machine |
-| `mcts fuzz` | Protocol fuzz probes | Test how a server handles malformed input |
-| `mcts readiness` | Production readiness checks | Operational heuristics (separate from security score) |
-| `mcts serve` | Start REST API server | Programmatic scans from other tools or services |
+| Command | Purpose |
+|---------|---------|
+| `mcts scan` | Security scan (default workflow) |
+| `mcts report` | JSON → HTML dashboard |
+| `mcts inventory` | List / scan local MCP configs |
+| `mcts doctor` | Preflight before first scan |
+
+Everything else (`vet`, `pentest`, `fuzz`, `mcts-mcp`, `serve`) is optional — see [CLI reference](cli.md).
 
 ---
 
 ## Guides
 
-| Page | What you'll learn |
-|------|-------------------|
-| [CLI Reference](cli.md) | Every command, flag, and exit code |
-| [REST API](rest-api.md) | `mcts serve` — programmatic scan endpoints |
-| [CI Integration](ci-integration.md) | GitHub Action, SARIF upload, pipeline gate patterns |
+| Page | Read when… |
+|------|------------|
+| [CLI Reference](cli.md) | You need a specific flag or subcommand |
+| [CI Integration](ci-integration.md) | You are wiring MCTS into a pipeline |
+| [REST API](rest-api.md) | You need HTTP endpoints instead of the CLI |
 
 ---
 
-## Common workflows
-
-### Daily development
+## Typical workflows
 
 ```bash
-mcts scan ./server.py                          # Quick check in terminal
-mcts scan ./server.py --theme minimal          # Cleaner output
-```
+# Daily development
+mcts scan ./server.py
 
-### CI/CD pipeline
+# CI gate
+mcts scan ./server.py --fail-on-critical --min-score 70 -o report.sarif --format sarif
 
-```bash
-mcts scan ./server.py --fail-on-critical --min-score 70 -o report.json
-mcts scan ./server.py -f sarif -o report.sarif
-```
-
-Or use the [GitHub Action](../../action/README.md). See [CI Integration](ci-integration.md).
-
-### Share with stakeholders
-
-```bash
-mcts scan ./server.py -o report.json
-mcts report report.json -o security-report.html
+# Share with stakeholders
+mcts scan ./server.py -o report.json && mcts report report.json -o report.html
 ```
 
 ---
 
-## Planned platform features
+## Contributor docs
 
-| Feature | Status |
-|---------|--------|
-| `mcts inspect`, `mcts vet`, `mcts watch` | Planned |
-| `--ci` preset flag | Planned |
-| Pre-commit hook installer | Planned |
-
-Full backlog: [Feature Expansion Plan](../more/feature-expansion-plan.md)
+CLI roadmap and GAP tracking: [Planned CLI](../more/planned-cli.md) (not needed for normal use).
 
 ---
 
 ## Related
 
-- [Getting Started](../get-started/getting-started.md)
-- [Scoring Specification](../reporting/scoring-spec.md)
-- [GitHub Action README](../../action/README.md)
-- [Glossary](../glossary.md)
+- [Getting started](../get-started/getting-started.md)
 - [Documentation index](../index.md)

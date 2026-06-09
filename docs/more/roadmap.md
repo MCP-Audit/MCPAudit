@@ -2,10 +2,9 @@
 
 > [Documentation](../index.md) → [More](README.md)
 
-This document describes **where MCTS is today** (alpha), **what's shipped**, and **what's planned** in upcoming phases. Read this to understand project direction and prioritize contributions.
+> **Using MCTS?** You only need [Getting started](../get-started/getting-started.md). This page is for project direction and contributors.
 
-> **Just want to use MCTS?** See [Getting Started](../get-started/getting-started.md).
-> **Detailed implementation guide:** [Feature Expansion Plan](feature-expansion-plan.md)
+This document describes **where MCTS is today** (alpha), **what's shipped**, and **what's planned** in upcoming phases.
 
 ---
 
@@ -50,11 +49,11 @@ Status labels used throughout this document:
 | Protocol fuzzing (`mcts fuzz`) | Shipped |
 | SARIF output (`--format sarif`) | Shipped |
 | CI score thresholds (`--min-score`, `--max-critical`) | Shipped |
-| Technique regression harness (34 techniques) | Shipped |
+| Technique regression harness (79 techniques) | Shipped |
 | Runtime telemetry analyzers (`--runtime-events`) | Shipped |
 | CLI category breakdown + `--fail-on-category` | Shipped |
 | GitHub Action (JSON + SARIF + HTML artifacts) | Shipped — `@v1` tag published |
-| Agent pentest (`mcts pentest`) | Planned (stub) |
+| Agent pentest (`mcts pentest`) | Shipped (structured phases) |
 | REST API (`mcts serve`) | Shipped |
 
 ### Known alpha gaps
@@ -62,10 +61,10 @@ Status labels used throughout this document:
 See [Feature Expansion Plan — Part 1](feature-expansion-plan.md#part-1--current-state-honest-inventory) for the honest inventory.
 
 - Multi-file repo discovery shipped; jailbreak analyzer uses weighted heuristic (not live payload injection)
-- `mcts pentest` remains a stub
+- `mcts pentest` runs static recon, attack-chain review, and optional safe fuzz
+- Semgrep SAST (`--semgrep`), LLM triage (`--llm-triage`), skills scan, vet, mcts-mcp, and machine-wide scan shipped
 - Remote protocol fuzz (`mcts fuzz --url`) not yet supported — stdio only
-- ~34 / ~75 external-framework techniques covered by regression fixtures (~45%)
-- Semgrep/Java SAST, skills scanning, and MCP server mode remain on the Phase 2–3 backlog (see [Part 11](feature-expansion-plan.md#part-11--prioritized-backlog))
+- 79 / 79 bundled MCTS-T techniques in regression harness (≥80% accuracy gate)
 - No CycloneDX AI-BOM export, runtime stdio proxy, or interactive attack-graph UI yet
 - Trust registries and runtime gateways address adjacent layers MCTS does not replace
 
@@ -100,7 +99,7 @@ See [Feature Expansion Plan — Part 1](feature-expansion-plan.md#part-1--curren
 | 1.4 | Live MCP probing (`--live`, stdio) | Done |
 | 1.5 | Config inventory (`mcts inventory`) | Done |
 | 1.6 | Runtime telemetry analyzers (`--runtime-events`) | Done |
-| 1.7 | Technique regression harness (34 techniques, ≥80% gate) | Done |
+| 1.7 | Technique regression harness (79 techniques, ≥80% gate) | Done |
 | 1.8 | CLI category breakdown + `--fail-on-category` gates | Done |
 
 ### 1. Security Risk Score (Category Breakdown in CLI) — Shipped
@@ -198,17 +197,17 @@ Per-tool capability dimensions (reads untrusted input, egresses network, execute
 | 2.3 | Rug-pull baselines | Shipped | `--baseline` / `--save-baseline` |
 | 2.4 | Description vs implementation drift | Partial | `BehavioralStaticAnalyzer` (SAST); full drift analyzer planned |
 | 2.5 | TypeScript/JavaScript static discovery | Shipped | `discovery/static_js.py` — see [typescript-discovery.md](../scanning/typescript-discovery.md) |
-| 2.6 | Scan history + trend chart | Planned | `.mcts/history/` |
+| 2.6 | Scan history + trend chart | Shipped | `mcts_analysis/history.json` + HTML dashboard |
 | 2.7 | Attack simulation mode | Planned | `mcts simulate` |
 | 2.8 | Visual attack graph export | Planned | Mermaid, Graphviz, PNG |
 | 2.9 | MCP marketplace scorecards | Planned | Public benchmark publishing |
 | 2.10 | Remote protocol fuzz | Planned | `mcts fuzz --url` |
-| 2.11 | Semgrep SAST adapter (+ Java) | Planned | `--semgrep` optional extra |
-| 2.12 | Skills / `SKILL.md` scanning | Planned | `mcts inventory --skills` |
-| 2.13 | Machine-wide config scan | Planned | Scan all well-known clients without explicit target |
-| 2.14 | Interactive attack-graph dashboard | Planned | HTML UI from `attack_chains` data |
+| 2.11 | Semgrep SAST adapter (+ Java) | Shipped | `--semgrep` optional extra |
+| 2.12 | Skills / `SKILL.md` scanning | Shipped | W007–W014 + `mcts inventory --skills` |
+| 2.13 | Machine-wide config scan | Shipped | `mcts scan --machine-wide` |
+| 2.14 | Interactive attack-graph dashboard | Partial | Static SVG in HTML; force-directed UI planned |
 | 2.15 | Git-aware MCP config diff + PR comments | Planned | CI markdown output |
-| 2.16 | Governance YAML policies | Planned | Extend readiness/OPA |
+| 2.16 | Governance YAML policies | Shipped | `--policy` allowlist + min-score |
 | 2.17 | CycloneDX / AI-BOM export | Planned | From inventory + scan metadata |
 
 ---
@@ -220,9 +219,9 @@ Per-tool capability dimensions (reads untrusted input, egresses network, execute
 
 | # | Deliverable |
 |---|-------------|
-| 3.1 | Package vetting (`mcts vet pypi:…` / `npm:…`) |
-| 3.2 | MCP server mode for IDE agents (`mcts-mcp`) |
-| 3.3 | Opt-in LLM review (`--llm-review`, review agent) |
+| 3.1 | Package vetting (`mcts vet pypi:…` / `npm:…`) | Done |
+| 3.2 | MCP server mode for IDE agents (`mcts-mcp`) | Done |
+| 3.3 | Opt-in LLM review (`--llm-judge`, `--llm-triage`) | Done |
 | 3.4 | Security baselines (`--profile strict\|balanced\|dev`) |
 | 3.5 | Certification badges (`mcts badge`) |
 | 3.6 | Expanded benchmark suite (Juice Shop–style MCP corpus) |

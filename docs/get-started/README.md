@@ -2,39 +2,26 @@
 
 > [Documentation](../index.md) → **Get Started**
 
-Everything you need to install MCTS, run your first scan, and understand the output.
+One guide covers install, first scan, and your first report.
 
 ---
 
-## Guide
+## Read this
 
-| Page | What you'll learn |
-|------|-------------------|
-| [Install and first scan](getting-started.md) | Install, scan the example server, read results, export JSON/SARIF/HTML, optional live modes, CI gates |
+**[Install and first scan](getting-started.md)** (~15 minutes)
 
-**Estimated time:** ~15 minutes
+That is all you need to begin. The [documentation index](../index.md) links to everything else by task.
 
 ---
 
-## Before you start
+## After your first scan
 
-- **No MCP experience required** — the guide explains what MCP servers are and what MCTS checks
-- **Unfamiliar terms?** See the [Glossary](../glossary.md)
-- **Just want commands?** Jump to [Quick reference in the index](../index.md#quick-reference)
-
----
-
-## After getting started
-
-| I want to… | Guide |
-|------------|-------|
-| See all CLI flags | [CLI Reference](../platform/cli.md) |
-| Understand how findings are produced | [Architecture](../analysis/architecture.md) |
-| Scan a remote or hosted server | [Remote Scanning](../scanning/remote-scanning.md) |
-| Scan from an exported JSON file | [Static Snapshot](../scanning/static-snapshot.md) |
-| Set up CI/CD | [CI Integration](../platform/ci-integration.md) |
-| Use the REST API | [REST API](../platform/rest-api.md) |
-| Understand the score | [Scoring Specification](../reporting/scoring-spec.md) |
+| Next step | Guide |
+|-----------|-------|
+| Pick live vs remote vs snapshot | [Which scan mode?](../scanning/README.md#which-scan-mode-should-i-use) |
+| Add MCTS to CI | [CI integration](../platform/ci-integration.md) |
+| Understand a finding | [Security checks](../analysis/security-checks.md) |
+| Share an HTML report | [HTML dashboard](../reporting/html-report.md) |
 
 ---
 

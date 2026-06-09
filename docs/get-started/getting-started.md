@@ -4,7 +4,14 @@
 
 This guide walks you through installing MCTS, running your first scan, and understanding the results. No prior MCP security experience required.
 
-**Time needed:** ~15 minutes for install, first scan, and HTML report.
+**Time needed:** ~15 minutes.
+
+| Where to go next | Link |
+|------------------|------|
+| Pick a scan mode (live, remote, snapshot…) | [Which scan mode should I use?](../scanning/README.md#which-scan-mode-should-i-use) |
+| Set up CI | [CI integration](../platform/ci-integration.md) |
+| Every flag and command | [CLI reference](../platform/cli.md) |
+| Full doc index | [Documentation map](../index.md#documentation-map) |
 
 > Unfamiliar with a term? See the [Glossary](../glossary.md).
 
@@ -53,9 +60,11 @@ Install these only when you need the corresponding feature:
 | Live probing + fuzzing | `uv sync --extra mcp` | Connect to running MCP servers |
 | REST API | `uv sync --extra api` | `mcts serve` (FastAPI) |
 | YARA rules | `uv sync --extra yara` | `--yara` metadata pattern matching |
-| LLM-as-judge | `uv sync --extra llm` | `--llm-judge` (opt-in semantic review) |
+| LLM-as-judge / triage | `uv sync --extra llm` | `--llm-judge`, `--llm-triage` (opt-in semantic review) |
+| Semgrep SAST | `uv sync --extra semgrep` | `--semgrep` (also requires `semgrep` CLI on PATH) |
 | Dependency CVE scan | `uv sync --extra supplychain` | `--pip-audit` |
 | Deep TypeScript SAST | `uv sync --extra sast` | Tree-sitter taint analysis |
+| MCP server mode | `uv sync --extra mcp` | `mcts-mcp` for IDE agent integration |
 
 For your first scan, the base install is enough.
 
@@ -63,23 +72,49 @@ For your first scan, the base install is enough.
 
 ## Install
 
-### From PyPI (recommended)
+### Recommended (isolated)
 
 > PyPI distribution: **`mcp-mcts`** (import package and CLI: `mcts`). The shorter name `mcts` is already used by another project on PyPI.
 
 ```bash
-pip install mcp-mcts
+# Scan without installing
+uvx mcp-mcts scan examples/vulnerable-mcp-server/server.py
+
+# One-off live scan with MCP extra (no global install)
+uvx --from 'mcp-mcts[mcp]' mcts scan ./server.py --live --i-understand-live-risk
+
+# Or install in an isolated tool environment
+pipx install 'mcp-mcts[mcp]'
+uv tool install mcp-mcts
 mcts --version
+```
+
+| Install | Use case |
+|---------|----------|
+| `uvx mcp-mcts` | One-off static scan |
+| `pipx install mcp-mcts` | Global isolated CLI |
+| `pip install mcp-mcts[mcp]` | Live probing in a dedicated venv |
+| `pip install mcp-mcts[all]` | All extras except LLM (no `litellm`) |
+| `pip install 'mcp-mcts[all,llm]'` | Full analyzer set including `--llm-judge` |
+
+### From PyPI (dedicated environment)
+
+Use a **separate** virtualenv — not your application's dev `.venv`:
+
+```bash
+pip install mcp-mcts
 mcts scan --help
 ```
 
-Add extras when you need them:
+Add extras when you need them (avoid `[all]` in app venvs):
 
 ```bash
 pip install "mcp-mcts[mcp]"          # live probing + fuzzing
 pip install "mcp-mcts[api]"          # REST API (`mcts serve`)
-pip install "mcp-mcts[supplychain]"    # `--pip-audit` / `--npm-audit`
-pip install "mcp-mcts[all]"            # every optional extra
+pip install "mcp-mcts[supplychain]"  # `--pip-audit` / `--npm-audit`
+pip install "mcp-mcts[llm]"          # `--llm-judge` / `--llm-triage`
+pip install "mcp-mcts[semgrep]"      # `--semgrep` SAST adapter
+pip install "mcp-mcts[mcp]"          # live probing + fuzzing + `mcts-mcp`
 ```
 
 ### From source (contributors)
@@ -119,7 +154,7 @@ The repo includes demo servers you can scan immediately:
 | Path | What it demonstrates | Expected score |
 |------|---------------------|----------------|
 | `examples/vulnerable-mcp-server/server.py` | Destructive tools, injection, attack chains | ~5/100 (CRITICAL) |
-| `examples/safe-mcp-server/server.py` | Minimal, safe tool surface | ~100/100 |
+| `examples/baseline-mcp-server/server.py` | Minimal, safe tool surface | ~100/100 |
 | `examples/medium-risk-mcp-server/server.py` | Moderate findings | ~67/100 |
 | `examples/live-mcp-server/server.py` | Live probe + fuzz tests | Varies |
 | `examples/prompt-only-server/` | Prompt-surface scanning | Multi-surface demo |
@@ -139,7 +174,7 @@ uv run mcts scan examples/vulnerable-mcp-server/server.py
 ### What happens under the hood
 
 1. **Discovery** — MCTS parses the Python file and finds all `@tool` handlers, their descriptions, input schemas, and handler source code
-2. **Analysis** — 20 security analyzers check for permissions, injection, secrets, command execution, attack chains, and more
+2. **Analysis** — 25+ security analyzers check for permissions, injection, secrets, command execution, attack chains, and more
 3. **Scoring** — Findings are weighted by severity and converted to a 0–100 score
 4. **Report** — Results appear in your terminal
 
@@ -191,19 +226,32 @@ uv run mcts scan examples/vulnerable-mcp-server/server.py --no-progress    # CI-
 
 ## Save JSON and SARIF
 
+By default, every scan writes artifacts to **`mcts_analysis/`** in your project folder:
+
+| File | Purpose |
+|------|---------|
+| `scan-report.json` | Full machine-readable report |
+| `scan-report.html` | Executive HTML dashboard (open directly) |
+| `scan-report.sarif` | GitHub Code Scanning upload |
+| `history.json` | Score trend across runs |
+
+Relative `-o` paths use the **basename only** under `mcts_analysis/` — e.g. `-o report.json` → `mcts_analysis/report.json`, not `./report.json`.
+
 ### JSON (full report)
 
 ```bash
 uv run mcts scan examples/vulnerable-mcp-server/server.py -o report.json
+# → writes mcts_analysis/report.json (+ HTML + SARIF)
 ```
 
-The JSON contains everything: server metadata, all findings, score breakdown, and attack chain graph. Use this as input for `mcts report` or CI automation.
+The JSON contains everything: server metadata, all findings, score breakdown, and attack chain graph. Use this for CI automation or `mcts report` (paths auto-resolve under `mcts_analysis/`).
 
 ### SARIF (GitHub Code Scanning)
 
 ```bash
 uv run mcts scan examples/vulnerable-mcp-server/server.py \
   -o report.sarif --format sarif
+# → writes mcts_analysis/report.sarif
 ```
 
 Upload to GitHub with `github/codeql-action/upload-sarif`. See [CI Integration](../platform/ci-integration.md).
@@ -212,21 +260,26 @@ Upload to GitHub with `github/codeql-action/upload-sarif`. See [CI Integration](
 
 ## HTML security dashboard
 
-Generate a shareable report for security teams or leadership:
+Every scan already writes **`mcts_analysis/scan-report.html`**. Open it directly after scanning — no extra step required.
+
+To regenerate HTML from an existing JSON file:
 
 ```bash
 uv run mcts scan examples/vulnerable-mcp-server/server.py -o report.json
-uv run mcts report report.json -o security-report.html
-open security-report.html   # macOS
+open mcts_analysis/scan-report.html   # macOS — written automatically on scan
+# optional:
+uv run mcts report report.json        # resolves to mcts_analysis/report.json
 ```
 
 The dashboard is a single self-contained HTML file with:
 
-- Score gauge and letter grade (A–F)
+- Score gauge, letter grade, and partitioned area scores
 - Severity breakdown and category radar chart
-- Searchable findings table with remediation advice
-- Attack chain visualization
-- OWASP LLM Top 10 mapping
+- Searchable findings table (location, CWE, technique links, expandable evidence)
+- Full **MCTS-T technique grid** (79 techniques) with Detected / Clear filters
+- **Tool capability matrix** and attack chain visualization
+- **OWASP LLM + MCP Top 10** mapping with coverage gap cards
+- Scan history trend chart
 - In-browser export (JSON, HTML, PDF)
 
 Full layout reference: [HTML Security Dashboard](../reporting/html-report.md).
@@ -265,18 +318,19 @@ See [Remote Scanning](../scanning/remote-scanning.md).
 
 ---
 
-## Optional: other scan modes
+## Other scan modes
 
-| Mode | Command | When to use |
-|------|---------|-------------|
-| Static JSON snapshot | `mcts scan . --snapshot ./tools-list.json` | Air-gapped CI, no network |
-| Multi-surface | `mcts scan ./repo/ --surfaces tool,prompt,resource,instruction` | Check prompts and resources too |
-| Supply chain | `mcts scan ./repo/ --pip-audit --npm-audit` | Check dependency CVEs |
-| Config inventory | `mcts inventory --scan` | Audit MCP servers on your machine |
-| Protocol fuzzing | `mcts fuzz ./server.py --i-understand-live-risk` | Test server error handling |
-| Readiness | `mcts readiness ./repo/` | Production readiness (non-security) |
+Most users start with a **static scan** (`mcts scan ./server.py`). When you need something else:
 
-Each mode has a dedicated guide in [Scanning](../scanning/README.md).
+| If you… | Read |
+|---------|------|
+| Have source code on disk (default) | You're in the right place — keep reading below |
+| Need to probe a running server | [Live scanning](../scanning/live-scanning.md) |
+| Have a hosted URL, no source | [Remote scanning](../scanning/remote-scanning.md) |
+| Have exported JSON, no network | [Static snapshot](../scanning/static-snapshot.md) |
+| Aren't sure which applies | [Which scan mode should I use?](../scanning/README.md#which-scan-mode-should-i-use) |
+
+**Also useful:** `mcts inventory --scan` (audit local configs) · `mcts scan --machine-wide` (all configs) · `mcts doctor .` (preflight) · [full task list](../index.md#i-want-to)
 
 ---
 
@@ -295,15 +349,31 @@ GitHub Action: [CI Integration](../platform/ci-integration.md) · [action/README
 
 ---
 
+## Optional: one-command auto scan
+
+When you are unsure which entrypoint or MCP config to use:
+
+```bash
+mcts scan . --auto
+mcts scan . --auto --auto-server my-server -o report.json --html report.html
+```
+
+`--auto` picks a single entrypoint, a lone config server, or falls back to repo scan. It never enables live probing.
+
+---
+
 ## Troubleshooting
 
 | Symptom | Likely cause | Fix |
 |---------|--------------|-----|
+| `externally-managed-environment` / PEP 668 | `pip install` into system Python | Use `uvx mcp-mcts`, `pipx install mcp-mcts`, or a dedicated venv |
+| `mcts: command not found` | Tool not on PATH | `pipx ensurepath`, `uv tool update-shell`, or use `uvx mcp-mcts` |
+| Dependency conflicts after install | MCTS installed in app `.venv` | Use isolated install; avoid `pip install mcp-mcts[all]` in app venv |
 | Exit code 2, "Live probing requires consent" | Missing consent flag | Add `--i-understand-live-risk` or `MCTS_LIVE_OK=1` |
 | Exit code 2, "Unknown format" | Invalid `--format` | Use `json` or `sarif` |
 | No tools discovered | Wrong target or empty repo | Point at server entrypoint; check `--languages` |
 | Score seems wrong | Compliance findings in report | Only scorable analyzers affect score; check `score.basis` |
-| `mcp` import error | Missing extra | `uv sync --extra mcp` |
+| `mcp` import error | Missing extra | `uv sync --extra mcp` or `uvx --from 'mcp-mcts[mcp]' mcts …` |
 | Remote scan fails | Missing consent or auth | `--i-understand-live-risk` + `--bearer-token` |
 | TS tools missing | Language filter | Use `--languages typescript` |
 
@@ -313,10 +383,8 @@ GitHub Action: [CI Integration](../platform/ci-integration.md) · [action/README
 
 | I want to… | Guide |
 |------------|-------|
-| See every CLI flag | [CLI Reference](../platform/cli.md) |
-| Understand the pipeline | [Architecture](../analysis/architecture.md) |
-| Learn what each check does | [Security Checks](../analysis/security-checks.md) |
-| Set up CI/CD | [CI Integration](../platform/ci-integration.md) |
-| Understand technique IDs | [Threat Taxonomy](../reporting/taxonomy.md) |
-| Understand the score formula | [Scoring Specification](../reporting/scoring-spec.md) |
-| Look up a term | [Glossary](../glossary.md) |
+| Pick live vs remote vs snapshot | [Which scan mode?](../scanning/README.md#which-scan-mode-should-i-use) |
+| See every CLI flag | [CLI reference](../platform/cli.md) |
+| Understand a finding | [Security checks](../analysis/security-checks.md) |
+| Set up CI/CD | [CI integration](../platform/ci-integration.md) |
+| Full doc map | [Documentation index](../index.md) |

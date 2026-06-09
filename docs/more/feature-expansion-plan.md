@@ -2,10 +2,9 @@
 
 > [Documentation](../index.md) → [More](README.md)
 
-This is the **detailed implementation guide** for evolving MCTS from an alpha scanner to a full MCP security platform. It covers gap analysis, module layout, build order, and success criteria.
+> **Using MCTS to scan servers?** This document is for **contributors and maintainers**. Start with [Getting started](../get-started/getting-started.md) instead.
 
-> **Just want to use MCTS?** See [Getting Started](../get-started/getting-started.md).
-> **High-level direction?** See [Product Roadmap](roadmap.md) and [Product Positioning](product-positioning.md).
+This is the **detailed implementation guide** for evolving MCTS from an alpha scanner to a full MCP security platform.
 
 **Related:** [Product Roadmap](roadmap.md) · [Architecture](../analysis/architecture.md) · [CLI Reference](../platform/cli.md)
 
@@ -35,22 +34,22 @@ This is the **detailed implementation guide** for evolving MCTS from an alpha sc
 | **Attack chains** | `attack_chains.py` | Capability-graph BFS on per-tool profiles |
 | **Scoring** | `scoring/engine.py` | Exponential decay + auditable `ScoreBasis` + `--fail-on-category` |
 | **Compliance** | `compliance/checks.py` | OWASP LLM meta-findings |
-| **CLI** | `cli/main.py` | `scan`, `report`, `inventory`, `fuzz`, `readiness`, `serve`; stub `pentest` |
+| **CLI** | `cli/main.py` | `scan`, `report`, `inventory`, `fuzz`, `readiness`, `serve`, `vet`, `pentest`, `doctor`, `snapshot`, `scan-mcp`; `mcts-mcp` server mode |
 | **Terminal UI** | `ui/*` | Rich themes, progress, report renderer, `--terminal-format` |
 | **HTML dashboard** | `report/*`, `reporting/html.py` | Full executive UI from JSON |
 | **REST API** | `api/app.py` | FastAPI — 10 endpoints (`--extra api`) |
-| **Tests** | `tests/` | 138+ tests incl. technique regression (34 techniques) |
+| **Tests** | `tests/` | 350+ tests incl. technique regression (79 techniques) |
 | **CI** | `action/action.yml`, `.github/workflows/ci.yml` | SARIF scan validation; Action `@v1` published |
 
 ### Remaining gaps (honest)
 
 - `PromptInjectionAnalyzer` — heuristic metadata patterns; live payload injection not sent
 - `JailbreakAnalyzer` — weighted manipulation score heuristic; not live agent red-teaming
-- `mcts pentest` — stub only
-- Scan history / `mcts trend` — planned (`.mcts/history/`)
+- Scan history / HTML trend chart — **shipped** (`mcts_analysis/history.json`)
 - Remote protocol fuzz — `mcts fuzz` is stdio-only; `--url` fuzz planned
 - HTML Capability Matrix + Technique Map — planned dashboard sections
-- Expanded behavioral eval corpus — 22 cases in `eval/behavioral/`; full parity corpus still growing
+- Expanded behavioral eval corpus — growing; full 100+ handler parity still in progress
+- Deep multi-language CFG/taint — tree-sitter today; full 10-language cross-file taint partial
 
 ### Architectural strengths to preserve
 
@@ -77,17 +76,19 @@ This is the **detailed implementation guide** for evolving MCTS from an alpha sc
 | Behavioral doc vs code mismatch | `ImplementationDriftAnalyzer` | P2 |
 | Rug-pull / baseline diff | `ManifestBaselineStore` | P2 |
 | Supply chain / deps | `DependencyPostureAnalyzer` | P2 |
-| Package pre-install scan | `mcts vet <package>` | P3 |
-| MCTS threat taxonomy | `technique_id` + `mitigation_ids` on `Finding` | P1 |
-| SARIF / CI gates | `reporting/sarif.py` + published Action | P0 |
+| Package pre-install scan | `mcts vet <package>` | P0 — shipped |
+| MCTS threat taxonomy | `technique_id` + `mitigation_ids` on `Finding` | P1 — shipped |
+| SARIF / CI gates | `reporting/sarif.py` + published Action | P0 — shipped |
 | REST API | `mcts serve` (optional) | P1 — shipped |
-| MCP server mode | `mcts-mcp` stdio tools | P3 |
-| LLM semantic review | `mcts review --llm` (opt-in) | P3 |
-| Skills scanning | `mcts inventory --skills` | P3 |
-| Fuzzing | `mcts fuzz` (protocol probes) | P2 |
+| MCP server mode | `mcts-mcp` stdio tools | P0 — shipped |
+| LLM semantic review | `--llm-judge`, `--llm-triage` (opt-in) | P1 — shipped |
+| Semgrep SAST + Java | `--semgrep` adapter | P0 — shipped |
+| Skills scanning | `mcts inventory --skills` | P0 — shipped |
+| Machine-wide scan | `mcts scan --machine-wide` | P0 — shipped |
+| Fuzzing | `mcts fuzz` (protocol probes) | P2 — shipped |
 | Config red-team | `mcts audit-config` (dry-run) | P2 |
 | Benchmark corpus | `examples/` + `benchmarks/expected/` | P1 |
-| Trend / history | `.mcts/history/` | P2 |
+| Trend / history | `mcts_analysis/history.json` | Shipped in HTML |
 
 ---
 
@@ -306,8 +307,9 @@ mcts scan --check-baseline .mcts/baseline.json
 
 #### 2.6 Report history + trend
 
-- Append scans to `.mcts/history/<target-hash>.jsonl`
-- Populate HTML trend chart; `mcts trend ./server.py`
+- Append scans to `mcts_analysis/history.json` (**shipped**)
+- HTML trend sparkline + table (**shipped**)
+- Standalone `mcts trend ./server.py` CLI — planned
 
 ---
 
@@ -451,13 +453,18 @@ Week 11+:  Phase 2 (fuzz, audit-config, baselines, drift, TS discovery)
 - [x] `--fail-on-category` category gates for CI
 - [x] `mcts fuzz` safe read-only protocol probes (stdio)
 - [x] REST API (`mcts serve`) with per-surface scan endpoints
-- [ ] HTML dashboard trend + capability matrix from real data
-- [ ] Benchmark suite expanded beyond 34 technique fixtures
+- [x] HTML dashboard trend + capability matrix from real data
+- [ ] Benchmark suite expanded beyond 79 technique fixtures
 - [ ] `mcts audit-config` replaces stub with safe, deterministic behavior
 - [ ] Remote protocol fuzz (`mcts fuzz --url`)
-- [ ] Semgrep SAST adapter + Java (`--semgrep` extra)
-- [ ] Skills / `SKILL.md` inventory scanning
-- [ ] MCP server mode (`mcts-mcp`) with `scan_mcp_target`, `explain_finding`
+- [x] Semgrep SAST adapter + Java (`--semgrep` extra)
+- [x] Skills / `SKILL.md` inventory scanning
+- [x] MCP server mode (`mcts-mcp`) with `scan_mcp_target`, `explain_finding`
+- [x] Package vetting (`mcts vet`)
+- [x] Structured pentest (`mcts pentest`)
+- [x] Machine-wide scan (`mcts scan --machine-wide`)
+- [x] LLM metadata triage (`--llm-triage`)
+- [x] Governance YAML policies (`--policy`)
 - [ ] CycloneDX / AI-BOM export from inventory + findings
 - [ ] Interactive attack-graph HTML dashboard
 - [ ] Runtime stdio proxy with inline detectors (opt-in extra)
@@ -471,17 +478,17 @@ Prioritized themes from the **240-item gap backlog** (213 actionable + 27 alread
 
 ### P0 — Must close for core MCP scanner completeness
 
-| ID theme | Deliverable | Module / CLI |
-|----------|-------------|--------------|
-| Per-technique SAF scan | `--technique SAF-T-xxxx` or dedicated subcommand | `cli/`, SAF pack loader |
-| Semgrep taint backend | Optional `--semgrep`; Java rules included | `analyzers/semgrep_adapter.py` |
-| Behavioral SAST depth | 10-language CFG + doc/code alignment | `analyzers/behavioral_static.py`, `sast/` |
-| Skills scanning | `mcts inventory --skills`, `SKILL.md` analyzers | `inventory/`, `analyzers/` |
-| Machine-wide scan | Default scan all well-known client configs | `cli/main.py`, `inventory/` |
-| Pre-install vet | `mcts vet pypi:pkg` / `npm:pkg` | new `vet/` |
-| MCP server mode | `mcts-mcp` stdio tools for IDE agents | `mcp_server/` |
-| Prompt firewall / action gate | BLOCK/WARN on tool calls (MCP server or hook) | optional `guard/` |
-| Fleet / Evo integration | Document defer or minimal upload API | `enterprise/` |
+| ID theme | Deliverable | Status | Module / CLI |
+|----------|-------------|--------|--------------|
+| Per-technique MCTS-T scan | `--technique MCTS-T-xxxx` | Shipped | `cli/`, `taxonomy/technique_mode.py` |
+| Semgrep taint backend | Optional `--semgrep`; Java rules included | Shipped | `analyzers/semgrep_adapter.py` |
+| Skills scanning | `mcts inventory --skills`, `SKILL.md` analyzers | Shipped | `inventory/`, `analyzers/skill_md.py` |
+| Machine-wide scan | Default scan all well-known client configs | Shipped | `scan/machine_wide.py`, `cli/` |
+| Pre-install vet | `mcts vet pypi:pkg` / `npm:pkg` / `oci:` | Shipped | `vet/` |
+| MCP server mode | `mcts-mcp` stdio tools for IDE agents | Shipped | `mcp_server/` |
+| Behavioral SAST depth | 10-language CFG + doc/code alignment | Partial | `analyzers/behavioral_static.py`, `sast/` |
+| Prompt firewall / action gate | BLOCK/WARN on tool calls (MCP server or hook) | Missing | optional `guard/` |
+| Fleet / Evo integration | Document defer or minimal upload API | Missing | `enterprise/` |
 
 ### P1 — Differentiation + enterprise readiness
 
@@ -525,7 +532,7 @@ Prioritized themes from the **240-item gap backlog** (213 actionable + 27 alread
 
 1. **Attack-chain-first** capability graph (BFS + category gates)
 2. **Auditable exponential scoring** with `ScoreBasis`
-3. **MCTS-T + SAF Sigma** in one scan pipeline
+3. **MCTS-T + bundled Sigma** in one scan pipeline
 4. **Executive HTML dashboard** without a reporting server
 5. **Readiness + OPA** for deploy-time policy
 6. **YARA + line-jumping** metadata defenses
@@ -573,7 +580,7 @@ Maintainers track detailed cross-tool mappings in a **local-only** audit.
 | GAP-065 | Package typosquatting | Partial | P1 | 2 | Package name similarity |
 | GAP-066 | RAG KB corpus | Missing | P2 | 4 | PgVector enrichment |
 | GAP-067 | Threat intel DDG/Arxiv/HN | Missing | P2 | 4 | Citation enrichment |
-| GAP-068 | LLM metadata triage | Partial | P1 | 3 | malicious/safe/suspect |
+| GAP-068 | LLM metadata triage | Shipped | P1 | 3 | `--llm-triage` malicious/safe/suspect |
 | GAP-069 | Cross-file LLM verdict | Partial | P1 | 3 | Staged HIGH/LOW pipeline |
 | GAP-070 | Pre-LLM rule hints | Missing | P1 | 2 | Chunk-level hints |
 | GAP-071 | LLM evidence-required review | Partial | P1 | 2 | file/lines/snippet |
@@ -582,7 +589,7 @@ Maintainers track detailed cross-tool mappings in a **local-only** audit.
 | GAP-074 | Auto-fix 165 templates | Missing | P1 | 4 | MCP subset only |
 | GAP-075 | Framework FP suppression | Missing | P2 | 4 | Django/FastAPI context |
 | GAP-076 | Skills E004–E006 | Missing | P0 | 3 | Skill injection/download |
-| GAP-077 | Skills W007–W014 | Partial | P1 | 3 | Skill credential checks |
+| GAP-077 | Skills W007–W014 | Shipped | P1 | 3 | Skill credential checks |
 | GAP-078 | Toxic flow W015–W020 | Partial | P1 | 2 | TF code taxonomy |
 | GAP-079 | Cloud ML E001 poisoning | Partial | P1 | 3 | Cloud ML E001 poisoning detection |
 | GAP-080 | Cross-server E002 | Partial | P1 | — | Inventory overlap |
@@ -628,15 +635,15 @@ Maintainers track detailed cross-tool mappings in a **local-only** audit.
 | GAP-026 | inspect subcommand | Missing | P1 | 2 | Read-only surface listing |
 | GAP-027 | evo fleet push | Missing | P0 | 4 | Fleet upload API integration |
 | GAP-028 | guard install/uninstall | Missing | P0 | 4 | Agent Guard hooks |
-| GAP-029 | --skills / SKILL.md scan | Missing | P0 | 3 | Skills dir + SKILL.md |
+| GAP-029 | --skills / SKILL.md scan | Shipped | P0 | 3 | `mcts inventory --skills` |
 | GAP-030 | Per-server consent | Partial | P1 | 2 | y/n per stdio server |
 | GAP-031 | --control-server bootstrap | Missing | P0 | 4 | Fleet scan upload |
-| GAP-032 | --full-toxic-flows | Partial | P1 | 2 | W015–W020 / TF codes |
+| GAP-032 | --full-toxic-flows | Shipped | P1 | 2 | W015–W020 / TF codes |
 | GAP-033 | --mcp-oauth-tokens-path | Partial | P2 | 3 | File-backed OAuth tokens |
 | GAP-034 | Traffic capture / stderr UX | Partial | P2 | 3 | Colored per-server stderr |
 | GAP-035 | --analysis-url cloud ML | Partial | P1 | 3 | E/W/TF issue codes |
 | GAP-036 | init client MCP setup | Missing | P1 | 4 | Auto-configure clients |
-| GAP-037 | doctor diagnostics | Missing | P1 | 4 | Dep + extras check |
+| GAP-037 | doctor diagnostics | Shipped | P1 | 4 | `mcts doctor` dep + extras check |
 | GAP-038 | init-hooks pre-commit | Missing | P2 | 4 | Pre-commit installer |
 | GAP-039 | benchmark harness | Partial | P2 | 4 | Precision metrics |
 | GAP-040 | audit/harden OpenClaw | Missing | P3 | — | Niche ecosystem |
@@ -650,7 +657,7 @@ Maintainers track detailed cross-tool mappings in a **local-only** audit.
 
 | GAP | Feature | Status | P | Ph | Notes |
 |:----|:--------|:-------|:--|:---|:------|
-| GAP-230 | OWASP MCP Top 10 full 10/10 map | Partial | P1 | 2 | Full OWASP MCP Top 10 report |
+| GAP-230 | OWASP MCP Top 10 full 10/10 map | Shipped | P1 | 2 | Compliance meta-findings |
 
 ### Data (4)
 
@@ -669,7 +676,7 @@ Maintainers track detailed cross-tool mappings in a **local-only** audit.
 | GAP-096 | VS Code workspaceStorage | Missing | P0 | 3 | Profiles/extensions |
 | GAP-097 | Claude Code plugin globs | Missing | P1 | 3 | **/.mcp.json, **/skills |
 | GAP-098 | AgentDiscoverer ABC | Missing | P1 | 3 | Phase A/B pipeline |
-| GAP-099 | Skills dirs per client | Missing | P0 | 3 | .cursor/skills etc |
+| GAP-099 | Skills dirs per client | Shipped | P0 | 3 | `.cursor/skills` etc |
 | GAP-100 | Claude commands *.md | Missing | P2 | 3 | Command markdown scan |
 | GAP-101 | macOS codesign trust | Missing | P2 | 3 | Stdio binary trust |
 | GAP-102 | WSL profile merge | Missing | P2 | 3 | Windows+WSL configs |
@@ -727,16 +734,16 @@ Maintainers track detailed cross-tool mappings in a **local-only** audit.
 
 | GAP | Feature | Status | P | Ph | Notes |
 |:----|:--------|:-------|:--|:---|:------|
-| GAP-222 | YAML governance policies + allowlist | Partial | P1 | 2 | YAML governance + allowlist rules |
+| GAP-222 | YAML governance policies + allowlist | Shipped | P1 | 2 | `--policy` + `.mcts/policy.yaml` |
 
 ### Integration (11)
 
 | GAP | Feature | Status | P | Ph | Notes |
 |:----|:--------|:-------|:--|:---|:------|
-| GAP-159 | MCP tool scan_mcp_server | Partial | P0 | 2 | Via mcts-mcp |
-| GAP-160 | MCP tool explain_finding | Missing | P0 | 2 | Part of mcts-mcp |
+| GAP-159 | MCP tool scan_mcp_server | Shipped | P0 | 2 | Via mcts-mcp |
+| GAP-160 | MCP tool explain_finding | Shipped | P0 | 2 | Part of mcts-mcp |
 | GAP-161 | MCP tool propose_mitigation_patch | Missing | P3 | — | MCP tool mitigation patch proposal |
-| GAP-162 | MCP tool list_techniques | Partial | P0 | 2 | server/src/lib.rs |
+| GAP-162 | MCP tool list_techniques | Shipped | P0 | 2 | Bundled taxonomy export |
 | GAP-163 | MCP tool scanner_health | Missing | P1 | 2 | Engine diagnostics |
 | GAP-164 | Claude Code plugin | Missing | P1 | 4 | 9 slash commands |
 | GAP-165 | Smithery marketplace | Missing | P2 | 4 | Distribution channel |
@@ -770,7 +777,7 @@ Maintainers track detailed cross-tool mappings in a **local-only** audit.
 | GAP | Feature | Status | P | Ph | Notes |
 |:----|:--------|:-------|:--|:---|:------|
 | GAP-125 | Auto-fix MCP findings | Missing | P1 | 4 | Top MCP rules |
-| GAP-126 | Scan history / trend | Missing | P2 | 4 | CI regression trends |
+| GAP-126 | Scan history / trend | Shipped | P2 | 4 | `mcts_analysis/history.json` + HTML chart |
 | GAP-127 | E/W/X/TF issue codes | Partial | P2 | 2 | Dual taxonomy option |
 | GAP-128 | Verbosity/token tiers | Missing | P1 | 2 | minimal/compact/full |
 | GAP-129 | Pre-rendered API strings | Missing | P3 | — | String templates |
@@ -801,14 +808,14 @@ Maintainers track detailed cross-tool mappings in a **local-only** audit.
 
 | GAP | Feature | Status | P | Ph | Notes |
 |:----|:--------|:-------|:--|:---|:------|
-| GAP-001 | Per-technique scan mode | Missing | P0 | 2 | Run one technique pack at a time |
-| GAP-002 | Semgrep taint backend | Missing | P0 | 3 | Optional `--semgrep`; includes Java |
-| GAP-003 | Java SAST | Missing | P0 | 3 | Part of Semgrep adapter |
-| GAP-004 | Agentic multi-agent pentest | Stub | P0 | 4 | Agno team; structured JSON output |
-| GAP-005 | Pre-install package vet | Missing | P0 | 2 | npm:/pypi: before install |
-| GAP-006 | Machine-wide default scan | Missing | P0 | 2 | Scan all well-known configs |
+| GAP-001 | Per-technique scan mode | Shipped | P0 | 2 | `--technique MCTS-T-*` |
+| GAP-002 | Semgrep taint backend | Shipped | P0 | 3 | `--semgrep`; bundled rules include Java |
+| GAP-003 | Java SAST | Shipped | P0 | 3 | Part of Semgrep adapter |
+| GAP-004 | Agentic multi-agent pentest | Shipped | P0 | 4 | `mcts pentest` structured phases |
+| GAP-005 | Pre-install package vet | Shipped | P0 | 2 | `mcts vet pypi:` / `npm:` / `oci:` |
+| GAP-006 | Machine-wide default scan | Shipped | P0 | 2 | `mcts scan --machine-wide` |
 | GAP-007 | Batch config scan | Missing | P0 | 1 | All servers in MCP JSON |
-| GAP-008 | known-configs scan all | Partial | P0 | 1 | inventory --scan one-shot |
+| GAP-008 | known-configs scan all | Shipped | P0 | 1 | `mcts inventory --scan-all` |
 | GAP-009 | GitHub URL scan target | Missing | P2 | 3 | Shallow clone / zip |
 | GAP-010 | Git-diff scoped scan | Missing | P1 | 4 | --diff-base for PR CI |
 | GAP-011 | Scoped file/line scan | Missing | P2 | 3 | File/selection/git-diff scopes |
@@ -836,7 +843,7 @@ Maintainers track detailed cross-tool mappings in a **local-only** audit.
 | GAP | Feature | Status | P | Ph | Notes |
 |:----|:--------|:-------|:--|:---|:------|
 | GAP-151 | run_determinism_benchmark.py | Missing | P1 | 4 | LLM reproducibility |
-| GAP-152 | run_scans.sh batch | Missing | P2 | 2 | Batch SAF-T scans |
+| GAP-152 | run_scans.sh batch | Missing | P2 | 2 | Batch MCTS-T scans |
 | GAP-153 | Makefile ci/binary/publish | Missing | P2 | 4 | Packaging automation |
 | GAP-154 | Pre-commit hook template | Missing | P2 | 4 | init-hooks companion |
 | GAP-155 | build_bloom_filters | Missing | P1 | 2 | Hallucination data build |
@@ -860,11 +867,11 @@ Maintainers track detailed cross-tool mappings in a **local-only** audit.
 
 | GAP | Feature | Status | P | Ph | Notes |
 |:----|:--------|:-------|:--|:---|:------|
-| GAP-137 | 73 Sigma rules | Partial | P1 | 1 | 73 files in SAF corpus |
+| GAP-137 | 73 Sigma rules | Partial | P1 | 1 | Bundled metadata rule corpus |
 | GAP-138 | 53 mitigation docs | Partial | P2 | 1 | Effectiveness ratings |
 | GAP-139 | 73 test-logs regression | Partial | P1 | 1 | Scale harness |
 | GAP-140 | 73 technique READMEs | Partial | P2 | 1 | Narrative dossiers |
-| GAP-141 | 32 uncovered SAF-T crosswalk | Partial | P1 | 1 | See gap analysis |
+| GAP-141 | Uncovered technique crosswalk | Partial | P1 | 1 | See gap analysis |
 | GAP-142 | Technique YAML + schema | Missing | P2 | 2 | Portable technique packs |
 | GAP-145 | LLM prompts (6 files) | Missing | P1 | 3 | Prompt library |
 | GAP-146 | Readiness LLM judge prompt | Partial | P2 | 3 | Engineered prompt |
@@ -892,23 +899,23 @@ Maintainers track detailed cross-tool mappings in a **local-only** audit.
 
 | ID | Feature | MCTS | Notes |
 |:---|:--------|:-----|:------|
-| L1-02 | Data-flow / taint analysis | P | MCTS tree-sitter taint; no Semgrep backend (GAP-002) |
-| L1-03 | Java SAST | N | GAP-003 |
+| L1-02 | Data-flow / taint analysis | P | MCTS tree-sitter taint + optional `--semgrep` backend |
+| L1-03 | Java SAST | P | `--semgrep` bundled Java rules |
 | L1-08 | SQL injection (code) | P | Partial via SAST patterns |
 | L1-13 | Malicious package / hallucinated pkg | P | GAP in MCTS for npm hallucination |
 | L1-14 | License compliance | N | — |
 | L1-15 | Abandoned dep / maintainer risk | N | — |
 | L1-17 | Cross-file analysis | P | GAP-064 cross-file taint |
-| L1-20 | Semgrep rule pack | N | GAP-002 |
+| L1-20 | Semgrep rule pack | P | Bundled `sast/semgrep/rules/mcts-mcp.yaml` |
 | L1-22 | Container / image scan | N | GAP — OCI scan |
 | L1-23 | IaC scan (TF/K8s/Helm) | N | GAP — IaC posture |
 | L1-24 | GPU / ML artifact scan | N | Niche ML artifact scan |
 | L1-25 | Instruction file SAST (.cursorrules) | P | GAP-029 skills |
 | L2-03 | ANSI / control-char smuggling | P | Partial metadata checks |
-| L2-20 | Per-technique SAF scan mode | P | GAP-001; `--technique` partial |
-| L3-01 | Agent config / harness discovery | P | inventory; GAP-006 machine-wide |
-| L3-02 | Skills / SKILL.md scanning | N | GAP-029 |
-| L3-05 | Multi-agent red-team pentest | Pln | `mcts pentest` stub GAP-004 |
+| L2-20 | Per-technique MCTS-T scan mode | P | `--technique` shipped (GAP-001) |
+| L3-01 | Agent config / harness discovery | P | inventory + `--machine-wide` (GAP-006) |
+| L3-02 | Skills / SKILL.md scanning | P | `mcts inventory --skills` (GAP-029) |
+| L3-05 | Multi-agent red-team pentest | P | `mcts pentest` structured phases (GAP-004) |
 | L3-06 | Agent hook / guard install | N | GAP-028 guard.py |
 | L3-07 | Fleet / Evo push telemetry | N | GAP-027 |
 | L3-08 | Managed agent misconfig (ASI) | N | ASI-03–07 class checks |
@@ -928,7 +935,7 @@ Maintainers track detailed cross-tool mappings in a **local-only** audit.
 | L5-06 | Public trust registry | N | GAP — optional feed |
 | L5-07 | Publisher trust / reputation score | N | Community reputation signals |
 | L5-08 | Security badge embed | N | — |
-| L5-09 | Pre-install package vet (`npm:`/`pypi:`) | N | GAP-005 `mcts vet` |
+| L5-09 | Pre-install package vet (`npm:`/`pypi:`) | P | `mcts vet` (GAP-005) |
 | L5-10 | Registry ID resolution (official MCP) | N | GAP — registry ID lookup |
 | L5-12 | Maintainer / repo takeover signals | N | — |
 | L5-13 | OpenSSF Scorecard integration | N | GAP — Scorecard enrichment |
@@ -939,7 +946,7 @@ Maintainers track detailed cross-tool mappings in a **local-only** audit.
 | L6-10 | Compliance evidence ZIP bundle | N | GAP — evidence export |
 | L7-04 | Interactive attack graph UI | P | MCTS HTML dashboard planned |
 | L7-07 | Credential flow graph | N | Gap |
-| L7-11 | Trend / historical dashboard | Pln | `.mcts/history` planned |
+| L7-11 | Trend / historical dashboard | Shipped | HTML sparkline + `history.json` |
 | L8-03 | Interactive fix agent / loop | N | GAP — fix agent loop |
 | L8-04 | Auto-generated PR | Pln | Roadmap |
 | L8-05 | Auto-apply patch / undo | N | GAP — patch undo flow |

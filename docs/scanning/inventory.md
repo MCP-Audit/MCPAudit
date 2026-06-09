@@ -18,6 +18,8 @@ If you use Cursor, Claude Desktop, or VS Code with MCP servers, those apps store
 
 With `--scan`, MCTS also runs a lightweight security scan on each server's entrypoint.
 
+With `--skills`, MCTS discovers `SKILL.md` files under well-known agent skill directories (for example `.cursor/skills`) and flags prompt-injection or exfiltration patterns.
+
 ---
 
 ## Commands
@@ -28,6 +30,15 @@ mcts inventory
 
 # Static-scan each entrypoint + export JSON
 mcts inventory --scan -o inventory.json
+
+# Scan agent SKILL.md files for injection/exfil patterns
+mcts inventory --skills -o inventory.json
+
+# Full security scan on every discovered server (GAP-008)
+mcts inventory --scan-all -o inventory-scan-all.json
+
+# Toxic flow analysis W015–W020 across servers
+mcts inventory --full-toxic-flows
 
 # Theme for saved-notice styling only
 mcts inventory --theme minimal -o inventory.json
@@ -198,7 +209,7 @@ See [Live Scanning](live-scanning.md).
 |------------|--------|
 | Local configs only | No remote fleet or enterprise MDM discovery |
 | Heuristic entrypoint resolution | `--scan` may miss non-Python launch patterns |
-| Four clients today | Broader agent support on [roadmap](../more/roadmap.md) — see [Planned discovery](#planned-discovery) |
+| Four clients in original inventory | Expanded to 12+ agent clients — see [inventory.md](../scanning/inventory.md) |
 | No secret values in export | Only `env_keys` names — not values |
 | Ephemeral CI runners | GitHub-hosted runners typically have no user MCP configs |
 
@@ -206,16 +217,17 @@ See [Live Scanning](live-scanning.md).
 
 ## Planned discovery
 
-Competitor audit gaps targeting inventory and config discovery (GAP-095–105, GAP-218–231):
+Planned inventory and discovery gaps (GAP-095–105, GAP-218–231):
 
 | Capability | Status | Phase | GAP |
 |------------|--------|-------|-----|
-| 12+ agent clients (Gemini, Codex, OpenClaw, Amazon Q…) | Partial | 3 | GAP-095 |
+| 12+ agent clients (Gemini, Codex, OpenClaw, Amazon Q…) | Shipped | 3 | GAP-095 |
 | VS Code `workspaceStorage` / profiles | Missing | 3 | GAP-096 |
 | Claude Code plugin + project-level globs | Missing | 3 | GAP-097 |
-| Skills dirs (`.cursor/skills`, etc.) | Missing | 3 | GAP-099 |
-| `mcts inventory --skills` | Missing | 2 | GAP-029 |
-| Machine-wide scan without explicit target | Missing | 2 | GAP-006 |
+| Skills dirs (`.cursor/skills`, etc.) | Shipped | 2 | GAP-099 |
+| `mcts inventory --skills` | Shipped | 2 | GAP-029 |
+| `mcts inventory --scan-all` | Shipped | 2 | GAP-008 |
+| Machine-wide scan without explicit target | Shipped | 2 | GAP-006 |
 | `--scan-all-users` multi-home | Missing | 3 | GAP-021 |
 | macOS codesign trust on stdio binaries | Missing | 3 | GAP-101 |
 | WSL profile merge | Missing | 3 | GAP-102 |

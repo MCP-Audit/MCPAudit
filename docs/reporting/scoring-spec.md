@@ -24,6 +24,23 @@ Compliance findings (OWASP mapping) appear in reports but do **not** affect the 
 
 **Implementation:** `src/mcts/scoring/engine.py`
 
+### Partitioned scores (MCP vs supply chain)
+
+Reports may include `score_breakdown` with decomposed scores:
+
+| Field | Meaning |
+|-------|---------|
+| `mcp_surface` | Tool/metadata analyzers (permissions, injection, chains, …) |
+| `supply_chain` | CVE and dependency analyzers (`supply_chain`, `vulnerable_package`, `npm_audit`) |
+| `dependency_hygiene` | Unpinned version findings |
+| `composite` | Weighted blend: `0.6×mcp + 0.25×supply + 0.15×hygiene` |
+
+`score.overall` remains the full finding set (backward compatible). `--min-score` gates on `score.overall`.
+
+`scan_scope` on each report: `entrypoint`, `repository`, `config-static`, `live`, or `snapshot`.
+
+**Implementation:** `src/mcts/scoring/partitions.py`, `src/mcts/scoring/categories.py`
+
 ---
 
 ## Design goals
@@ -78,7 +95,7 @@ overall = round(100 × e^(-raw_risk / 50))
 | 1 Critical + 2 High | 45 | 41 |
 | 3 Critical + 7 High + 2 Medium | 151 | **5** |
 
-Example servers: `examples/safe-mcp-server/` (~100), `examples/medium-risk-mcp-server/` (~67), `examples/vulnerable-mcp-server/` (~5).
+Example servers: `examples/baseline-mcp-server/` (~100), `examples/medium-risk-mcp-server/` (~67), `examples/vulnerable-mcp-server/` (~5).
 
 ---
 

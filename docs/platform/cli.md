@@ -5,7 +5,12 @@
 Complete reference for every MCTS command and flag. Use this when you need to look up a specific option or understand exit codes.
 
 > **New to MCTS?** Start with [Getting Started](../get-started/getting-started.md) — you don't need this full reference yet.
+> **Choosing a scan mode?** See [Which scan mode should I use?](../scanning/README.md#which-scan-mode-should-i-use).
 > **Unfamiliar with a term?** See the [Glossary](../glossary.md).
+
+**On this page:** [scan](#mcts-scan) · [report](#mcts-report) · [inventory](#mcts-inventory) · [vet](#mcts-vet) · [pentest](#mcts-pentest) · [fuzz](#mcts-fuzz) · [readiness](#mcts-readiness) · [serve](#mcts-serve) · [exit codes](#exit-codes) · [environment variables](#environment-variables)
+
+**Roadmap / GAP tables** (contributors only): [Planned CLI](../more/planned-cli.md)
 
 **Global options**
 
@@ -13,6 +18,39 @@ Complete reference for every MCTS command and flag. Use this when you need to lo
 |--------|-------------|
 | `--version` | Print `mcts` version and exit |
 | `--help` | Command-specific help |
+
+**Prerequisites:** Python 3.11+. Prefer `uvx mcp-mcts`, `pipx install mcp-mcts`, or `uv tool install mcp-mcts` — do not install into your application venv unless isolated.
+
+---
+
+## `mcts doctor`
+
+Read-only preflight checks before your first scan (no live probes).
+
+```bash
+mcts doctor .
+mcts doctor /path/to/repo --deep
+```
+
+| Flag | Description |
+|------|-------------|
+| `--deep` | Optional import dry-run for config servers |
+| `--json` | Machine-readable output |
+
+Exit **0** when checks pass; **1** on failures; **2** on user error.
+
+---
+
+## `mcts snapshot`
+
+Export live `tools/list` metadata to JSON for offline `mcts scan --snapshot`.
+
+```bash
+mcts snapshot . --config .mcp.json --server my-server \
+  --i-understand-live-risk -o tools-snapshot.json
+```
+
+Requires `--i-understand-live-risk` (or `MCTS_LIVE_OK=1` in CI).
 
 ---
 
@@ -100,6 +138,9 @@ OAuth client credentials: set via config JSON or env (`oauth_token_url`, `oauth_
 | `--protocol-probe` | false | Active MCPS HTTP checks on `--url` |
 | `--yara` | false | Enable YARA metadata analyzer (`uv sync --extra yara`) |
 | `--llm-judge` | false | Opt-in LLM-as-judge (`MCTS_LLM_API_KEY`, `--extra llm`) |
+| `--llm-triage` | false | LLM metadata triage: malicious/safe/suspect (`MCTS_LLM_API_KEY`, `--extra llm`) |
+| `--semgrep` | false | Semgrep SAST adapter (`semgrep` CLI on PATH; `--extra semgrep`) |
+| `--semgrep-rules` | — | Custom Semgrep rules file or directory (default: bundled MCP rule pack) |
 | `--cloud-inspect` | false | Opt-in cloud ML API (`MCTS_CLOUD_API_KEY`) |
 | `--virustotal` | false | VirusTotal hash lookup (`MCTS_VT_API_KEY`) |
 
@@ -113,6 +154,12 @@ OAuth client credentials: set via config JSON or env (`oauth_token_url`, `oauth_
 | `--severity-filter` | Comma-separated severities |
 | `--analyzers` | Run only listed analyzers (subset mode) |
 | `--hide-safe` | Hide low-severity informational findings in terminal output |
+| `--auto` | Auto-resolve scan target (entrypoint or config-static; static only) |
+| `--auto-server` | Server name when `--auto` finds multiple MCP servers |
+| `--machine-wide` | Scan all MCP servers in local client configs (TARGET optional) |
+| `--html` | Write HTML report after scan (same as `mcts report`) |
+
+`mcts scan .` runs a repository-wide static scan and prints MCP config hints when `.mcp.json` is present.
 
 ### Planned flags (not yet implemented)
 
@@ -132,6 +179,9 @@ Each scan prints:
 ### Examples
 
 ```bash
+# Machine-wide audit (no explicit target)
+mcts scan --machine-wide -o machine-scan-report.json
+
 # Repo scan (Python + TypeScript)
 mcts scan ./my-mcp-repo/ -o report.json
 
@@ -254,12 +304,77 @@ mcts inventory [options]
 | Flag | Default | Description |
 |------|---------|-------------|
 | `--scan` | false | Static-scan each entrypoint for tool names |
+| `--skills` | false | Discover and scan `SKILL.md` files in agent skill directories |
 | `--output`, `-o` | — | Write inventory JSON |
 | `--theme` | `cyber` | Terminal theme |
 
 Clients: Cursor, Claude Desktop, VS Code, Windsurf. Exit **1** on critical/high cross-server shadow findings.
 
 See [Config Inventory](../scanning/inventory.md).
+
+---
+
+## `mcts vet`
+
+Pre-install vetting for PyPI, npm, and OCI package references before adding them to an agent or MCP server.
+
+```bash
+mcts vet pypi:requests@2.31.0
+mcts vet npm:@modelcontextprotocol/sdk
+mcts vet oci:ghcr.io/org/mcp-server:1.0.0
+mcts vet pypi:fastmcp --json -o vet-report.json
+```
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--json` | false | Print machine-readable report to stdout |
+| `--output`, `-o` | — | Write vet report JSON |
+
+Exit **0** when no high/critical findings; **1** on high/critical issues; **2** on parse or network errors.
+
+Heuristics include typosquat detection, yanked PyPI releases, npm lifecycle scripts, suspicious metadata text, and unfamiliar OCI registries.
+
+---
+
+## `mcts-mcp`
+
+MCP server mode for IDE agents. Requires the optional `mcp` extra (`uv sync --extra mcp`).
+
+```bash
+mcts-mcp
+# or: uv run --extra mcp mcts-mcp
+```
+
+**Tools exposed over stdio:**
+
+| Tool | Description |
+|------|-------------|
+| `scan_mcp_target` | Run a full MCTS scan on a server path or repo |
+| `explain_finding` | Explain a finding from a scan report JSON by ID |
+| `compare_baselines` | Compare two scan reports (score and finding deltas) |
+
+Configure your MCP client to launch `mcts-mcp` as a stdio server.
+
+---
+
+## `mcts pentest`
+
+Structured red-team orchestration: static recon, metadata/attack-chain review, and optional safe protocol fuzz.
+
+```bash
+mcts pentest examples/vulnerable-mcp-server/server.py
+mcts pentest ./server.py --live --i-understand-live-risk
+mcts pentest ./repo --json -o pentest-report.json
+```
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--live` | false | Include safe protocol fuzz after static phases |
+| `--i-understand-live-risk` | false | Consent for live fuzz phase |
+| `--json` | false | Print report JSON to stdout |
+| `--output`, `-o` | — | Write pentest report JSON |
+
+Exit **0** on pass/medium verdict; **1** on critical/high; **2** on errors.
 
 ---
 
@@ -294,74 +409,6 @@ See [Protocol Fuzzing](../scanning/fuzzing.md).
 
 ---
 
-## Planned commands and flags
-
-From the [Feature Expansion Plan — CLI appendix](../more/feature-expansion-plan.md#scanning-29). Status reflects MCTS today vs the roadmap backlog.
-
-### Planned subcommands
-
-| Command | Status | Priority | Description |
-|---------|--------|----------|-------------|
-| `mcts audit-config` | Planned | P1 | Static review of `mcpServers` JSON |
-| `mcts diff` | Planned | P1 | Git-aware MCP config diff; PR comment output |
-| `mcts inspect` | Missing | P1 | Read-only tools/prompts/resources listing |
-| `mcts vet` | Planned | P0 | Pre-install `pypi:` / `npm:` / `oci:` vetting |
-| `mcts review` / `cr-agent` | Missing | P1 | Dedicated LLM security review CLI |
-| `mcts simulate` | Planned | P2 | Active attack-path simulation |
-| `mcts pentest` | Stub | P0 | Multi-agent red-team orchestration |
-| `mcts trend` | Planned | P2 | Score history from `.mcts/history/` |
-| `mcts badge` | Planned | P3 | README certification SVG |
-| `mcts watch` | Planned | P2 | Continuous config re-scan daemon |
-| `mcts shadow` | Planned | P1 | Unknown/shadow MCP server discovery |
-| `mcts dashboard` | Planned | P1 | Interactive attack-graph UI |
-| `mcts-mcp` | Planned | P0 | MCP server mode — scan tools for IDE agents |
-| `mcts guard install` | Missing | P0 | Agent Guard runtime hooks (defer/partner) |
-| `mcts init` / `doctor` | Missing | P1 | Client setup and dependency diagnostics |
-| `mcts rules` | Missing | P3 | Expose Sigma/rule paths |
-| `mcts scan-mcp` | Partial | P2 | Remote manifest probe before connect |
-
-### Planned global flags (selected)
-
-| Flag / behavior | GAP | Priority |
-|-----------------|-----|----------|
-| `--technique SAF-T-*` per-technique mode | GAP-001 | P0 |
-| `--semgrep` taint backend (+ Java) | GAP-002–003 | P0 |
-| Machine-wide scan (no explicit target) | GAP-006 | P0 |
-| `--skills` / SKILL.md scanning | GAP-029 | P0 |
-| `--scan-all-users` multi-home | GAP-021 | P1 |
-| `--ci` unified CI preset | GAP-024 | P1 |
-| `--full-toxic-flows` TF codes | GAP-032 | P1 |
-| `--diff-base` git-scoped scan | GAP-010 | P1 |
-| GitHub URL scan target | GAP-009 | P2 |
-| `--stdio-timeout`, `--skip-ssl-verify` | GAP-017, GAP-023 | P2 |
-| `--ignore-issues-codes` CI allowlist | GAP-025 | P2 |
-| `mcts fuzz --url` remote protocol fuzz | GAP-190 | P2 |
-
-Full CLI/scanning gap list:
-
-| GAP | Planned surface | Status | P | Phase | Notes |
-|:----|:----------------|:-------|:--|:------|:------|
-| GAP-001 | Per-technique scan mode | Missing | P0 | 2 | Run one technique pack at a time |
-| GAP-002 | Semgrep taint backend | Missing | P0 | 3 | Optional `--semgrep`; includes Java |
-| GAP-003 | Java SAST | Missing | P0 | 3 | Part of Semgrep adapter |
-| GAP-004 | Agentic multi-agent pentest | Stub | P0 | 4 | Agno team; structured JSON output |
-| GAP-005 | Pre-install package vet | Missing | P0 | 2 | npm:/pypi: before install |
-| GAP-006 | Machine-wide default scan | Missing | P0 | 2 | Scan all well-known configs |
-| GAP-007 | Batch config scan | Missing | P0 | 1 | All servers in MCP JSON |
-| GAP-008 | known-configs scan all | Partial | P0 | 1 | inventory --scan one-shot |
-| GAP-009 | GitHub URL scan target | Missing | P2 | 3 | Shallow clone / zip |
-| GAP-010 | Git-diff scoped scan | Missing | P1 | 4 | --diff-base for PR CI |
-| GAP-026 | inspect subcommand | Missing | P1 | 2 | Read-only surface listing |
-| GAP-027 | evo fleet push | Missing | P0 | 4 | Fleet upload API integration |
-| GAP-028 | guard install/uninstall | Missing | P0 | 4 | Agent Guard hooks |
-| GAP-029 | --skills / SKILL.md scan | Missing | P0 | 3 | Skills dir + SKILL.md |
-| GAP-217 | cr-agent LLM security review | Missing | P1 | 4 | Dedicated LLM security review CLI |
-| GAP-225 | Remote manifest scan-mcp | Partial | P2 | 2 | Pre-connect tools/list probe |
-
-See [Roadmap](../more/roadmap.md) and [Feature Expansion Plan Part 11](../more/feature-expansion-plan.md#part-11--prioritized-backlog).
-
----
-
 ## Exit codes
 
 | Code | When |
@@ -380,7 +427,7 @@ Gate failures (`scan` only): `--fail-on-critical`, `--min-score`, `--max-critica
 |----------|--------|
 | `MCTS_LIVE_OK=1` | Grants live/fuzz/remote probe consent in CI |
 | `MCTS_BEARER_TOKEN` | Default bearer token for `--url` scans |
-| `MCTS_LLM_API_KEY` | LiteLLM provider key for `--llm-judge` |
+| `MCTS_LLM_API_KEY` | LiteLLM provider key for `--llm-judge` and `--llm-triage` |
 | `MCTS_LLM_MODEL` | LLM model ID (default `gpt-4o-mini`) |
 | `MCTS_CLOUD_API_KEY` | Cloud inspect API key for `--cloud-inspect` |
 | `MCTS_CLOUD_ENDPOINT` | Cloud inspect API URL |

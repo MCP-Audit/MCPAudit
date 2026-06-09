@@ -131,8 +131,8 @@ Response: full `ScanReport` JSON (`model_dump()`).
 
 | Capability | Status | GAP | Notes |
 |------------|--------|-----|-------|
-| Per-request analyzer/scoring knobs (full parity with CLI) | Partial | GAP-213 | Expand `ScanRequest` |
-| OAuth object on REST auth | Partial | GAP-093 | Beyond bearer token |
+| Per-request analyzer/scoring knobs (full parity with CLI) | Shipped | GAP-213 | Expanded `ScanRequest` |
+| OAuth object on REST auth | Shipped | GAP-093 | OAuth fields on `ScanRequest` |
 | Taxonomy tree in API response | Missing | GAP-094 | Hierarchical MCTS-T |
 | MCP server mode over stdio | Planned | GAP-115 | `scan_mcp_target`, `explain_finding` tools |
 | Fleet upload / bootstrap ingest | Planned | GAP-116–118 | Enterprise defer |

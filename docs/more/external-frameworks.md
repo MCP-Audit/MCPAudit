@@ -5,7 +5,7 @@
 This document explains how MCTS relates to **industry MCP threat frameworks** and **Sigma rule corpora**. MCTS uses its own first-party taxonomy but learns detection patterns from external research.
 
 > **Looking for MCTS technique IDs?** See [Threat Taxonomy](../reporting/taxonomy.md).
-> **Contributing detection rules?** See [Adding an analyzer](../analysis/architecture.md#adding-an-analyzer).
+> **Contributing detection rules?** See [Extension points](../analysis/architecture.md#extension-points).
 
 ---
 
@@ -78,7 +78,7 @@ Detection patterns from industry reference corpora were adapted into MCTS-owned 
 | Supply chain signals | `supply_chain.py` | Partial |
 | Cross-server escalation | `cross_server.py` | Shipped |
 | Protocol robustness | `fuzz/`, MCTS-T-1009 | Shipped |
-| Regression fixtures | `tests/fixtures/regression/MCTS-T-*/` | Shipped (34+ IDs) |
+| Regression fixtures | `tests/fixtures/regression/MCTS-T-*/` | Shipped (79 IDs) |
 
 When adapting external Sigma rules:
 

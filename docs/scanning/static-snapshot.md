@@ -91,14 +91,19 @@ Snapshot mode does **not** produce live `runtime_events` unless you also pass `-
 
 ## Exporting a snapshot
 
-From a live scan (trusted server only):
+Use `mcts snapshot` to connect live and write normalized JSON for offline scans:
 
 ```bash
-mcts scan ./server.py --live --i-understand-live-risk -o live.json
-# Extract server.tools from live.json → tools-list.json
+mcts snapshot . \
+  --config .mcp.json \
+  --server my-server \
+  --i-understand-live-risk \
+  -o tools-snapshot.json
+
+mcts scan . --snapshot tools-snapshot.json -o report.json
 ```
 
-Or use your MCP client's `tools/list` JSON-RPC response directly.
+Alternative: extract `server.tools` from a prior live scan JSON, or use your MCP client's `tools/list` JSON-RPC response directly.
 
 ---
 
