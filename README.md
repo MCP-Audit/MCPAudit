@@ -7,9 +7,11 @@
 ![Status](https://img.shields.io/badge/status-alpha-orange)
 ![Security](https://img.shields.io/badge/focus-MCP%20Security-red)
 
-Security analysis purpose-built for Model Context Protocol (MCP) servers — permissions, injection, attack chains, and risk scoring.
+Security scanner for [Model Context Protocol (MCP)](https://modelcontextprotocol.io) servers — the programs that give AI assistants access to tools, files, databases, and APIs.
 
-Make MCP threat scanning as easy as running a linter.
+Run one command to find permission issues, injection risks, attack chains, and more. Works locally, in CI, with no cloud account required.
+
+> **New to MCP or MCTS?** See the [documentation index](docs/index.md) and [glossary](docs/glossary.md).
 
 ```bash
 mcts scan ./server.py
@@ -45,7 +47,14 @@ Severity Summary          Top Findings
 
 ## Problem
 
-MCP servers expose databases, APIs, file systems, cloud resources, and SaaS tools to AI agents — often without rigorous security review. MCTS helps teams find issues before attackers do.
+AI assistants connect to the outside world through **MCP servers** — small programs that expose callable tools (e.g. "delete user", "read file", "query database"). A misconfigured or malicious server can:
+
+- Grant the AI destructive capabilities it shouldn't have
+- Hide malicious instructions in tool descriptions
+- Chain innocent tools into data theft or remote code execution
+- Leak secrets embedded in server source code
+
+Most teams ship MCP servers without dedicated security review. MCTS makes scanning as routine as running a linter.
 
 ## Features
 
@@ -147,10 +156,10 @@ uv run mcts scan ./server.py --theme minimal --no-progress
 
 ## Documentation
 
-Full index: [docs/index.md](docs/index.md)
+Full index: [docs/index.md](docs/index.md) · [Glossary](docs/glossary.md)
 
 **Get started**
-- [Install and first scan](docs/get-started/getting-started.md)
+- [Install and first scan](docs/get-started/getting-started.md) — step-by-step guide (~15 min)
 
 **Scanning**
 - [Live Scanning](docs/scanning/live-scanning.md) · [Remote Scanning](docs/scanning/remote-scanning.md) · [Static Snapshot](docs/scanning/static-snapshot.md) · [Fuzzing](docs/scanning/fuzzing.md) · [Inventory](docs/scanning/inventory.md) · [Readiness](docs/scanning/readiness.md)

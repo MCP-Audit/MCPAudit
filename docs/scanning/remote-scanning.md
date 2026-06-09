@@ -2,9 +2,22 @@
 
 > [Documentation](../index.md) → [Scanning](README.md)
 
-MCTS can connect to **production remote MCP servers** over streamable HTTP or SSE — not only local stdio subprocesses. Remote probing uses the official MCP Python SDK (`streamable_http_client`, `sse_client`) and supports Bearer tokens, custom headers, and OAuth client credentials.
+**Remote scanning** connects to a hosted MCP server over HTTP or SSE — without local source code or a subprocess. Use this when your MCP server runs in the cloud and you want to scan what it actually exposes.
 
-Implementation: `probe/http_session.py`, `probe/auth.py`, `discovery/live.py`.
+> **Requires consent and authentication.** See [When to use](#when-to-use) below.
+> **Unfamiliar with terms?** See the [Glossary](../glossary.md).
+
+---
+
+## In plain English
+
+Most MCTS scans read source code from your machine. Remote scanning instead connects to a **URL** — like `https://mcp.example.com/mcp` — and probes the server over the network. This is useful when:
+
+- The server is deployed and you don't have the repo locally
+- You want to verify a staging or production endpoint
+- You're scanning a third-party MCP service
+
+You'll need a Bearer token or OAuth credentials to authenticate. Remote scans run the same security analyzers as local scans.
 
 ---
 

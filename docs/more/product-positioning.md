@@ -2,13 +2,23 @@
 
 > [Documentation](../index.md) → [More](README.md)
 
-What **MCTS** (Model Context Threat Scanner) is built for, who it serves, what it delivers today, and where the roadmap is headed.
+This document explains **what MCTS is built for**, **who uses it**, **what it does well today**, and **what's planned next**. Read this if you're evaluating MCTS, presenting it to stakeholders, or deciding how it fits alongside your existing security tools.
+
+> **Just want to run a scan?** See [Getting Started](../get-started/getting-started.md).
 
 ---
 
 ## What MCTS is
 
-MCTS is a **local-first MCP server security scanner** for server authors, platform security teams, and agent infrastructure engineers. It discovers tools from Python and TypeScript source (or optional live stdio/HTTP/SSE probes), runs 20 analyzers by default (25+ with optional flags), scores risk with auditable math, and outputs terminal dashboards, JSON, SARIF, and executive HTML reports — **without requiring a cloud API** for standard scans.
+MCTS is a **local-first security scanner for MCP servers**. It helps teams find vulnerabilities in the tools, prompts, and resources that AI assistants can access — before deployment.
+
+**In one sentence:** MCTS is to MCP servers what Semgrep is to application code, or Trivy is to containers.
+
+Key properties:
+- **Runs locally** — no cloud account required for standard scans
+- **Works in CI** — SARIF output, score gates, published GitHub Action
+- **MCP-specific** — checks tool permissions, description poisoning, attack chains, and protocol behavior that general SAST tools miss
+- **Transparent scoring** — auditable 0–100 score with clear pass/fail gates
 
 ```bash
 mcts scan ./repo/ -o report.json --min-score 70
@@ -16,7 +26,7 @@ mcts report report.json -o security-report.html
 mcts inventory --scan -o inventory.json
 ```
 
-MCTS sits at the **MCP boundary**: tool metadata, JSON schemas, handler source, client configs, and protocol behavior — not generic application pentesting.
+MCTS focuses on the **MCP boundary** — tool metadata, JSON schemas, handler source code, client configs, and protocol behavior. It does not replace general application pentesting or runtime policy enforcement.
 
 ---
 

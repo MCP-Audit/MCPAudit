@@ -2,7 +2,10 @@
 
 > [Documentation](../index.md) → [Platform](README.md)
 
-Complete reference for the MCTS command-line interface (`src/mcts/cli/main.py`). All commands use [Typer](https://typer.tiangolo.com/) with Rich terminal output.
+Complete reference for every MCTS command and flag. Use this when you need to look up a specific option or understand exit codes.
+
+> **New to MCTS?** Start with [Getting Started](../get-started/getting-started.md) — you don't need this full reference yet.
+> **Unfamiliar with a term?** See the [Glossary](../glossary.md).
 
 **Global options**
 

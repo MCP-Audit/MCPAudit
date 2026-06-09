@@ -2,33 +2,43 @@
 
 > [Documentation](../index.md) → **Get Started**
 
-Everything you need to install MCTS, run your first scan, interpret output, and enable optional live modes.
+Everything you need to install MCTS, run your first scan, and understand the output.
 
 ---
 
 ## Guide
 
-| Page | Contents |
-|------|----------|
-| [Install and first scan](getting-started.md) | Install, first scan, remote/snapshot modes, JSON/SARIF/HTML, live/fuzz/inventory/readiness, CI gate |
+| Page | What you'll learn |
+|------|-------------------|
+| [Install and first scan](getting-started.md) | Install, scan the example server, read results, export JSON/SARIF/HTML, optional live modes, CI gates |
 
-Estimated time: **15 minutes** for install + first scan + HTML report.
+**Estimated time:** ~15 minutes
+
+---
+
+## Before you start
+
+- **No MCP experience required** — the guide explains what MCP servers are and what MCTS checks
+- **Unfamiliar terms?** See the [Glossary](../glossary.md)
+- **Just want commands?** Jump to [Quick reference in the index](../index.md#quick-reference)
 
 ---
 
 ## After getting started
 
-| Next step | Guide |
-|-----------|-------|
-| All CLI flags | [CLI Reference](../platform/cli.md) |
-| Pipeline internals | [Architecture](../analysis/architecture.md) |
-| Remote / snapshot scanning | [Remote Scanning](../scanning/remote-scanning.md) · [Static Snapshot](../scanning/static-snapshot.md) |
-| CI setup | [CI Integration](../platform/ci-integration.md) |
-| REST API | [REST API](../platform/rest-api.md) |
-| Score formula | [Scoring Specification](../reporting/scoring-spec.md) |
+| I want to… | Guide |
+|------------|-------|
+| See all CLI flags | [CLI Reference](../platform/cli.md) |
+| Understand how findings are produced | [Architecture](../analysis/architecture.md) |
+| Scan a remote or hosted server | [Remote Scanning](../scanning/remote-scanning.md) |
+| Scan from an exported JSON file | [Static Snapshot](../scanning/static-snapshot.md) |
+| Set up CI/CD | [CI Integration](../platform/ci-integration.md) |
+| Use the REST API | [REST API](../platform/rest-api.md) |
+| Understand the score | [Scoring Specification](../reporting/scoring-spec.md) |
 
 ---
 
 ## Related
 
 - [Documentation index](../index.md)
+- [Glossary](../glossary.md)

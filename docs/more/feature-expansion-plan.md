@@ -2,7 +2,10 @@
 
 > [Documentation](../index.md) → [More](README.md)
 
-Detailed gap analysis and implementation guide for evolving MCTS from alpha static scanner to a full MCP security platform. This plan is **original MCTS architecture** — informed by [product positioning](product-positioning.md) and [external frameworks](external-frameworks.md).
+This is the **detailed implementation guide** for evolving MCTS from an alpha scanner to a full MCP security platform. It covers gap analysis, module layout, build order, and success criteria.
+
+> **Just want to use MCTS?** See [Getting Started](../get-started/getting-started.md).
+> **High-level direction?** See [Product Roadmap](roadmap.md) and [Product Positioning](product-positioning.md).
 
 **Related:** [Product Roadmap](roadmap.md) · [Architecture](../analysis/architecture.md) · [CLI Reference](../platform/cli.md)
 
@@ -10,11 +13,12 @@ Detailed gap analysis and implementation guide for evolving MCTS from alpha stat
 
 | Topic | Guide |
 |-------|-------|
-| Install and first scan | [get-started/getting-started.md](../get-started/getting-started.md) |
+| Install and first scan | [getting-started.md](../get-started/getting-started.md) |
 | Live probe, fuzz, inventory, TS discovery | [scanning/](../scanning/README.md) |
 | Pipeline and analyzers | [analysis/architecture.md](../analysis/architecture.md) |
 | Scoring, taxonomy, HTML dashboard | [reporting/](../reporting/README.md) |
 | CLI and CI | [platform/](../platform/README.md) |
+| Term definitions | [glossary.md](../glossary.md) |
 | Full doc index | [index.md](../index.md) |
 
 ---

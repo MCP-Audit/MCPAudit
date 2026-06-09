@@ -2,9 +2,17 @@
 
 > [Documentation](../index.md) → [Scanning](README.md)
 
-Air-gapped and CI-friendly mode: scan pre-exported MCP metadata JSON **without** launching a server or connecting to a network. Useful when a pipeline exports `tools/list` results from a trusted environment.
+**Snapshot scanning** analyzes a pre-exported JSON file of MCP tool metadata — no source code, no running server, no network. Ideal for air-gapped environments or CI pipelines that export tool lists separately.
 
-Implementation: `discovery/static_json.py`.
+> **Have source code?** A regular static scan is simpler: `mcts scan ./repo/`
+
+---
+
+## In plain English
+
+Sometimes you can't run MCTS against live source code or a running server — for example, in an air-gapped CI environment. Snapshot mode lets you export your server's tool list as JSON (from a trusted environment) and scan that file offline.
+
+MCTS reads the JSON, extracts tool names, descriptions, and schemas, and runs the same security analyzers as a normal scan. Handler source code checks won't run (there's no source), but metadata checks (permissions, poisoning, schema issues) still work.
 
 ---
 

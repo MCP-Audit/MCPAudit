@@ -1,21 +1,29 @@
 # MCTS Docs
 
-> Start here: **[Documentation index](index.md)**
+Welcome to the MCTS documentation. This folder contains guides for installing, using, and contributing to the Model Context Threat Scanner.
 
-MCTS (Model Context Threat Scanner) documentation — installation through CI integration, scoring, taxonomy, and roadmap.
+> **Start here:** [Documentation index](index.md)
 
 ---
 
-## Sections
+## New to MCTS?
 
-| Section | Purpose | Start here |
-|---------|---------|------------|
-| [Get Started](get-started/README.md) | Install and first scan | [getting-started.md](get-started/getting-started.md) |
-| [Scanning](scanning/README.md) | Live, fuzz, TS, inventory | [scanning/README.md](scanning/README.md) |
-| [Analysis](analysis/README.md) | Pipeline and analyzers | [architecture.md](analysis/architecture.md) |
-| [Reporting](reporting/README.md) | Score, taxonomy, HTML | [scoring-spec.md](reporting/scoring-spec.md) |
-| [Platform](platform/README.md) | CLI and CI | [cli.md](platform/cli.md) |
-| [More](more/README.md) | Roadmap, positioning, gap backlog, expansion plan | [roadmap.md](more/roadmap.md) |
+1. Read the [Glossary](glossary.md) if terms like MCP, SARIF, or attack chain are unfamiliar
+2. Follow [Install and first scan](get-started/getting-started.md) (~15 minutes)
+3. Pick your next guide from the [index](index.md#choose-your-path) based on your role
+
+---
+
+## Sections at a glance
+
+| Section | Who it's for | Start here |
+|---------|--------------|------------|
+| [Get Started](get-started/README.md) | Everyone — first-time setup | [getting-started.md](get-started/getting-started.md) |
+| [Scanning](scanning/README.md) | Developers choosing a scan mode | [Which scan mode?](scanning/README.md#which-scan-mode-should-i-use) |
+| [Analysis](analysis/README.md) | Security engineers understanding findings | [Security Checks](analysis/security-checks.md) |
+| [Reporting](reporting/README.md) | Anyone interpreting scores and exports | [Scoring Spec](reporting/scoring-spec.md) |
+| [Platform](platform/README.md) | DevOps and CI engineers | [CLI Reference](platform/cli.md) |
+| [More](more/README.md) | Contributors and product stakeholders | [Product Positioning](more/product-positioning.md) |
 
 ---
 
@@ -30,6 +38,8 @@ uv run mcts report report.json -o security-report.html
 
 ---
 
-## Changelog
+## Other resources
 
-- [Changelog](../CHANGELOG.md)
+- [Glossary](glossary.md) — term definitions
+- [Changelog](../CHANGELOG.md) — release notes
+- [Main README](../README.md) — project overview

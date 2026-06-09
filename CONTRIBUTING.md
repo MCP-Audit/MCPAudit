@@ -2,6 +2,10 @@
 
 Thank you for helping make MCP security testing accessible to everyone.
 
+> **New to the project?** Read [Getting Started](docs/get-started/getting-started.md) and the [Glossary](docs/glossary.md) first.
+
+---
+
 ## Getting Started
 
 1. Fork and clone the repository
@@ -10,6 +14,8 @@ Thank you for helping make MCP security testing accessible to everyone.
 4. Install pre-commit hooks: `pre-commit install`
 
 See [Getting Started](docs/get-started/getting-started.md) and [CLI Reference](docs/platform/cli.md) for usage beyond local development.
+
+---
 
 ## Development Workflow
 
@@ -29,12 +35,17 @@ uv run mcts scan examples/vulnerable-mcp-server/server.py -o report.json
 uv run mcts report report.json -o security-report.html
 ```
 
+---
+
 ## Pull Request Guidelines
 
 - Keep PRs focused — one feature or fix per PR
 - Add tests for new behavior
 - Update `CHANGELOG.md` under `[Unreleased]` for user-facing changes
 - Follow existing code style (ruff enforces this in CI)
+- Update documentation when adding user-facing features
+
+---
 
 ## Branch Protection
 
@@ -58,31 +69,45 @@ Pull requests to `main` require the **test** CI check to pass.
 
 The ruleset definition lives in `.github/rulesets/main.json`.
 
-## Planning & roadmap
+---
+
+## Planning & Roadmap
 
 Before large features, read:
 
-- [Documentation index](docs/index.md)
-- [Feature Expansion Plan](docs/more/feature-expansion-plan.md) — gap analysis, implementation how-to, **Part 11 prioritized backlog**
-- [Product Roadmap](docs/more/roadmap.md) — phased deliverables and success criteria
-- [Product Positioning](docs/more/product-positioning.md) — positioning, differentiation, and roadmap gaps
+| Document | What it covers |
+|----------|---------------|
+| [Documentation index](docs/index.md) | All user and contributor docs |
+| [Glossary](docs/glossary.md) | Term definitions |
+| [Feature Expansion Plan](docs/more/feature-expansion-plan.md) | Gap analysis, implementation how-to, prioritized backlog |
+| [Product Roadmap](docs/more/roadmap.md) | Phased deliverables and success criteria |
+| [Product Positioning](docs/more/product-positioning.md) | Positioning, differentiation, and roadmap gaps |
 
 When proposing parity with another MCP security tool, cite the capability layer (static scan, supply chain, runtime, governance, graph) and confirm it fits MCTS's local-first MCP-boundary scope — see [Feature Expansion Plan Part 8](docs/more/feature-expansion-plan.md#part-8--what-not-to-build).
 
 Pick a phase item from [Part 11](docs/more/feature-expansion-plan.md#part-11--prioritized-backlog) or the [full GAP appendix](docs/more/feature-expansion-plan.md#part-11-appendix--full-gap-backlog-gap-001240) and open a [feature request](https://github.com/MCP-Audit/MCTS/issues/new?template=feature_request.yml) or Discussion to align on design.
+
+---
 
 ## Adding a New Analyzer
 
 1. Create a module under `src/mcts/analyzers/`
 2. Subclass `BaseAnalyzer` and implement `analyze()`
 3. Register it in `src/mcts/core/scanner.py`
-4. Add benchmark fixture in `examples/bench/` when applicable (see [Feature Expansion Plan § 1.7](docs/more/feature-expansion-plan.md#part-1--current-state-honest-inventory))
+4. Add benchmark fixture in `examples/bench/` when applicable
 5. Assign `technique_id` (`MCTS-T-*`) — see [Threat Taxonomy](docs/reporting/taxonomy.md)
 6. Add tests under `tests/`
+7. Document the check in [Security Checks Reference](docs/analysis/security-checks.md)
+
+Full guide: [Architecture — Adding an analyzer](docs/analysis/architecture.md#adding-an-analyzer)
+
+---
 
 ## Code of Conduct
 
 This project follows the [Contributor Covenant](CODE_OF_CONDUCT.md).
+
+---
 
 ## Questions?
 

@@ -2,9 +2,17 @@
 
 > [Documentation](../index.md) → [Scanning](README.md)
 
-**Readiness** checks assess production reliability of MCP tools — timeouts, retries, error schemas, descriptions, rate limits, and operational documentation. This is **separate from the security risk score** and does not affect `score.overall`.
+**Readiness scanning** checks whether your MCP server is production-ready — things like error handling, timeouts, documentation, and rate limits. This is **separate from security scoring** and does not affect your security score.
 
-Implementation: `readiness/heuristics.py`, `readiness/opa.py`, `readiness/llm_judge.py` · CLI: `mcts readiness`.
+> **Want security checks?** Use `mcts scan` instead. Readiness is for operational quality.
+
+---
+
+## In plain English
+
+Security scanning (`mcts scan`) finds vulnerabilities. Readiness scanning (`mcts readiness`) checks whether your server is **well-built for production** — does it have proper error schemas? Are descriptions clear? Are there timeouts? Is logging configured?
+
+Think of it as a code quality check specifically for MCP servers. Readiness findings use their own IDs (HEUR-001 through HEUR-020) and appear separately from security findings.
 
 ---
 

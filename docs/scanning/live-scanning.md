@@ -2,9 +2,23 @@
 
 > [Documentation](../index.md) → [Scanning](README.md)
 
-Live probing connects MCTS to a **real stdio MCP server** over the official MCP protocol. It enriches or replaces static discovery with runtime tool schemas, prompts, resources, and server instructions — then feeds the same analyzer pipeline as repository scans.
+**Live probing** starts your MCP server as a subprocess and asks it what tools, prompts, and resources it exposes at runtime. This catches differences between what your source code says and what the server actually advertises.
 
-Static analysis remains valuable (handler source, secrets in code, path validation). Live mode adds **ground truth** from what the server actually advertises at runtime, and generates **runtime telemetry** for `RuntimeEventsAnalyzer`.
+> **Default scan mode (static) is enough for most users.** Only use live probing when you need runtime schemas or don't have source code.
+> **Requires consent** — live mode starts a real server process. See [Consent model](#consent-model) below.
+
+---
+
+## In plain English
+
+A static scan reads your source code. A live probe **runs your server** and talks to it over the MCP protocol to get the actual tool list, schemas, and server instructions.
+
+Use live probing when:
+- You want to verify what the server **actually exposes** at runtime (not just what's in the code)
+- You don't have source code — only a config entry pointing to an npm package or binary
+- You want to detect **rug pulls** — when a server's advertised tools change between scans
+
+Live probing does **not** call your tools during a scan (read-only `list_*` methods only). To test tool invocation, use [Protocol Fuzzing](fuzzing.md).
 
 ---
 

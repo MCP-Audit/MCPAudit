@@ -2,7 +2,26 @@
 
 > [Documentation](../index.md) → [Analysis](README.md)
 
-Complete catalog of checks MCTS runs during **`mcts scan`**, optional probes, and the separate **`mcts readiness`** command. Each check maps to an analyzer key in scan reports, a technique ID in the [MCTS-T taxonomy](../reporting/taxonomy.md), and (where applicable) a severity that affects the [security score](../reporting/scoring-spec.md).
+This is the complete catalog of security checks MCTS runs. Use it to understand **what each check looks for**, **how severe findings are**, and **how to enable optional checks**.
+
+> **Just want to run a scan?** See [Getting Started](../get-started/getting-started.md).
+> **Want the pipeline overview?** See [Architecture](architecture.md).
+
+---
+
+## In plain English
+
+When MCTS scans your server, it runs a series of automated checks — called **analyzers** — each looking for a specific type of security problem. By default, 20 analyzers run automatically. You can enable 5+ more with flags like `--pip-audit` or `--yara`.
+
+Every finding includes:
+- A **severity** (Critical, High, Medium, or Low)
+- A **description** of what's wrong and why it matters
+- A **recommendation** for how to fix it
+- A **technique ID** (like `MCTS-T-1003`) for tracking and compliance
+
+Some checks are separate from the main scan:
+- **`mcts readiness`** — production readiness heuristics (not security)
+- **Compliance (OWASP)** — always appended but does not affect your score
 
 ---
 

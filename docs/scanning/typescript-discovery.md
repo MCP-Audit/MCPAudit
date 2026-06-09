@@ -2,9 +2,18 @@
 
 > [Documentation](../index.md) → [Scanning](README.md)
 
-MCTS discovers MCP tools in TypeScript and JavaScript **without running Node.js or installing npm dependencies**. Pattern matching extracts tool names, descriptions, and input schemas from source so the same analyzers that run on Python handlers can evaluate Node MCP servers in CI.
+MCTS can scan **Node.js MCP servers** written in TypeScript or JavaScript — without running Node or installing npm dependencies. It reads source files and extracts tool definitions using pattern matching.
 
-**Implementation:** `discovery/static_js.py`, orchestrated by `discovery/static_runner.py` and merged via `discovery/static_merge.py`.
+> **Python servers?** Just run `mcts scan ./server.py` — Python discovery is the default.
+> **Mixed repo?** Directory scans automatically discover both Python and TypeScript.
+
+---
+
+## In plain English
+
+If your MCP server is written in TypeScript (using the `@modelcontextprotocol/sdk` or similar), MCTS can find your tools by reading the source code — the same way it reads Python `@tool` decorators. No `npm install` or Node.js runtime needed.
+
+This means you can run `mcts scan ./my-ts-server/` in CI and get the same security checks (permissions, injection, secrets, attack chains) as you would for a Python server.
 
 ---
 

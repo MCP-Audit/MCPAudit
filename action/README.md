@@ -1,48 +1,68 @@
 # MCTS GitHub Action
 
-Composite action for running MCTS security scans in CI with JSON, SARIF, and HTML outputs.
+Run MCTS security scans in your GitHub Actions workflow. The action scans your MCP server, generates JSON + SARIF + HTML reports, and can fail the build on security thresholds.
 
-**Status:** Ready for `@v1` tag — generates SARIF for Code Scanning; upload via a workflow step with `security-events: write`. Publish with `git tag v1 && git push origin v1` on the default branch.
+> **New to MCTS?** See [Getting Started](../docs/get-started/getting-started.md) first.
+> **Full CI guide:** [CI Integration](../docs/platform/ci-integration.md)
 
 ---
 
-## Usage (local / monorepo)
+## Quick start
+
+Add this to your workflow file (`.github/workflows/mcp-security.yml`):
 
 ```yaml
-- uses: actions/checkout@v4
+name: MCP Security
+
+on: [push, pull_request]
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  mcts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: MCP-Audit/MCTS@v1
+        with:
+          target: ./server.py
+          fail-on-critical: true
+          min-score: "70"
+
+      - uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: mcts-report.sarif
+```
+
+---
+
+## What the action does
+
+1. Installs MCTS with dependencies
+2. Runs `mcts scan` on your target
+3. Writes `mcts-report.json` and `mcts-report.sarif`
+4. Generates `mcts-report.html` via `mcts report`
+5. Uploads JSON and HTML as workflow artifacts
+6. Fails the workflow if `fail-on-critical` or `min-score` thresholds are not met
+
+You upload SARIF separately (step 2 above) to show findings in GitHub's Security tab.
+
+---
+
+## Usage (monorepo / local action)
+
+If the action lives in your repo under `action/`:
+
+```yaml
 - uses: ./action
   with:
     target: ./server.py
     fail-on-critical: true
     min-score: "70"
-```
-
-## Usage (after publish)
-
-```yaml
-- uses: actions/checkout@v4
-- uses: MCP-Audit/MCTS@v1
-  with:
-    target: ./server.py
-    fail-on-critical: true
-    min-score: "70"
-```
-
-The action runs `mcts scan`, emits `mcts-report.sarif`, generates HTML via `mcts report`, and uploads JSON/HTML artifacts. Add a separate workflow step to publish SARIF to GitHub Code Scanning (requires `security-events: write`):
-
-```yaml
-permissions:
-  contents: read
-  security-events: write
-
-- uses: MCP-Audit/MCTS@v1
-  with:
-    target: ./server.py
-
-- uses: github/codeql-action/upload-sarif@v3
-  if: always()
-  with:
-    sarif_file: mcts-report.sarif
 ```
 
 ---
@@ -52,25 +72,24 @@ permissions:
 | Input | Default | Description |
 |-------|---------|-------------|
 | `target` | `./server.py` | Path to MCP server entrypoint or repo directory |
-| `fail-on-critical` | `true` | Fail workflow on critical findings |
-| `min-score` | — | Fail if overall score is below threshold (0–100) |
+| `fail-on-critical` | `true` | Fail workflow if any critical finding is detected |
+| `min-score` | — | Fail if overall score is below this threshold (0–100) |
 
-### Planned inputs
+---
 
-| Input | Status | GAP | Notes |
-|-------|--------|-----|-------|
-| `format: sarif` native in action | Partial | — | SARIF generated; upload step separate |
-| Git-diff / PR comment mode | Planned | GAP-010, GAP-235 | PR workflow integration |
-| `inventory --scan` job | Planned | GAP-006 | Scheduled config audit |
-| `--semgrep` / `--skills` flags | Planned | GAP-002, GAP-029 | When CLI lands |
+## Outputs
 
-See [CI Integration — planned](../docs/platform/ci-integration.md#planned-ci-capabilities).
+| File | Format | Use |
+|------|--------|-----|
+| `mcts-report.json` | JSON | Full scan report — automation, archiving |
+| `mcts-report.sarif` | SARIF | Upload to GitHub Code Scanning |
+| `mcts-report.html` | HTML | Human review — download from workflow artifacts |
 
 ---
 
 ## Related
 
-- [CI Integration](../docs/platform/ci-integration.md)
-- [Roadmap — GitHub Action](../docs/more/roadmap.md#2-github-action)
-- [CLI Reference](../docs/platform/cli.md)
+- [CI Integration](../docs/platform/ci-integration.md) — full CI patterns and gate examples
+- [CLI Reference](../docs/platform/cli.md) — all scan flags available locally
+- [Scoring Specification](../docs/reporting/scoring-spec.md) — how scores are calculated
 - [Documentation index](../docs/index.md)

@@ -2,9 +2,20 @@
 
 > [Documentation](../index.md) → [Platform](README.md)
 
-MCTS exposes an optional **FastAPI** server for programmatic scans — same `Scanner` class as the CLI.
+MCTS can run as a **REST API server** for programmatic scans — useful when you want other tools or services to trigger scans without using the CLI directly.
 
-Implementation: `api/app.py` · CLI: `mcts serve`.
+> **Most users should use the CLI.** The REST API is for automation and integration scenarios.
+
+---
+
+## In plain English
+
+Instead of running `mcts scan` from the command line, you can start a local HTTP server with `mcts serve` and send scan requests via REST endpoints. The API runs the same scanner as the CLI and returns the same JSON report format.
+
+Use cases:
+- Integrate MCTS into an internal security platform
+- Trigger scans from a web dashboard or orchestration tool
+- Run scans from languages other than Python/shell
 
 ---
 

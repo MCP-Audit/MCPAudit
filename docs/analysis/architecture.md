@@ -2,9 +2,25 @@
 
 > [Documentation](../index.md) → [Analysis](README.md)
 
-MCTS follows a modular **discover → analyze → score → report** pipeline. The scanner orchestrates static and optional live discovery, runs a registry of security analyzers, applies compliance checks and taxonomy enrichment, and emits JSON/SARIF/terminal/HTML output.
+This document explains how MCTS works internally — from reading your source code to producing a scored security report. Read this if you want to understand the pipeline, extend MCTS with new analyzers, or debug unexpected scan results.
 
-This document describes every major layer, data model, analyzer registry, and extension point. **Planning docs:** [Feature Expansion Plan](../more/feature-expansion-plan.md) · [Roadmap](../more/roadmap.md)
+> **Just want to use MCTS?** You don't need this doc. Start with [Getting Started](../get-started/getting-started.md).
+> **Unfamiliar with terms?** See the [Glossary](../glossary.md).
+
+---
+
+## In plain English
+
+When you run `mcts scan ./server.py`, MCTS does four things:
+
+1. **Discover** — Find all MCP tools, prompts, resources, and handler source code (from files, a running server, or exported JSON)
+2. **Analyze** — Run 20+ automated security checks on what was discovered
+3. **Score** — Convert findings into a 0–100 security score using a transparent formula
+4. **Report** — Show results in your terminal, or export as JSON, SARIF, or HTML
+
+Each step is a separate module in the codebase, connected by shared data models. The sections below describe each layer in detail.
+
+**Planning docs:** [Feature Expansion Plan](../more/feature-expansion-plan.md) · [Roadmap](../more/roadmap.md)
 
 ---
 

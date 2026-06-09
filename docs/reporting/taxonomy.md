@@ -2,11 +2,25 @@
 
 > [Documentation](../index.md) → [Reporting](README.md)
 
-MCTS uses a first-party technique and mitigation catalog. Every scannable finding can expose `technique_id` (MCTS-T-*), `mitigation_ids` (MCTS-M-*), optional `cwe_id`, and `confidence`. SARIF and HTML reports link back to technique documentation URLs.
+MCTS labels every finding with a **technique ID** (`MCTS-T-*`) and links it to **mitigation IDs** (`MCTS-M-*`). This gives your findings consistent, trackable names instead of free-form descriptions.
+
+> **Just want to see what checks run?** See [Security Checks](../analysis/security-checks.md).
+> **Unfamiliar with technique IDs?** See the [Glossary](../glossary.md).
+
+---
+
+## In plain English
+
+When MCTS finds a problem, it tags it with a standard ID like `MCTS-T-1003` (command execution) or `MCTS-T-1001` (description poisoning). These IDs:
+
+- Make findings **searchable and filterable** across scans and teams
+- Link to **recommended mitigations** (`MCTS-M-*`)
+- Map to **industry standards** (CWE, OWASP LLM Top 10) for compliance reporting
+- Appear in SARIF and HTML reports with documentation links
+
+You don't need to memorize these IDs — they appear automatically on every finding. This document is the reference catalog.
 
 **Source of truth:** `src/mcts/taxonomy/techniques.json`
-**Enrichment:** `src/mcts/taxonomy/mapper.py` (runs after analyzers on every scan)
-**Mitigation links:** `src/mcts/taxonomy/mitigation_urls.py`
 
 ---
 

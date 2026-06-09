@@ -2,24 +2,43 @@
 
 > [Documentation](../index.md) → **Scanning**
 
-MCTS discovers MCP servers through **static source analysis**, optional **live stdio probing**, **protocol fuzzing**, and **client config inventory**. Discovery output becomes `MCPServerInfo` — the input to all security analyzers.
+Scanning is how MCTS **finds** MCP servers and **collects data** about their tools, prompts, resources, and handler code. This data feeds into the security analyzers described in [Analysis](../analysis/README.md).
+
+> **Unfamiliar with scan modes?** See [Which scan mode should I use?](#which-scan-mode-should-i-use) below, or check the [Glossary](../glossary.md).
 
 ---
 
-## Mode selection guide
+## Which scan mode should I use?
 
-| Your situation | Recommended mode | Command |
-|----------------|------------------|---------|
-| Python/TS source in repo | Static scan | `mcts scan ./repo/` |
-| Need runtime tool schemas | Static + live merge | `mcts scan ./repo/ --live --i-understand-live-risk` |
-| Hosted HTTP MCP server | Remote probe | `mcts scan . --url https://... --i-understand-live-risk` |
-| Air-gapped CI | Static JSON snapshot | `mcts scan . --snapshot tools.json` |
-| npm package, no source | Config + live | `mcts scan . --config ... --server X --live ...` |
-| Prompt/resource poisoning | Multi-surface scan | `mcts scan ... --surfaces tool,prompt,resource,instruction` |
-| Protocol hardening test | Fuzz → scan pipeline | `mcts fuzz ... -o fuzz.json` then `--runtime-events` |
-| Audit laptop MCP installs | Inventory | `mcts inventory --scan` |
-| Production readiness | Readiness (non-security) | `mcts readiness ./repo/` |
-| Node server, no `npm install` | TS static discovery | `mcts scan ./repo/ --languages typescript` |
+Answer these questions to pick the right mode:
+
+**Do you have the server's source code?**
+- **Yes** → Start with a static scan: `mcts scan ./repo/`
+- **No, but it's running locally** → Use live probe: `mcts scan . --config ~/.cursor/mcp.json --server my-server --live --i-understand-live-risk`
+- **No, it's hosted remotely** → Use remote scan: `mcts scan . --url https://... --i-understand-live-risk`
+- **No, but you have an exported JSON file** → Use snapshot: `mcts scan . --snapshot tools.json`
+
+**Do you need runtime schemas (what the server actually advertises)?**
+- Add `--live --i-understand-live-risk` to merge live tool listings with static analysis
+
+**Do you want to test protocol robustness?**
+- Run fuzz first, then feed results into scan: `mcts fuzz ... -o fuzz.json` → `mcts scan ... --runtime-events fuzz.json`
+
+**Do you want to audit what's installed on your machine?**
+- Run inventory: `mcts inventory --scan`
+
+---
+
+## Mode comparison
+
+| Mode | Reads source code | Starts server | Needs network | Best for |
+|------|:-:|:-:|----------|
+| **Static** (default) | Yes | No | No | Daily development, CI on repos |
+| **Live probe** | Optional | Yes | No | Verifying runtime tool schemas |
+| **Remote** | No | No | Yes | Hosted MCP endpoints |
+| **Snapshot** | No | No | No | Air-gapped CI |
+| **Fuzz** | No | Yes | No | Protocol hardening tests |
+| **Inventory** | Optional | No | No | Auditing local MCP configs |
 
 ---
 
@@ -27,24 +46,26 @@ MCTS discovers MCP servers through **static source analysis**, optional **live s
 
 | Guide | What you'll learn |
 |-------|-------------------|
-| [Live Scanning](live-scanning.md) | Consent model, discovery modes, merge semantics, behavioral probe |
-| [Remote Scanning](remote-scanning.md) | HTTP/SSE, auth, protocol probes |
-| [Static Snapshot](static-snapshot.md) | Offline `tools/list` JSON scanning |
-| [Protocol Fuzzing](fuzzing.md) | safe/standard/aggressive levels, probe catalog, CI usage |
-| [TypeScript Discovery](typescript-discovery.md) | SDK patterns, Zod mapping, multi-language merge |
-| [Config Inventory](inventory.md) | Client paths, JSON schema, cross-server shadowing |
-| [Readiness Scanning](readiness.md) | Operational heuristics via `mcts readiness` |
+| [Live Scanning](live-scanning.md) | How to probe a running server, consent model, merge with static analysis |
+| [Remote Scanning](remote-scanning.md) | Scan hosted HTTP/SSE servers with authentication |
+| [Static Snapshot](static-snapshot.md) | Scan from exported JSON without network or subprocess |
+| [Protocol Fuzzing](fuzzing.md) | Safe/standard/aggressive fuzz levels and CI usage |
+| [TypeScript Discovery](typescript-discovery.md) | Scan Node.js MCP servers without `npm install` |
+| [Config Inventory](inventory.md) | Find MCP servers in Cursor, Claude, VS Code, Windsurf configs |
+| [Readiness Scanning](readiness.md) | Production readiness checks (separate from security scoring) |
 
 ---
 
-## Data flow
+## How scanning feeds analysis
 
 ```
-Static (Py/TS) ──┐
-Live probe ──────┼──► MCPServerInfo ──► Analyzers
-Fuzz events ─────┤
-Inventory ───────┘ (cross-server context)
+Your source code ──┐
+Running server ────┼──► Discovered tools & schemas ──► Security analyzers ──► Findings & score
+Fuzz telemetry ────┤
+Local configs ─────┘
 ```
+
+After discovery, every scan mode produces the same `MCPServerInfo` structure that all analyzers consume. The scan mode only affects **what data is collected**, not **what checks run**.
 
 Deep dive: [Architecture — Discovery](../analysis/architecture.md#discovery-layer-discovery)
 
@@ -52,19 +73,16 @@ Deep dive: [Architecture — Discovery](../analysis/architecture.md#discovery-la
 
 ## Planned discovery modes
 
-| Mode | Status | Phase | Notes |
-|------|--------|-------|-------|
-| Machine-wide scan (all client configs) | Missing | 2 | GAP-006 — no explicit target |
-| 12+ agent clients (Gemini, Codex, OpenClaw…) | Partial | 3 | GAP-095 |
-| Skills directories + `SKILL.md` | Missing | 2–3 | GAP-029, GAP-099 |
-| VS Code workspaceStorage profiles | Missing | 3 | GAP-096 |
-| Claude Code project/plugin globs | Missing | 3 | GAP-097 |
-| WSL + macOS codesign trust | Missing | 3 | GAP-101–102 |
-| GitHub URL shallow-clone target | Missing | 3 | GAP-009 |
-| Remote `scan-mcp` manifest pre-check | Partial | 2 | GAP-225 |
-| `mcts fuzz --url` remote fuzz | Planned | 2 | GAP-190 |
+These features are on the roadmap but not yet shipped:
 
-See [Inventory — planned discovery](inventory.md#planned-discovery) and [Feature Expansion Plan](../more/feature-expansion-plan.md#discovery-13).
+| Mode | Status | Notes |
+|------|--------|-------|
+| Machine-wide scan (all client configs) | Planned | Scan all MCP servers without specifying a target |
+| 12+ agent clients (Gemini, Codex, etc.) | Partial | More client config paths |
+| Skills directories + `SKILL.md` | Planned | Scan agent skill files |
+| Remote fuzz (`mcts fuzz --url`) | Planned | Fuzz hosted servers, not just stdio |
+
+See [Feature Expansion Plan](../more/feature-expansion-plan.md) for the full backlog.
 
 ---
 
@@ -72,5 +90,5 @@ See [Inventory — planned discovery](inventory.md#planned-discovery) and [Featu
 
 - [Getting Started](../get-started/getting-started.md)
 - [CLI Reference](../platform/cli.md)
-- [Planned discovery modes](#planned-discovery-modes)
+- [Glossary](../glossary.md)
 - [Documentation index](../index.md)

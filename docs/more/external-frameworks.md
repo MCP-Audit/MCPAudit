@@ -2,9 +2,22 @@
 
 > [Documentation](../index.md) → [More](README.md)
 
-MCTS uses a **first-party taxonomy** (`MCTS-T-*` techniques, `MCTS-M-*` mitigations). Industry MCP threat frameworks and Sigma rule corpora inform detection patterns and roadmap priorities but are **not vendored** in this repository.
+This document explains how MCTS relates to **industry MCP threat frameworks** and **Sigma rule corpora**. MCTS uses its own first-party taxonomy but learns detection patterns from external research.
 
-**Product source of truth:** `src/mcts/taxonomy/techniques.json` · [Threat Taxonomy](../reporting/taxonomy.md)
+> **Looking for MCTS technique IDs?** See [Threat Taxonomy](../reporting/taxonomy.md).
+> **Contributing detection rules?** See [Adding an analyzer](../analysis/architecture.md#adding-an-analyzer).
+
+---
+
+## In plain English
+
+Several organizations publish catalogs of MCP-specific attack techniques (description poisoning, tool shadowing, rug pulls, etc.) with detection rules and mitigation guidance. MCTS:
+
+- **Uses its own taxonomy** (`MCTS-T-*` / `MCTS-M-*`) on all findings — not third-party IDs
+- **Learns from external frameworks** when designing new analyzers and detection patterns
+- **Does not vend** external rule corpora — they inform the roadmap, not the runtime
+
+Think of external frameworks as the "textbook" and MCTS as the "exam" — frameworks describe what attacks exist; MCTS checks whether your server is vulnerable.
 
 ---
 

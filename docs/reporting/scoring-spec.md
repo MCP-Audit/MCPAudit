@@ -2,9 +2,27 @@
 
 > [Documentation](../index.md) → [Reporting](README.md)
 
-MCTS computes an auditable **security score** and **risk index** from findings. Every `ScanReport` includes a `ScoreBasis` so teams can verify how the number was derived — nothing is hardcoded per target.
+This document explains how MCTS calculates the **security score** (0–100) and **risk index** from findings. Use it to set CI gate thresholds, explain scores to stakeholders, or verify that scoring is working correctly.
 
-**Implementation:** `src/mcts/scoring/engine.py` (core math), `src/mcts/report/data.py` (category breakdown, HTML radar)
+> **Just want to set a CI gate?** Use `--min-score 70 --fail-on-critical`. See [CI Integration](../platform/ci-integration.md).
+> **Unfamiliar with terms?** See the [Glossary](../glossary.md).
+
+---
+
+## In plain English
+
+After MCTS finds security issues, it converts them into a single number:
+
+- **Security score (0–100):** Higher is better. 100 means no issues. Below 50 is serious.
+- **Risk index (0–100):** Higher is worse. A linear measure of total risk burden.
+
+The score is calculated from finding severities using a transparent formula — nothing is hardcoded per target. Every report includes a `score.basis` field showing exactly which findings contributed, so you can verify the math.
+
+**Example:** A server with 3 Critical + 7 High + 2 Medium findings scores approximately **5/100**.
+
+Compliance findings (OWASP mapping) appear in reports but do **not** affect the score.
+
+**Implementation:** `src/mcts/scoring/engine.py`
 
 ---
 

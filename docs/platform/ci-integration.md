@@ -2,7 +2,23 @@
 
 > [Documentation](../index.md) → [Platform](README.md)
 
-MCTS is designed for **local-first pipeline gates** — no cloud API required for core scans. Use JSON for artifacts, SARIF for GitHub Advanced Security, HTML for human review, and score thresholds to fail builds deterministically.
+This guide shows how to run MCTS in your CI/CD pipeline — fail builds on security thresholds, upload SARIF to GitHub Code Scanning, and share HTML reports with your team.
+
+> **Just want a quick gate?** Run `mcts scan ./server.py --fail-on-critical --min-score 70`
+> **Want the GitHub Action?** See [GitHub Actions](#github-actions-published-action) below.
+
+---
+
+## In plain English
+
+MCTS is designed to work in CI without a cloud account. The typical workflow:
+
+1. **Scan** your MCP server on every pull request
+2. **Fail the build** if critical findings exist or the score drops below your threshold
+3. **Upload SARIF** so findings appear in GitHub's Security tab
+4. **Save HTML** as a workflow artifact for human review
+
+No API keys or external services required for standard scans.
 
 ---
 

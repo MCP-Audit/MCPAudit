@@ -2,14 +2,24 @@
 
 > [Documentation](../index.md) → [More](README.md)
 
+This document describes **where MCTS is today** (alpha), **what's shipped**, and **what's planned** in upcoming phases. Read this to understand project direction and prioritize contributions.
 
-MCTS aims to become the **default security platform for the MCP ecosystem** — the CVSS-style scorecard, CI gate, and threat intelligence layer for AI agent tooling.
+> **Just want to use MCTS?** See [Getting Started](../get-started/getting-started.md).
+> **Detailed implementation guide:** [Feature Expansion Plan](feature-expansion-plan.md)
 
-**Detailed implementation guide:** [Feature Expansion Plan](feature-expansion-plan.md) — gap analysis, module layout, build order, and success criteria.
+---
+
+## Vision
+
+MCTS aims to become the **default security tool for MCP servers** — the same way teams use `ruff check` for Python linting or Trivy for container scanning.
+
+**North star:** Every MCP server repository runs `mcts scan` in CI before merge.
+
+Today, MCTS identifies security issues across permissions, injection, tool abuse, data leakage, and attack chains. The next evolution adds deeper SAST, skills scanning, AI-BOM export, and runtime proxy capabilities.
 
 **Operational docs (shipped features):** [Architecture](../analysis/architecture.md) · [CLI](../platform/cli.md) · [Scoring](../reporting/scoring-spec.md) · [CI](../platform/ci-integration.md)
 
-Status labels:
+Status labels used throughout this document:
 
 | Label | Meaning |
 |-------|---------|
@@ -17,14 +27,6 @@ Status labels:
 | In progress | Actively being built |
 | Planned | Scoped for an upcoming phase |
 | Future | Longer-term vision |
-
----
-
-## Vision
-
-Today, MCTS identifies security issues across permissions, prompt injection, tool abuse, data leakage, and attack chains. The next evolution turns those findings into **actionable risk intelligence** that teams can compare, track over time, and enforce in CI/CD — the same way teams use Trivy for containers or Semgrep for code.
-
-**North star:** Make `mcts scan` as standard in MCP projects as `ruff check` is in Python projects.
 
 ---
 

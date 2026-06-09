@@ -2,36 +2,39 @@
 
 > [Documentation](../index.md) → **More**
 
-Planning documents, product positioning, and references for contributors and stakeholders.
+Planning documents, product positioning, and references for contributors and stakeholders. These docs describe **where MCTS is today**, **where it's going**, and **how to contribute**.
+
+> **Just want to use MCTS?** You can skip this section. Start with [Getting Started](../get-started/getting-started.md).
 
 ---
 
 ## Guides
 
-| Page | Contents |
-|------|----------|
-| [Feature Expansion Plan](feature-expansion-plan.md) | Honest inventory, gap analysis, phased implementation, **Part 11 prioritized backlog** (440+ lines) |
-| [Product Roadmap](roadmap.md) | Executive phases 0–3, success criteria, shipped vs planned |
-| [Product Positioning](product-positioning.md) | Personas, use cases, capability matrix, differentiation, design principles |
-| [External Frameworks](external-frameworks.md) | Industry taxonomy relationship, pattern adoption, porting guidance, maintainer gap review |
+| Page | Who should read it | What it covers |
+|------|-------------------|----------------|
+| [Product Positioning](product-positioning.md) | Security leaders, product managers | What MCTS is for, who uses it, how it compares to other tools |
+| [Product Roadmap](roadmap.md) | Everyone interested in direction | What's shipped vs planned, phased deliverables |
+| [Feature Expansion Plan](feature-expansion-plan.md) | Contributors implementing features | Detailed gap analysis, module layout, build order |
+| [External Frameworks](external-frameworks.md) | Detection engineers, contributors | How MCTS relates to industry threat taxonomies |
 
 ---
 
-## When to read which
+## Which doc should I read?
 
-| Audience | Start with |
-|----------|------------|
-| New contributor implementing a feature | [Feature Expansion Plan](feature-expansion-plan.md) |
-| Product / leadership | [Product Roadmap](roadmap.md) + [Product Positioning](product-positioning.md) |
-| Gap planning / backlog | [Product Positioning — Complete gap index](product-positioning.md#complete-gap-index) + [Feature Expansion Plan Appendix](feature-expansion-plan.md#part-11-appendix--full-gap-backlog-gap-001240) |
-| CLI planned surface | [CLI Reference — Planned commands](platform/cli.md#planned-commands-and-flags) |
-| Planned analyzers | [Security Checks — §16](analysis/security-checks.md#16-planned-checks) |
-| Detection engineer porting rules | [External Frameworks](external-frameworks.md) + [Taxonomy](../reporting/taxonomy.md) |
+| Your goal | Start here |
+|-----------|------------|
+| Understand what MCTS does and who it's for | [Product Positioning](product-positioning.md) |
+| See what's coming next | [Product Roadmap](roadmap.md) |
+| Implement a new feature | [Feature Expansion Plan](feature-expansion-plan.md) |
+| Port detection rules from another framework | [External Frameworks](external-frameworks.md) + [Threat Taxonomy](../reporting/taxonomy.md) |
+| Find a specific planned CLI command | [CLI Reference — Planned](../platform/cli.md#planned-commands-and-flags) |
+| Find a specific planned analyzer | [Security Checks — Planned](../analysis/security-checks.md#16-planned-checks) |
 
 ---
 
 ## Related
 
 - [Architecture](../analysis/architecture.md)
+- [Glossary](../glossary.md)
 - [Changelog](../../CHANGELOG.md)
 - [Documentation index](../index.md)

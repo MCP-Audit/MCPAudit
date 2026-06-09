@@ -1,122 +1,152 @@
 # MCTS Documentation
 
-**MCTS** (Model Context Threat Scanner) analyzes MCP servers — static and live discovery, 20 security analyzers by default (25+ with optional flags), risk scoring, terminal dashboard, SARIF/JSON, and shareable HTML reports.
+**MCTS** (Model Context Threat Scanner) is a security scanner for [Model Context Protocol (MCP)](https://modelcontextprotocol.io) servers. It finds vulnerabilities in the tools, prompts, and resources that AI agents can access — before attackers do.
 
-This documentation covers installation, every scan mode, the analysis pipeline, scoring and taxonomy, CLI/CI integration, and long-term planning.
+> **New here?** Start with [Install and first scan](get-started/getting-started.md). Unfamiliar with a term? See the [Glossary](glossary.md).
 
 ---
 
-## What MCTS does
+## What problem does MCTS solve?
 
-| Stage | Description |
-|-------|-------------|
-| **Discover** | Python/TS static analysis; stdio + HTTP/SSE live probe; JSON snapshots; client config inventory |
-| **Analyze** | 25+ security analyzers on tools, prompts, resources, instructions, handlers, runtime events |
-| **Score** | Exponential security score + category breakdown + auditable `ScoreBasis` |
-| **Report** | Rich terminal UI, JSON, SARIF, executive HTML dashboard |
+AI assistants connect to external capabilities through **MCP servers** — small programs that expose tools like "query database", "read file", or "send email". If a server is poorly designed, an attacker (or a manipulated AI) could:
 
-Typical commands:
+- Delete data through an overly powerful tool
+- Steal secrets embedded in server code
+- Chain multiple innocent-looking tools into a serious attack
+- Trick the AI with poisoned tool descriptions
+
+MCTS scans MCP servers the same way you would run a linter or SAST tool on application code — locally, in CI, with clear pass/fail gates.
 
 ```bash
-mcts scan ./repo/ -o report.json --min-score 70
-mcts report report.json -o security-report.html
-mcts inventory --scan
+mcts scan ./server.py                    # Scan and show results in terminal
+mcts scan ./server.py -o report.json     # Save full report as JSON
+mcts report report.json -o report.html   # Generate shareable HTML dashboard
 ```
 
 ---
 
-## Get Started
+## How MCTS works (four steps)
 
-New users: install, run the vulnerable example server, export JSON/SARIF/HTML, optional live modes.
+| Step | What happens | Example output |
+|------|--------------|----------------|
+| **1. Discover** | Find tools, prompts, resources, and handler code from source files, live probes, or exported JSON | List of 12 tools with schemas |
+| **2. Analyze** | Run 20+ security checks on permissions, injection, secrets, attack chains, and more | 15 findings across 4 severity levels |
+| **3. Score** | Compute a 0–100 security score with a transparent, auditable formula | Score: 67/100 (MEDIUM) |
+| **4. Report** | Show results in terminal, JSON, SARIF (for GitHub), or HTML dashboard | Terminal table, CI artifact, executive report |
 
-- [Install and first scan](get-started/getting-started.md) — step-by-step with troubleshooting
-
-All pages: [get-started/](get-started/README.md)
-
----
-
-## Scanning
-
-Discovery modes — how MCTS finds MCP servers and collects signal before analysis.
-
-| Guide | Description |
-|-------|-------------|
-| [Live Scanning](scanning/live-scanning.md) | Stdio MCP probing, consent, config-based launch, runtime events |
-| [Remote Scanning](scanning/remote-scanning.md) | HTTP/SSE endpoints, Bearer/OAuth, protocol probes |
-| [Static Snapshot](scanning/static-snapshot.md) | Air-gapped scan from exported `tools/list` JSON |
-| [Protocol Fuzzing](scanning/fuzzing.md) | Safe/standard/aggressive fuzz levels; pipe into `--runtime-events` |
-| [TypeScript Discovery](scanning/typescript-discovery.md) | Node MCP servers without npm install |
-| [Config Inventory](scanning/inventory.md) | Cursor, Claude, VS Code, Windsurf; cross-server shadowing |
-| [Readiness Scanning](scanning/readiness.md) | Production readiness heuristics (`mcts readiness`) |
-
-All pages: [scanning/](scanning/README.md)
+Details: [Architecture](analysis/architecture.md)
 
 ---
 
-## Analysis
+## Choose your path
+
+Pick the guide that matches your role:
+
+| I am a… | Start here | Then read |
+|---------|------------|-----------|
+| **Developer new to MCTS** | [Getting Started](get-started/getting-started.md) | [CLI Reference](platform/cli.md) |
+| **MCP server author** | [Getting Started](get-started/getting-started.md) → scan your repo | [Security Checks](analysis/security-checks.md) |
+| **DevOps / CI engineer** | [CI Integration](platform/ci-integration.md) | [Scoring Spec](reporting/scoring-spec.md) (gate thresholds) |
+| **Security engineer** | [Architecture](analysis/architecture.md) | [Threat Taxonomy](reporting/taxonomy.md) |
+| **Security / engineering leader** | [Getting Started](get-started/getting-started.md) → HTML report | [Product Positioning](more/product-positioning.md) |
+| **Contributor** | [CONTRIBUTING.md](../CONTRIBUTING.md) | [Feature Expansion Plan](more/feature-expansion-plan.md) |
+
+---
+
+## Documentation sections
+
+### Get Started
+
+Install MCTS, run your first scan, and understand the output.
+
+- [Install and first scan](get-started/getting-started.md) — step-by-step guide (~15 minutes)
+- [Get Started section](get-started/README.md)
+
+### Scanning
+
+How MCTS finds MCP servers and collects data before analysis.
+
+| Guide | When to use it |
+|-------|----------------|
+| [Live Scanning](scanning/live-scanning.md) | You want to probe a running server, not just read source code |
+| [Remote Scanning](scanning/remote-scanning.md) | The server is hosted over HTTP/SSE, not on your machine |
+| [Static Snapshot](scanning/static-snapshot.md) | You have an exported JSON file and no network access |
+| [Protocol Fuzzing](scanning/fuzzing.md) | You want to test how the server handles bad input |
+| [TypeScript Discovery](scanning/typescript-discovery.md) | Your MCP server is written in Node.js/TypeScript |
+| [Config Inventory](scanning/inventory.md) | You want to audit which MCP servers are installed locally |
+| [Readiness Scanning](scanning/readiness.md) | You want production-readiness checks (separate from security) |
+
+All scanning guides: [scanning/](scanning/README.md)
+
+### Analysis
 
 How findings are produced from discovered tools and source code.
 
-| Guide | Description |
-|-------|-------------|
-| [Security Checks Reference](analysis/security-checks.md) | Every analyzer — shipped checks + **§16 planned checks** from gap audit |
-| [Architecture](analysis/architecture.md) | Full pipeline: data models, discovery, 20+ analyzers, scoring, reporting |
+| Guide | What you'll learn |
+|-------|-------------------|
+| [Security Checks Reference](analysis/security-checks.md) | Every check MCTS runs, what it looks for, and how to enable it |
+| [Architecture](analysis/architecture.md) | Full pipeline: discovery → analyzers → scoring → reporting |
 
-All pages: [analysis/](analysis/README.md)
+All analysis guides: [analysis/](analysis/README.md)
 
----
+### Reporting
 
-## Reporting
+Scores, threat labels, and export formats.
 
-Scores, taxonomies, and shareable output formats.
+| Guide | What you'll learn |
+|-------|-------------------|
+| [Scoring Specification](reporting/scoring-spec.md) | How the 0–100 score is calculated and how to set CI gates |
+| [Threat Taxonomy](reporting/taxonomy.md) | MCTS-T technique IDs and MCTS-M mitigation IDs on findings |
+| [HTML Security Dashboard](reporting/html-report.md) | Generate and share executive security reports |
 
-| Guide | Description |
-|-------|-------------|
-| [HTML Security Dashboard](reporting/html-report.md) | Layout, pages, export, design system, implementation |
-| [Scoring Specification](reporting/scoring-spec.md) | Formula, categories, CI gates, worked examples |
-| [Threat Taxonomy](reporting/taxonomy.md) | MCTS-T techniques, MCTS-M mitigations, Sigma rules |
+All reporting guides: [reporting/](reporting/README.md)
 
-All pages: [reporting/](reporting/README.md)
+### Platform
 
----
+Running MCTS from the command line, in CI, or via API.
 
-## Platform
+| Guide | What you'll learn |
+|-------|-------------------|
+| [CLI Reference](platform/cli.md) | Every command and flag |
+| [REST API](platform/rest-api.md) | Programmatic scans via `mcts serve` |
+| [CI Integration](platform/ci-integration.md) | GitHub Action, SARIF upload, pipeline gates |
 
-CLI commands, flags, exit codes, and CI/CD integration.
+All platform guides: [platform/](platform/README.md)
 
-| Guide | Description |
-|-------|-------------|
-| [CLI Reference](platform/cli.md) | Complete reference + **planned commands/flags** from gap audit |
-| [REST API](platform/rest-api.md) | `mcts serve` — FastAPI scan endpoint |
-| [CI Integration](platform/ci-integration.md) | GitHub Action, SARIF, gates, workflow patterns |
+### More
 
-All pages: [platform/](platform/README.md)
+Planning, positioning, and contributor references.
 
----
+| Guide | Audience |
+|-------|----------|
+| [Product Positioning](more/product-positioning.md) | What MCTS is for, who uses it, how it compares to other tools |
+| [Product Roadmap](more/roadmap.md) | What's shipped vs planned, phased deliverables |
+| [Feature Expansion Plan](more/feature-expansion-plan.md) | Detailed gap analysis and implementation guide for contributors |
+| [External Frameworks](more/external-frameworks.md) | How MCTS relates to industry threat taxonomies |
 
-## More
-
-Planning, positioning, and external references.
-
-| Guide | Description |
-|-------|-------------|
-| [Feature Expansion Plan](more/feature-expansion-plan.md) | Gap analysis, phased implementation, **Part 11 + full GAP appendix (213 rows)** |
-| [Product Roadmap](more/roadmap.md) | Phases from foundation → platform |
-| [Product Positioning](more/product-positioning.md) | Strengths, personas, differentiation, roadmap gaps |
-| [External Frameworks](more/external-frameworks.md) | Industry taxonomies, maintainer gap review workflow |
-| [Feature matrix (README)](../README.md#features) | Current module status |
-
-All pages: [more/](more/README.md)
+All planning docs: [more/](more/README.md)
 
 ---
 
-## Changelog
+## Quick reference
 
-- [Changelog](../CHANGELOG.md) — User-facing release notes
+| I want to… | Command |
+|------------|---------|
+| Scan a Python MCP server | `mcts scan ./server.py` |
+| Scan a whole repository | `mcts scan ./repo/` |
+| Fail CI on critical findings | `mcts scan ./server.py --fail-on-critical --min-score 70` |
+| Export for GitHub Code Scanning | `mcts scan ./server.py -o report.sarif --format sarif` |
+| Share results with leadership | `mcts report report.json -o security-report.html` |
+| See what's installed on my machine | `mcts inventory --scan` |
+| Probe a running server | `mcts scan ./server.py --live --i-understand-live-risk` |
+
+Full flag reference: [CLI Reference](platform/cli.md)
 
 ---
 
-## Contributing
+## Reference
 
-- [CONTRIBUTING.md](../CONTRIBUTING.md) — Development workflow, analyzer guide
-- [SECURITY.md](../SECURITY.md) — Vulnerability reporting and safe usage
+- [Glossary](glossary.md) — plain-language definitions for all key terms
+- [Changelog](../CHANGELOG.md) — release notes
+- [CONTRIBUTING.md](../CONTRIBUTING.md) — development workflow
+- [SECURITY.md](../SECURITY.md) — vulnerability reporting
