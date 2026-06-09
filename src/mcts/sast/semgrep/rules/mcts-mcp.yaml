@@ -1,0 +1,68 @@
+rules:
+  - id: mcts-python-subprocess-shell
+    languages: [python]
+    message: Shell command execution via subprocess with shell=True
+    severity: ERROR
+    metadata:
+      technique_id: MCTS-T-1003
+      category: command_execution
+    pattern-either:
+      - pattern: subprocess.run(..., shell=True, ...)
+      - pattern: subprocess.call(..., shell=True, ...)
+      - pattern: subprocess.Popen(..., shell=True, ...)
+      - pattern: os.system(...)
+
+  - id: mcts-python-eval-exec
+    languages: [python]
+    message: Dynamic code execution via eval or exec
+    severity: ERROR
+    metadata:
+      technique_id: MCTS-T-1003
+      category: command_execution
+    pattern-either:
+      - pattern: eval(...)
+      - pattern: exec(...)
+
+  - id: mcts-python-pickle-load
+    languages: [python]
+    message: Unsafe deserialization via pickle.load
+    severity: WARNING
+    metadata:
+      technique_id: MCTS-T-1005
+      category: deserialization
+    pattern-either:
+      - pattern: pickle.load(...)
+      - pattern: pickle.loads(...)
+
+  - id: mcts-java-runtime-exec
+    languages: [java]
+    message: Java command execution via Runtime.exec or ProcessBuilder
+    severity: ERROR
+    metadata:
+      technique_id: MCTS-T-1003
+      category: command_execution
+    pattern-either:
+      - pattern: Runtime.getRuntime().exec(...)
+      - pattern: new ProcessBuilder(...)
+
+  - id: mcts-js-child-process
+    languages: [javascript, typescript]
+    message: Node.js child_process command execution
+    severity: ERROR
+    metadata:
+      technique_id: MCTS-T-1003
+      category: command_execution
+    pattern-either:
+      - pattern: require('child_process').exec(...)
+      - pattern: require('child_process').execSync(...)
+      - pattern: require("child_process").exec(...)
+      - pattern: require("child_process").execSync(...)
+
+  - id: mcts-js-eval
+    languages: [javascript, typescript]
+    message: Dynamic code execution via eval
+    severity: ERROR
+    metadata:
+      technique_id: MCTS-T-1003
+      category: command_execution
+    pattern: eval(...)
