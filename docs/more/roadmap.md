@@ -203,12 +203,13 @@ Per-tool capability dimensions (reads untrusted input, egresses network, execute
 | 2.9 | MCP marketplace scorecards | Planned | Public benchmark publishing |
 | 2.10 | Remote protocol fuzz | Planned | `mcts fuzz --url` |
 | 2.11 | Semgrep SAST adapter (+ Java) | Shipped | `--semgrep` optional extra |
-| 2.12 | Skills / `SKILL.md` scanning | Shipped | W007–W014 + `mcts inventory --skills` |
-| 2.13 | Machine-wide config scan | Shipped | `mcts scan --machine-wide` |
-| 2.14 | Interactive attack-graph dashboard | Partial | Static SVG in HTML; force-directed UI planned |
-| 2.15 | Git-aware MCP config diff + PR comments | Planned | CI markdown output |
-| 2.16 | Governance YAML policies | Shipped | `--policy` allowlist + min-score |
-| 2.17 | CycloneDX / AI-BOM export | Planned | From inventory + scan metadata |
+| 2.12 | Skills / `SKILL.md` scanning | Shipped | W007–W014 via `skill_md` on `mcts scan` + `mcts inventory --skills` |
+| 2.13 | Repo instruction discovery | Shipped | `SKILL.md`, `*prompt*.md`, `system_prompt.md` on static scans; `--instruction-file` / `--skills-dir` |
+| 2.14 | Machine-wide config scan | Shipped | `mcts scan --machine-wide` |
+| 2.15 | Interactive attack-graph dashboard | Partial | Static SVG in HTML; force-directed UI planned |
+| 2.16 | Git-aware MCP config diff + PR comments | Planned | CI markdown output |
+| 2.17 | Governance YAML policies | Shipped | `--policy` allowlist + min-score |
+| 2.18 | CycloneDX / AI-BOM export | Planned | From inventory + scan metadata |
 
 ---
 

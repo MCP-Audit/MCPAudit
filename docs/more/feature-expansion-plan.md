@@ -459,6 +459,7 @@ Week 11+:  Phase 2 (fuzz, audit-config, baselines, drift, TS discovery)
 - [ ] Remote protocol fuzz (`mcts fuzz --url`)
 - [x] Semgrep SAST adapter + Java (`--semgrep` extra)
 - [x] Skills / `SKILL.md` inventory scanning
+- [x] Repository instruction discovery (`SKILL.md`, `*prompt*.md`, `system_prompt.md` on static scans)
 - [x] MCP server mode (`mcts-mcp`) with `scan_mcp_target`, `explain_finding`
 - [x] Package vetting (`mcts vet`)
 - [x] Structured pentest (`mcts pentest`)
@@ -482,7 +483,8 @@ Prioritized themes from the **240-item gap backlog** (213 actionable + 27 alread
 |----------|-------------|--------|--------------|
 | Per-technique MCTS-T scan | `--technique MCTS-T-xxxx` | Shipped | `cli/`, `taxonomy/technique_mode.py` |
 | Semgrep taint backend | Optional `--semgrep`; Java rules included | Shipped | `analyzers/semgrep_adapter.py` |
-| Skills scanning | `mcts inventory --skills`, `SKILL.md` analyzers | Shipped | `inventory/`, `analyzers/skill_md.py` |
+| Skills scanning | `skill_md` on `mcts scan` + `mcts inventory --skills` | Shipped | `discovery/instruction_files.py`, `inventory/`, `analyzers/skill_md.py` |
+| Repo instruction discovery | Markdown prompts/instructions under scan target | Shipped | `discovery/instruction_files.py`, `--discover-instructions` |
 | Machine-wide scan | Default scan all well-known client configs | Shipped | `scan/machine_wide.py`, `cli/` |
 | Pre-install vet | `mcts vet pypi:pkg` / `npm:pkg` / `oci:` | Shipped | `vet/` |
 | MCP server mode | `mcts-mcp` stdio tools for IDE agents | Shipped | `mcp_server/` |
@@ -635,7 +637,7 @@ Maintainers track detailed cross-tool mappings in a **local-only** audit.
 | GAP-026 | inspect subcommand | Missing | P1 | 2 | Read-only surface listing |
 | GAP-027 | evo fleet push | Missing | P0 | 4 | Fleet upload API integration |
 | GAP-028 | guard install/uninstall | Missing | P0 | 4 | Agent Guard hooks |
-| GAP-029 | --skills / SKILL.md scan | Shipped | P0 | 3 | `mcts inventory --skills` |
+| GAP-029 | --skills / SKILL.md scan | Shipped | P0 | 3 | `mcts scan` + `inventory --skills`, `skill_md` |
 | GAP-030 | Per-server consent | Partial | P1 | 2 | y/n per stdio server |
 | GAP-031 | --control-server bootstrap | Missing | P0 | 4 | Fleet scan upload |
 | GAP-032 | --full-toxic-flows | Shipped | P1 | 2 | W015–W020 / TF codes |
@@ -910,11 +912,11 @@ Maintainers track detailed cross-tool mappings in a **local-only** audit.
 | L1-22 | Container / image scan | N | GAP — OCI scan |
 | L1-23 | IaC scan (TF/K8s/Helm) | N | GAP — IaC posture |
 | L1-24 | GPU / ML artifact scan | N | Niche ML artifact scan |
-| L1-25 | Instruction file SAST (.cursorrules) | P | GAP-029 skills |
+| L1-25 | Instruction file SAST (.cursorrules) | Partial | Repo markdown discovery shipped; `.cursorrules` not yet in default globs |
 | L2-03 | ANSI / control-char smuggling | P | Partial metadata checks |
 | L2-20 | Per-technique MCTS-T scan mode | P | `--technique` shipped (GAP-001) |
 | L3-01 | Agent config / harness discovery | P | inventory + `--machine-wide` (GAP-006) |
-| L3-02 | Skills / SKILL.md scanning | P | `mcts inventory --skills` (GAP-029) |
+| L3-02 | Skills / SKILL.md scanning | Shipped | `mcts scan`, `inventory --skills` (GAP-029) |
 | L3-05 | Multi-agent red-team pentest | P | `mcts pentest` structured phases (GAP-004) |
 | L3-06 | Agent hook / guard install | N | GAP-028 guard.py |
 | L3-07 | Fleet / Evo push telemetry | N | GAP-027 |

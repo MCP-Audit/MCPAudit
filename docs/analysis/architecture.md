@@ -38,7 +38,7 @@ Roadmap and planned work: [Product roadmap](../more/roadmap.md) (not covered her
 
 When you run `mcts scan ./server.py`:
 
-1. **Discover** — Build an `MCPServerInfo` snapshot (tools, prompts, resources, handler source, optional live schemas)
+1. **Discover** — Build an `MCPServerInfo` snapshot (tools, prompts, resources, handler source, repo markdown instructions, optional live schemas)
 2. **Analyze** — Run security analyzers; each returns `Finding` objects
 3. **Post-process** — Dedupe, enrich with MCTS-T IDs, append OWASP compliance meta-findings
 4. **Score** — Compute 0–100 score (compliance findings excluded from score)
@@ -129,12 +129,23 @@ All scan paths converge on `Scanner.analyze_server(MCPServerInfo)`.
 |--------|------|--------|
 | Python static AST | Default repo/file scan | `discovery/static.py` |
 | TypeScript/JS patterns | `--languages typescript` | `discovery/static_js.py` |
+| **Repository markdown** | Default repo scan (`--discover-instructions`, on) | `discovery/instruction_files.py` |
 | Live stdio MCP | `--live` | `discovery/live.py`, `probe/session.py` |
 | Remote HTTP/SSE | `--url` | `probe/http_session.py` |
 | Exported JSON | `--snapshot` | `discovery/static_json.py` |
 | Client config launch | `--config` + `--server` | `discovery/live_config.py` |
 
-Static + live can merge when `merge_static_live` is true (default). See [Scanning overview](../scanning/README.md).
+Static + live can merge when `merge_static_live` is true (default). Repository markdown discovery merges with Python/JS static results via `discovery/static_merge.py`. See [Scanning overview](../scanning/README.md).
+
+**Repository instruction discovery** (`discovery/instruction_files.py`) walks the scan target for agent prompt content outside MCP `prompts/list`:
+
+| Pattern | Loaded as |
+|---------|-----------|
+| `**/SKILL.md` | Prompt surface + `agent_skills` entry (for `skill_md`) |
+| `**/*prompt*.md`, `**/system_prompt.md` | Prompt and/or instruction surfaces |
+| `skills/`, `agent/skills/` | Project-local skill roots (no symlink required) |
+
+Explicit paths: `--instruction-file`, `--instruction-glob`, `--skills-dir`. Disabled with `--no-discover-instructions`. Skipped when `--live`, `--url`, or `--snapshot` is used (MCP protocol takes precedence).
 
 ### 2. Attach runtime context
 
@@ -144,7 +155,7 @@ Static + live can merge when `merge_static_live` is true (default). See [Scannin
 
 ### 3. Run analyzers
 
-Loop registered analyzers; skip disabled or filtered ones (`--analyzers`, config toggles). See [Analyzers](#analyzers).
+Loop registered analyzers; skip disabled or filtered ones (`--analyzers`, config toggles). When `--surface-scoped-analyzers` is on (default) and `--surfaces` is a strict subset, only analyzers relevant to those surfaces run — e.g. `mcts scan-prompts` skips `supply_chain` on `pyproject.toml`. See [Analyzers](#analyzers) and `core/surface_analyzers.py`.
 
 Optional: `probe_protocol_security()` when `--protocol-probe` + `--url`.
 
@@ -182,10 +193,20 @@ The **single input** every analyzer receives.
 |-------|---------|
 | `tools`, `prompts`, `resources` | MCP surfaces with schemas and text |
 | `instructions` | Server system instructions when exposed |
+| `instruction_sources` | Source paths for repo-discovered system instruction markdown |
+| `agent_skills` | Discovered `SKILL.md` files (`name`, `path`, `content`) for `skill_md` |
 | `source_files` | Path → content cache for SAST |
 | `runtime_events` | Telemetry rows for runtime analyzers |
-| `discovery_mode` | `static`, `live`, `merged`, `config-static`, etc. |
+| `discovery_mode` | `static`, `live`, `merged`, `static+instruction-files`, `instruction-files`, etc. |
 | `surface_scan` | Per-scan surface and MIME options |
+
+### MCPPrompt (key fields)
+
+| Field | Purpose |
+|-------|---------|
+| `name`, `description` | Prompt metadata or full markdown body when repo-discovered |
+| `source_file`, `source_line` | Path to `SKILL.md`, `*prompt*.md`, etc. |
+| `discovered_via` | `mcp`, `skill-md`, or `instruction-file` |
 
 ### MCPTool (key fields)
 
@@ -307,6 +328,7 @@ Run unless disabled by `_is_enabled()` or `--analyzers` subset.
 | `sigma_metadata` | Bundled + custom Sigma YAML |
 | `oauth_config` | OAuth misconfiguration |
 | `supply_chain` | Dependency posture heuristics |
+| `skill_md` | Agent `SKILL.md` patterns (W007–W014) when repo skills discovered |
 
 ### Default-on (config toggles)
 
@@ -314,6 +336,7 @@ Run unless disabled by `_is_enabled()` or `--analyzers` subset.
 |-----|--------|-------|
 | `surface_metadata` | `enable_surface_metadata` (default on) | Multi-surface poisoning |
 | `prompt_defense` | `enable_prompt_defense` (default on) | Missing defensive language |
+| `skill_md` | always registered | `SKILL.md` W007–W014 when `agent_skills` populated |
 | `behavioral_static` | `enable_behavioral_static` (default on) | Description vs handler + taint |
 | `jailbreak` | `enable_jailbreak` (default on) | Manipulation resistance |
 | `attack_chains` | `enable_attack_chains` (default on) | Capability-graph BFS |
@@ -342,7 +365,7 @@ Run unless disabled by `_is_enabled()` or `--analyzers` subset.
 
 ### Multi-surface iteration
 
-`analyzers/surfaces.py` defines `ScanSurface` for tools, prompts, resources, and instructions. Surface-aware analyzers iterate via `scan_surfaces(server)`.
+`analyzers/surfaces.py` defines `ScanSurface` for tools, prompts, resources, and instructions. Surface-aware analyzers iterate via `scan_surfaces(server)`. Repo-discovered markdown is loaded into `prompts` / `instructions` before surface iteration, so `prompt_injection`, `jailbreak`, and `prompt_defense` analyze real file content — not only MCP `prompts/list` from live probes.
 
 ### Behavioral SAST (`sast/`)
 

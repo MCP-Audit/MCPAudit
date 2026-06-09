@@ -68,6 +68,7 @@ MCTS is **alpha** software with a local-first MCP security pipeline — no cloud
 | Repository & entrypoint scan | `mcts scan ./repo/` or `mcts scan ./server.py` — Python + TypeScript static discovery |
 | Auto target resolution | `mcts scan . --auto` — pick entrypoint or lone MCP config server |
 | Multi-surface analysis | `--surfaces tool,prompt,resource,instruction` |
+| Repo instruction discovery | Default on static scans — `SKILL.md`, `*prompt*.md`, `system_prompt.md` → prompt/instruction analyzers |
 | Live stdio probing | `--live --i-understand-live-risk` — merge runtime schemas with static context |
 | Remote HTTP/SSE | `--url` + Bearer/OAuth — streamable HTTP and SSE transports |
 | Air-gapped snapshot | `--snapshot tools.json` or `mcts snapshot` → offline scan |
@@ -98,7 +99,7 @@ MCTS is **alpha** software with a local-first MCP security pipeline — no cloud
 |------------|-----|
 | Client config inventory | `mcts inventory` — **12+** agent clients (Cursor, Claude, VS Code, Gemini, Codex, …) |
 | Inventory batch scan | `mcts inventory --scan-all` |
-| Skills scanning | `mcts inventory --skills` — `SKILL.md` checks (`W007–W014`) |
+| Skills scanning | `mcts scan ./skills` or `mcts inventory --skills` — `SKILL.md` checks (`W007–W014`) |
 | Dependency CVE scan | `--pip-audit`, `--npm-audit` |
 | Package pre-install vet | `mcts vet pypi:` / `npm:` / `oci:` |
 | Structured pentest | `mcts pentest` — static recon, attack chains, optional safe fuzz |
@@ -125,7 +126,7 @@ MCTS is **alpha** software with a local-first MCP security pipeline — no cloud
 | MCP server mode | `mcts-mcp` — `scan_mcp_target`, `explain_finding`, `compare_baselines` for IDE agents |
 | Readiness (non-security) | `mcts readiness` — HEUR-001–020 + optional OPA/LLM |
 | Protocol fuzzing | `mcts fuzz` — safe read-only probes by default |
-| Surface subcommands | `mcts scan-prompts`, `scan-resources`, `scan-instructions` |
+| Surface subcommands | `mcts scan-prompts`, `scan-resources`, `scan-instructions` (surface-scoped analyzers; no supply-chain noise) |
 | Python API | `from mcts import Scanner, ScanConfig` |
 
 ## Quick Start

@@ -63,7 +63,9 @@ The output is one HTML file with **inlined CSS and JavaScript**. Chart.js and In
 | **Radar chart** | Your categories vs industry benchmark |
 | **Trend panel** | Historical scores from `scan_history` or `mcts_analysis/history.json` |
 | **Risk guide** | Reference cards for score ranges 0–25 through 76–100 |
-| **Banners** | Tool-discovery notice (static scans), `scan_notes` |
+| **Banners** | Tool-discovery notice (static scans), `scan_notes` (includes instruction-discovery summary when repo markdown was loaded) |
+
+When repository instruction discovery runs, a note is appended to `scan_notes` (visible in the overview banners) listing counts of prompt surfaces, `SKILL.md` files, and system instruction files found. Dedicated sidebar fields for `instruction_sources` / skill counts are not shown yet — use the JSON export or `server.agent_skills` in Raw Data for audit detail.
 
 Sidebar **Scan Information** includes target, **scan scope** (repository / live / snapshot / entrypoint), date/time, tools, and analyzers run.
 

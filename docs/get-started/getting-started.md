@@ -214,6 +214,24 @@ uv run mcts scan examples/bench/multi-file-server/
 
 Directory scans walk the tree, discover Python and TypeScript MCP servers, merge tools by name, and skip test directories and dependencies automatically.
 
+### Scan prompts and instructions in a repo
+
+Agent projects often store prompts in markdown (`system_prompt.md`, `skills/*/SKILL.md`) rather than MCP `prompts/list`. MCTS discovers these files by default on static scans:
+
+```bash
+# Prompt/instruction surfaces only (skips supply-chain noise on pyproject.toml)
+uv run mcts scan . --surfaces prompt,instruction
+
+# Skills tree only
+uv run mcts scan ./skills --surfaces prompt,instruction
+
+# Explicit files or globs
+uv run mcts scan . --instruction-file src/agent/system_prompt.md
+uv run mcts inventory --skills --skills-dir ./skills
+```
+
+Disable repo markdown discovery with `--no-discover-instructions` when you only want MCP tool metadata from source code. See [Security checks — metadata poisoning](../analysis/security-checks.md#2-metadata-poisoning-and-injection).
+
 ### Terminal themes
 
 ```bash

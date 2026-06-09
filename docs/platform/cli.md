@@ -110,6 +110,11 @@ Valid category keys: `permissions`, `injection`, `execution`, `data_leakage`, `a
 | `--expand-vars` | `auto` | Expand `$VAR` / `%VAR%` in config commands: `auto`, `linux`, `mac`, `windows`, `off` |
 | `--snapshot` | — | Static JSON snapshot (`tools/list` export); no live connection |
 | `--surfaces` | all four | Comma-separated: `tool`, `prompt`, `resource`, `instruction` |
+| `--discover-instructions` | true | Discover markdown prompts/instructions (`SKILL.md`, `*prompt*.md`, `system_prompt.md`) in repo scans |
+| `--instruction-glob` | — | Repeatable glob under TARGET for extra instruction markdown files |
+| `--instruction-file` | — | Repeatable explicit markdown file to include as a prompt/instruction surface |
+| `--skills-dir` | — | Repeatable skills directory to scan for `SKILL.md` files |
+| `--surface-scoped-analyzers` | true | When `--surfaces` is a subset, run only analyzers relevant to those surfaces |
 | `--resource-mime` | — | Comma-separated MIME allowlist for resource scanning (e.g. `text/plain`) |
 | `--i-understand-live-risk` | false | Consent for live/remote probe (or `MCTS_LIVE_OK=1`) |
 | `--stderr-file` | — | Capture live server stderr to file |
@@ -247,6 +252,17 @@ mcts scan-prompts <target> [--snapshot path.json]
 mcts scan-resources <target> [--snapshot path.json] [--resource-mime text/plain]
 mcts scan-instructions <target> [--snapshot path.json]
 ```
+
+For agent repos with prompts in markdown (not MCP `prompts/list`), repository discovery is enabled by default on static scans:
+
+```bash
+mcts scan . --surfaces prompt,instruction
+mcts scan ./skills --surfaces prompt,instruction
+mcts scan . --instruction-file src/agent/system_prompt.md
+mcts inventory --skills --skills-dir ./skills
+```
+
+Discovered markdown becomes prompt/instruction surfaces for `prompt_injection`, `jailbreak`, `prompt_defense`, and `skill_md`. Surface subcommands skip repo-wide analyzers such as `supply_chain` unless `--no-surface-scoped-analyzers` is set.
 
 ---
 

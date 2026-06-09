@@ -18,7 +18,24 @@ If you use Cursor, Claude Desktop, or VS Code with MCP servers, those apps store
 
 With `--scan`, MCTS also runs a lightweight security scan on each server's entrypoint.
 
-With `--skills`, MCTS discovers `SKILL.md` files under well-known agent skill directories (for example `.cursor/skills`) and flags prompt-injection or exfiltration patterns.
+With `--skills`, MCTS discovers `SKILL.md` files under well-known agent skill directories (for example `.cursor/skills`) **and** project-local paths such as `skills/` and `agent/skills`.
+
+```bash
+# Include repo-local skills/ without symlinks
+mcts inventory --skills
+
+# Additional skills tree
+mcts inventory --skills --skills-dir ./skills --skills-dir ./custom-skills
+```
+
+For full prompt/instruction analysis on markdown in your repository (not only MCP `prompts/list`):
+
+```bash
+mcts scan . --surfaces prompt,instruction
+mcts scan ./skills --surfaces prompt,instruction
+mcts scan . --instruction-file src/agent/system_prompt.md
+mcts scan . --instruction-glob 'skills/**/SKILL.md'
+```
 
 ---
 

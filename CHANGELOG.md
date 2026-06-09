@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- **Repository instruction discovery** — auto-discovers `SKILL.md`, `*prompt*.md`, and `system_prompt.md` from repo markdown during static scans; feeds prompt/instruction analyzers and `skill_md`
+- **Surface-scoped analyzers** — `--surface-scoped-analyzers` (default on) limits analyzers to selected `--surfaces` (e.g. `scan-prompts` no longer runs supply-chain on `pyproject.toml`)
+- **CLI flags** — `--instruction-file`, `--instruction-glob`, `--skills-dir`, `--discover-instructions` / `--no-discover-instructions`
+- **Documentation** — instruction discovery, surface-scoped analyzers, and repo skills paths documented in architecture, security-checks, glossary, and README
+
 ## [0.1.1] - 2026-06-09
 
 ### Added

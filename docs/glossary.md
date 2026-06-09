@@ -71,7 +71,8 @@ Plain-language definitions for terms used throughout MCTS documentation. If you 
 | **Semgrep SAST** | Optional static analysis via `--semgrep` — runs bundled Semgrep rules (Python, JS/TS, Java) against the scan target. Requires the `semgrep` CLI on PATH. |
 | **LLM metadata triage** | Optional `--llm-triage` analyzer that classifies MCP metadata as malicious, safe, or suspect using an LLM (requires `MCTS_LLM_API_KEY`). |
 | **Toxic flow** | Cross-server capability combination where multiple tools together create elevated risk (W015–W020 issue codes). Enable with `--full-toxic-flows`. |
-| **SKILL.md** | Agent skill definition files scanned by `mcts inventory --skills` for prompt injection and credential patterns (W007–W014). |
+| **SKILL.md** | Agent skill definition files analyzed by `skill_md` (W007–W014). Discovered on `mcts scan` (repo `skills/`, `**/SKILL.md`) and `mcts inventory --skills` (agent config paths). |
+| **Instruction discovery** | Default static-scan behavior that loads prompt/instruction content from repository markdown (`SKILL.md`, `*prompt*.md`, `system_prompt.md`) into MCP prompt/instruction surfaces. Disable with `--no-discover-instructions`. |
 
 ---
 
