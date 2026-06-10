@@ -47,9 +47,9 @@ def detect_repo_languages(
         suffix = path.suffix.lower()
         if suffix == ".go" and _file_has_indicators(path, GO_MCP_INDICATORS):
             detected.add("go")
-        elif suffix == ".rs" and _file_has_indicators(path, RUST_MCP_INDICATORS):
-            detected.add("rust")
-        elif path.name == "Cargo.toml" and _file_has_indicators(path, ("rmcp", "mcp_server")):
+        elif (suffix == ".rs" and _file_has_indicators(path, RUST_MCP_INDICATORS)) or (
+            path.name == "Cargo.toml" and _file_has_indicators(path, ("rmcp", "mcp_server"))
+        ):
             detected.add("rust")
 
     return detected

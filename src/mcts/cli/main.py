@@ -259,7 +259,10 @@ def scan(
         str | None,
         typer.Option(
             "--languages",
-            help="Comma-separated discovery languages: python, typescript, go, rust (auto-detects go/rust in repos)",
+            help=(
+                "Comma-separated discovery languages: python, typescript, go, rust "
+                "(auto-detects go/rust in repos)"
+            ),
         ),
     ] = None,
     baseline: Annotated[
