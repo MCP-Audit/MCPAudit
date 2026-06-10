@@ -59,9 +59,7 @@ def compile_metadata_rules(source: Path, *, merge_bundled: bool = True) -> list[
 @lru_cache(maxsize=4)
 def _load_bundled_rules_cached(extra_root_str: str | None) -> tuple[MetadataSigmaRule, ...]:
     extra = Path(extra_root_str) if extra_root_str else None
-    return tuple(
-        dedupe_rules(load_bundled_rules() + (load_rules_from_directory(extra) if extra else []))
-    )
+    return tuple(dedupe_rules(load_bundled_rules() + (load_rules_from_directory(extra) if extra else [])))
 
 
 def cached_metadata_rules(extra_root: Path | None = None) -> list[MetadataSigmaRule]:
