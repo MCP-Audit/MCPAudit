@@ -107,10 +107,7 @@ def main() -> int:
                 print(f"  - [{finding.severity.value}] {finding.title}")
 
     if args.strict and vulnerable_findings < args.min_vulnerable_findings:
-        failures.append(
-            f"vulnerable example findings {vulnerable_findings} "
-            f"< {args.min_vulnerable_findings}"
-        )
+        failures.append(f"vulnerable example findings {vulnerable_findings} < {args.min_vulnerable_findings}")
     if args.min_findings is not None and total < args.min_findings:
         failures.append(f"total findings {total} < {args.min_findings}")
 
