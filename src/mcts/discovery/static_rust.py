@@ -153,9 +153,7 @@ class RustStaticDiscovery:
         tools.extend(self._tools_from_match_arms(file_path, content, tools))
         return tools
 
-    def _tools_from_match_arms(
-        self, file_path: Path, content: str, existing: list[MCPTool]
-    ) -> list[MCPTool]:
+    def _tools_from_match_arms(self, file_path: Path, content: str, existing: list[MCPTool]) -> list[MCPTool]:
         if "CallToolRequest" not in content and "call_tool" not in content:
             return []
         known = {tool.name for tool in existing}
