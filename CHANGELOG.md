@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Ignore PEP 621 `requires-python` metadata in supply-chain dependency findings.
+
 ## [0.1.2] - 2026-06-10
 
 ### Added

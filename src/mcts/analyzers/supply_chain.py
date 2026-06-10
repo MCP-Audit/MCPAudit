@@ -84,7 +84,20 @@ class SupplyChainAnalyzer(BaseAnalyzer):
         findings: list[Finding] = []
         for path in _find_files(root, "pyproject.toml"):
             text = path.read_text(encoding="utf-8", errors="ignore")
+            current_section = ""
+
             for line_no, line in enumerate(text.splitlines(), start=1):
+                stripped = line.strip()
+
+                section_match = re.fullmatch(r"\[([^\]]+)\]", stripped)
+                if section_match:
+                    current_section = section_match.group(1)
+                    continue
+
+                key, separator, _ = stripped.partition("=")
+                if current_section == "project" and separator and key.strip() == "requires-python":
+                    continue
+
                 if UNPINNED_PATTERN.search(line) and any(
                     token in line for token in ('"', "dependencies", "requires")
                 ):
@@ -93,7 +106,7 @@ class SupplyChainAnalyzer(BaseAnalyzer):
                             path,
                             f"supply-unpinned-py-{line_no}",
                             "Unpinned Python dependency",
-                            line.strip(),
+                            stripped,
                             Severity.MEDIUM,
                             "MCTS-T-1014",
                             line=line_no,
