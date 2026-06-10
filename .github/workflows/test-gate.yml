@@ -33,6 +33,7 @@ jobs:
       - run: uv run python scripts/compile_sigma_rules.py --check
       - run: uv run pytest -m "not integration"
       - run: uv run python scripts/run_behavioral_regression.py --strict --json
+      - run: uv run python scripts/run_behavioral_eval.py --json > behavioral-eval.json
       - run: uv run pytest -m integration tests/integration/
       - run: |
           uv run python - <<'PY'
@@ -60,3 +61,8 @@ jobs:
         with:
           name: mcts-regression-report
           path: regression-report.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: behavioral-eval-report
+          path: behavioral-eval.json
