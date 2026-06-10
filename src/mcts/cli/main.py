@@ -12,6 +12,7 @@ from rich.console import Console
 from mcts import __version__
 from mcts.core.config import ScanConfig
 from mcts.core.scanner import Scanner
+from mcts.discovery.static_json import StaticJsonError
 from mcts.output.analysis_dir import (
     ANALYSIS_DIR_NAME,
     analysis_path,
@@ -763,7 +764,7 @@ def scan(
             enabled=not no_progress,
             terminal_width=term_width,
         )
-    except (LiveProbeConsentError, MCPStartupError, MCPProbeError, ValueError) as exc:
+    except (LiveProbeConsentError, MCPStartupError, MCPProbeError, StaticJsonError, ValueError) as exc:
         if isinstance(exc, MCPStartupError):
             _print_startup_error(exc)
         else:
@@ -1342,7 +1343,11 @@ def _surface_scan(
         surface_scoped_analyzers=True,
         discover_instructions=True,
     )
-    report = Scanner(config).run()
+    try:
+        report = Scanner(config).run()
+    except StaticJsonError as exc:
+        console.print(f"[red]Error:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
     console.print(f"[bold]MCTS[/bold] — {len(report.findings)} finding(s) on surfaces: {', '.join(surfaces)}")
     for finding in report.findings[:15]:
         console.print(f"  [{finding.severity.value}] {finding.title}")
@@ -1386,7 +1391,11 @@ def scan_resources(
         snapshot_path=snapshot,
         resource_mime_allowlist=mime_list,
     )
-    report = Scanner(config).run()
+    try:
+        report = Scanner(config).run()
+    except StaticJsonError as exc:
+        console.print(f"[red]Error:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
     console.print(f"[bold]MCTS[/bold] — {len(report.findings)} resource finding(s)")
     for finding in report.findings[:15]:
         console.print(f"  [{finding.severity.value}] {finding.title}")
