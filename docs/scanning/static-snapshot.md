@@ -25,6 +25,36 @@ MCTS reads the JSON, extracts tool names, descriptions, and schemas, and runs th
 | Comparing analyzer versions | Same input across MCTS releases |
 | PR review of tool metadata | Scan changed `tools.json` from build |
 
+**Use snapshot when** the authoritative source is an exported MCP `tools/list` (or combined prompts/resources JSON) from a live server — not when prompts live only as markdown files in your repo.
+
+---
+
+## Snapshot vs repository markdown discovery
+
+MCTS supports two ways to analyze prompt/instruction content without a live MCP connection:
+
+| Approach | Input | Best for |
+|----------|-------|----------|
+| **`--snapshot`** | Exported JSON (`tools`, `prompts`, `resources`, `instructions` from MCP protocol) | Air-gapped CI, regulated envs, comparing live server metadata across MCTS versions |
+| **Repo markdown discovery** (default on static scans) | Files under scan target: `SKILL.md`, `*prompt*.md`, `system_prompt.md` | Agent repos (Aegra, Cursor skills, embedded system prompts) with no MCP `prompts/list` |
+
+```bash
+# Snapshot — metadata from a prior live export
+mcts scan . --snapshot ./artifacts/mcp-export.json --surfaces prompt,instruction
+
+# Repo markdown — walks the repository (no JSON export needed)
+mcts scan . --surfaces prompt,instruction
+```
+
+| | Snapshot | Repo markdown |
+|--|----------|---------------|
+| Requires live export step | Yes | No |
+| Finds `skills/foo/SKILL.md` in repo | Only if you put it in snapshot JSON | Yes (default) |
+| Handler / SAST on `.py` tools | No (no source in JSON) | Yes when combined with normal static scan |
+| Disabled when | N/A | `--no-discover-instructions`, or when using `--snapshot` / `--live` / `--url` |
+
+For hybrid workflows, run a full static scan (tools from source + prompts from markdown), or export live MCP surfaces to JSON and scan with `--snapshot` when the server is the source of truth.
+
 ---
 
 ## Input formats
@@ -91,14 +121,19 @@ Snapshot mode does **not** produce live `runtime_events` unless you also pass `-
 
 ## Exporting a snapshot
 
-From a live scan (trusted server only):
+Use `mcts snapshot` to connect live and write normalized JSON for offline scans:
 
 ```bash
-mcts scan ./server.py --live --i-understand-live-risk -o live.json
-# Extract server.tools from live.json → tools-list.json
+mcts snapshot . \
+  --config .mcp.json \
+  --server my-server \
+  --i-understand-live-risk \
+  -o tools-snapshot.json
+
+mcts scan . --snapshot tools-snapshot.json -o report.json
 ```
 
-Or use your MCP client's `tools/list` JSON-RPC response directly.
+Alternative: extract `server.tools` from a prior live scan JSON, or use your MCP client's `tools/list` JSON-RPC response directly.
 
 ---
 

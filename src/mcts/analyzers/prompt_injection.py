@@ -14,6 +14,7 @@ from mcts.analyzers.surface_context import (
 from mcts.analyzers.surfaces import ScanSurface
 from mcts.analyzers.tpa_patterns import (
     find_homoglyphs,
+    has_ansi_smuggling,
     has_hidden_unicode,
     has_mixed_scripts,
 )
@@ -74,6 +75,23 @@ class PromptInjectionAnalyzer(BaseAnalyzer):
                     confidence=0.8,
                     location=loc,
                     evidence={"type": "hidden_unicode", "field": field, "surface": surface.kind.value},
+                )
+            )
+
+        if has_ansi_smuggling(text):
+            findings.append(
+                Finding(
+                    id=f"inject-ansi-smuggle-{surface.label}{suffix}",
+                    analyzer=self.name,
+                    title=f"ANSI escape smuggling in {surface.label} {field}",
+                    description="MCP surface contains ANSI terminal escape sequences.",
+                    severity=Severity.MEDIUM,
+                    tool=tool_name,
+                    recommendation="Remove ANSI/control sequences from tool metadata.",
+                    technique_id="MCTS-T-1001",
+                    confidence=0.85,
+                    location=loc,
+                    evidence={"type": "ansi_smuggling", "field": field, "surface": surface.kind.value},
                 )
             )
 

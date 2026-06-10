@@ -14,7 +14,8 @@ Run one command to find permission issues, injection risks, attack chains, and m
 > **New to MCP or MCTS?** See the [documentation index](docs/index.md) and [glossary](docs/glossary.md).
 
 ```bash
-mcts scan ./server.py
+mcts scan ./server.py   # single entrypoint
+mcts scan ./            # entire repository
 ```
 
 ## Demo
@@ -58,33 +59,75 @@ Most teams ship MCP servers without dedicated security review. MCTS makes scanni
 
 ## Features
 
-| Module | Status | Description |
-|--------|--------|-------------|
-| Repository scanning | Alpha | `mcts scan ./repo/` — Python + TypeScript discovery |
-| Multi-surface scanning | Alpha | Tools, prompts, resources, instructions (`--surfaces`) |
-| Remote HTTP/SSE probing | Alpha | `--url` with Bearer/OAuth; streamable HTTP + SSE |
-| Static JSON snapshot | Alpha | `--snapshot` for air-gapped CI from `tools/list` JSON |
-| Permission & metadata analyzers | Alpha | Destructive tools, poisoning, schema surface (FSP) |
-| Source-aware SAST | Alpha | Secrets, command execution, path validation, behavioral static |
-| Supply chain CVE scan | Alpha | `--pip-audit`, `--npm-audit` |
-| Runtime telemetry analyzers | Alpha | OAuth, rug-pull, injection — via `--runtime-events` / `--live` |
-| Multi-step attack chains | Alpha | Capability-graph chain detection |
-| Live stdio probing | Alpha | `--live` merges MCP protocol schemas with static analysis |
-| Config inventory | Alpha | `mcts inventory` — Cursor, Claude, VS Code, Windsurf |
-| Protocol fuzzing | Alpha | `mcts fuzz` — safe read-only probes by default |
-| Readiness scanning | Alpha | `mcts readiness` — HEUR-001–020 + OPA + LLM judge (opt-in) |
-| Surface subcommands | Alpha | `mcts scan-prompts`, `scan-resources`, `scan-instructions` |
-| REST API | Alpha | `mcts serve` — 10 endpoints (`--extra api`) |
-| Raw envelope output | Alpha | `--format raw` for CI pipelines |
-| Optional analyzers | Alpha | YARA, LLM judge, cloud inspect, VirusTotal (opt-in) |
-| Risk scoring engine | Alpha | Exponential score + risk index + category breakdown |
-| MCTS-T taxonomy | Alpha | Technique/mitigation IDs + AITech crosswalk on findings |
-| Terminal UI | Alpha | Rich dashboard + `--terminal-format` table views |
-| SARIF + CI gates | Alpha | `--format sarif`, `--min-score`, `--fail-on-category` |
-| GitHub Action | Alpha | JSON + SARIF + HTML artifacts (`@v1`) |
-| HTML security dashboard | Alpha | `mcts report` — gauge, grades, OWASP, attack chains |
-| Compliance checks | Alpha | OWASP LLM Top 10 mapping |
-| MCTS Agent | Roadmap | `mcts pentest` (stub) |
+MCTS is **alpha** software with a local-first MCP security pipeline — no cloud account required for standard scans. Full reference: [Security checks](docs/analysis/security-checks.md) · [CLI](docs/platform/cli.md).
+
+### Scanning & discovery
+
+| Capability | How |
+|------------|-----|
+| Repository & entrypoint scan | `mcts scan ./repo/` or `mcts scan ./server.py` — Python + TypeScript static discovery |
+| Auto target resolution | `mcts scan . --auto` — pick entrypoint or lone MCP config server |
+| Multi-surface analysis | `--surfaces tool,prompt,resource,instruction` |
+| Repo instruction discovery | Default on static scans — `SKILL.md`, `*prompt*.md`, `system_prompt.md` → prompt/instruction analyzers |
+| Live stdio probing | `--live --i-understand-live-risk` — merge runtime schemas with static context |
+| Remote HTTP/SSE | `--url` + Bearer/OAuth — streamable HTTP and SSE transports |
+| Air-gapped snapshot | `--snapshot tools.json` or `mcts snapshot` → offline scan |
+| Machine-wide scan | `mcts scan --machine-wide` — all MCP servers in local client configs |
+| Remote manifest probe | `mcts scan-mcp <url>` — pre-connect `tools/list` check |
+| Per-technique mode | `--technique MCTS-T-*` — run one technique pack at a time |
+
+### Security analysis
+
+| Capability | How |
+|------------|-----|
+| Core metadata checks | Permissions, poisoning, FSP, shadowing, line-jumping, jailbreak resistance |
+| Source-aware SAST | Secrets, command execution, path validation in handler code |
+| Behavioral static SAST | Description vs implementation mismatch + taint (Python, TS, Go, Rust) |
+| Semgrep SAST (opt-in) | `--semgrep` — bundled rules for Python, JS/TS, Java |
+| Runtime telemetry | 50+ sub-detectors via `--runtime-events`, `--live`, or fuzz output |
+| Attack chains | Capability-graph BFS (read → exfil, read → exec, …) |
+| Cross-server analysis | Tool shadowing + toxic flows (`W015–W020`) with `--full-toxic-flows` |
+| Sigma metadata rules | Bundled YAML + `--sigma-rules-path` |
+| Rug-pull / baseline diff | `--baseline` / `--save-baseline` |
+| Optional ML & intel | `--yara`, `--llm-judge`, `--llm-triage`, `--cloud-inspect`, `--virustotal` |
+| MCTS-T taxonomy | Technique/mitigation IDs + crosswalk on every finding |
+| Regression harness | **79/79** bundled techniques with ≥80% CI accuracy gate |
+
+### Agent ecosystem & supply chain
+
+| Capability | How |
+|------------|-----|
+| Client config inventory | `mcts inventory` — **12+** agent clients (Cursor, Claude, VS Code, Gemini, Codex, …) |
+| Inventory batch scan | `mcts inventory --scan-all` |
+| Skills scanning | `mcts scan ./skills` or `mcts inventory --skills` — `SKILL.md` checks (`W007–W014`) |
+| Dependency CVE scan | `--pip-audit`, `--npm-audit` |
+| Package pre-install vet | `mcts vet pypi:` / `npm:` / `oci:` |
+| Structured pentest | `mcts pentest` — static recon, attack chains, optional safe fuzz |
+
+### Reports, CI & governance
+
+| Capability | How |
+|------------|-----|
+| Risk scoring | Exponential 0–100 score, risk index, category breakdown |
+| Compliance mapping | OWASP LLM Top 10 + OWASP MCP Top 10 (non-scoring meta-findings) |
+| Terminal UI | Rich dashboard — themes, progress, `--terminal-format` views |
+| Export formats | JSON, SARIF (`--format sarif`), raw envelope, HTML (`mcts report`) |
+| CI gates | `--fail-on-critical`, `--min-score`, `--max-critical`, `--fail-on-category` |
+| CI preset | `--ci` unified gate bundle |
+| Governance policies | `--policy` YAML allowlist and min-score gates |
+| GitHub Action | JSON + SARIF + HTML artifacts ([`@v1`](action/README.md)) |
+| Preflight | `mcts doctor` — deps, extras, and config hints |
+
+### Platform & integrations
+
+| Capability | How |
+|------------|-----|
+| REST API | `mcts serve` — 10 scan endpoints (`--extra api`) |
+| MCP server mode | `mcts-mcp` — `scan_mcp_target`, `explain_finding`, `compare_baselines` for IDE agents |
+| Readiness (non-security) | `mcts readiness` — HEUR-001–020 + optional OPA/LLM |
+| Protocol fuzzing | `mcts fuzz` — safe read-only probes by default |
+| Surface subcommands | `mcts scan-prompts`, `scan-resources`, `scan-instructions` (surface-scoped analyzers; no supply-chain noise) |
+| Python API | `from mcts import Scanner, ScanConfig` |
 
 ## Quick Start
 
@@ -95,6 +138,38 @@ Most teams ship MCP servers without dedicated security review. MCTS makes scanni
 
 ### Install
 
+**Recommended — isolated tool install** (does not touch your app venv):
+
+```bash
+uvx mcp-mcts scan ./server.py
+pipx install mcp-mcts
+uv tool install mcp-mcts
+```
+
+> Distribution name is **`mcp-mcts`** (the generic `mcts` name is already taken on PyPI). The import package and CLI remain `mcts`.
+
+**From PyPI in a dedicated environment** (not your application `.venv`):
+
+```bash
+pip install mcp-mcts
+pip install "mcp-mcts[mcp]"        # live probing + fuzzing
+pip install "mcp-mcts[api]"        # REST API (`mcts serve`)
+pip install "mcp-mcts[llm]"        # LLM-as-judge / --llm-triage (install separately; not in [all])
+pip install "mcp-mcts[semgrep]"    # Semgrep SAST adapter (--semgrep; also needs semgrep CLI)
+```
+
+Avoid `pip install mcp-mcts[all]` inside your app's dev venv — it can conflict with pinned dependencies.
+
+| Install | Use case |
+|---------|----------|
+| `uvx mcp-mcts` | One-off scan, no install |
+| `pipx install mcp-mcts` | Global isolated CLI |
+| `pip install mcp-mcts[mcp]` | Live probing in a dedicated venv |
+| `pip install mcp-mcts[all]` | All extras except LLM (no `litellm`) |
+| `pip install 'mcp-mcts[all,llm]'` | Everything including `--llm-judge` / `--llm-triage` |
+
+**From source** (contributors):
+
 ```bash
 git clone https://github.com/MCP-Audit/MCTS.git
 cd MCTS
@@ -103,15 +178,29 @@ uv sync --all-extras
 
 ### Scan an MCP server
 
+**Single entrypoint** — when you know the server file:
+
 ```bash
-uv run mcts scan examples/vulnerable-mcp-server/server.py
+mcts scan ./server.py
+mcts scan examples/vulnerable-mcp-server/server.py
 ```
+
+**Entire repository** — when tools are spread across multiple files:
+
+```bash
+mcts scan .
+mcts scan ./path/to/mcp-repo
+mcts scan examples/bench/multi-file-server/
+```
+
+Repo mode walks Python and TypeScript sources, discovers MCP tools across the tree, and merges them into one report (skips `tests/`, venvs, and other excluded paths). For large monorepos, prefer scanning a single entrypoint (`mcts scan path/to/bridge.py`) or `mcts scan . --auto` before a full-repo scan.
 
 Save JSON and generate an executive HTML dashboard:
 
 ```bash
-uv run mcts scan examples/vulnerable-mcp-server/server.py -o report.json
-uv run mcts report report.json -o security-report.html
+mcts scan ./server.py -o report.json
+mcts scan . -o report.json
+mcts report report.json -o security-report.html
 open security-report.html
 ```
 
@@ -120,8 +209,9 @@ The HTML report includes a dark-themed overview (score gauge, letter grade, seve
 ### CI gate (fail on critical or score)
 
 ```bash
-uv run mcts scan ./server.py --fail-on-critical --min-score 70
-uv run mcts scan ./server.py -o report.sarif --format sarif
+mcts scan ./server.py --fail-on-critical --min-score 70
+mcts scan . --fail-on-critical --min-score 70
+mcts scan . -o report.sarif --format sarif
 ```
 
 See [docs/platform/ci-integration.md](docs/platform/ci-integration.md) and [action/README.md](action/README.md).
@@ -142,8 +232,8 @@ uv run mcts scan ./server.py --theme minimal --no-progress
      Discovery (static Py+TS, live stdio/HTTP, JSON snapshot)
               │
               ▼
-     25+ security analyzers + compliance + MCTS-T taxonomy
-     (20 enabled by default)
+     30+ security analyzers + compliance + MCTS-T taxonomy
+     (core checks always on; 20+ per scan; opt-in via flags)
               │
               ▼
         Risk scoring engine
@@ -156,39 +246,36 @@ uv run mcts scan ./server.py --theme minimal --no-progress
 
 ## Documentation
 
-Full index: [docs/index.md](docs/index.md) · [Glossary](docs/glossary.md)
+**Start here:** [Install and first scan](docs/get-started/getting-started.md) (~15 min)
 
-**Get started**
-- [Install and first scan](docs/get-started/getting-started.md) — step-by-step guide (~15 min)
+| I want to… | Guide |
+|------------|-------|
+| Choose a scan mode | [Scanning overview](docs/scanning/README.md) |
+| Set up CI | [CI integration](docs/platform/ci-integration.md) |
+| Look up commands | [CLI reference](docs/platform/cli.md) |
+| Understand findings | [Security checks](docs/analysis/security-checks.md) |
 
-**Scanning**
-- [Live Scanning](docs/scanning/live-scanning.md) · [Remote Scanning](docs/scanning/remote-scanning.md) · [Static Snapshot](docs/scanning/static-snapshot.md) · [Fuzzing](docs/scanning/fuzzing.md) · [Inventory](docs/scanning/inventory.md) · [Readiness](docs/scanning/readiness.md)
-
-**Analysis & reporting**
-- [Architecture](docs/analysis/architecture.md)
-- [Scoring Spec](docs/reporting/scoring-spec.md) · [Threat Taxonomy](docs/reporting/taxonomy.md) · [HTML Dashboard](docs/reporting/html-report.md)
-
-**Platform**
-- [CLI Reference](docs/platform/cli.md) · [REST API](docs/platform/rest-api.md) · [CI Integration](docs/platform/ci-integration.md)
-
-**Planning**
-- [Feature Expansion Plan](docs/more/feature-expansion-plan.md) · [Roadmap](docs/more/roadmap.md) · [Product Positioning](docs/more/product-positioning.md)
-- [Changelog](CHANGELOG.md)
+Full map (guides → reference → contributor docs): [docs/index.md](docs/index.md) · [Glossary](docs/glossary.md)
 
 ## Project Structure
 
 ```
 MCTS/
 ├── src/mcts/          # Main package (src layout)
-│   ├── cli/             # Typer CLI (`scan`, `report`, `inventory`, `fuzz`, `readiness`, `serve`)
+│   ├── cli/             # Typer CLI (`scan`, `report`, `inventory`, `fuzz`, `vet`, `pentest`, `mcts-mcp`, `serve`)
 │   ├── core/            # Scanner orchestration, ScanConfig
 │   ├── discovery/       # Static (Python/TS), live, JSON snapshot, merge
 │   ├── probe/           # Stdio + HTTP sessions, auth, protocol checks
-│   ├── analyzers/       # 25+ security analyzers
+│   ├── analyzers/       # 25+ security analyzers (Semgrep, LLM triage, toxic flows, …)
+│   ├── vet/             # Pre-install package vetting (pypi/npm/oci)
+│   ├── pentest/         # Structured pentest runner
+│   ├── mcp_server/      # `mcts-mcp` stdio tools for IDE agents
+│   ├── governance/      # YAML policy allowlist + min-score gates
 │   ├── readiness/       # Production readiness heuristics
 │   ├── api/             # FastAPI REST server
-│   ├── inventory/       # Client config discovery
+│   ├── inventory/       # Client config + skills discovery
 │   ├── fuzz/            # Protocol fuzz runner
+│   ├── sast/            # Tree-sitter taint + Semgrep rule pack
 │   ├── taxonomy/        # MCTS-T techniques, Sigma rules
 │   ├── scoring/         # Risk scoring engine
 │   ├── compliance/      # OWASP & MCP compliance checks
@@ -231,9 +318,9 @@ MCTS is **MCP-boundary security** — tool metadata, schemas, handler source, cl
 | Trust registries | Cloud scan + reputation | MCTS is local-first; no account required for CI |
 | Runtime gateways | Runtime policy & governance | Different layer — MCTS scans before deploy; they enforce at runtime |
 
-**Where MCTS leads today:** auditable exponential scoring, capability-graph attack chains, first-party MCTS-T taxonomy with bundled Sigma rules, executive HTML dashboard, readiness + OPA, YARA on metadata, line-jumping detection, local-first default.
+**Where MCTS leads today:** auditable exponential scoring, capability-graph attack chains, first-party MCTS-T taxonomy with bundled Sigma rules, executive HTML dashboard, readiness + OPA, YARA on metadata, line-jumping detection, Semgrep SAST adapter, LLM metadata triage, package vetting, MCP server mode (`mcts-mcp`), skills scanning, toxic-flow analysis, local-first default.
 
-**Highest-priority gaps:** Semgrep SAST adapter (+ Java), skills / `SKILL.md` scanning, machine-wide config scan, MCP server mode (`mcts-mcp`), AI-BOM / CycloneDX export, interactive attack-graph UI, runtime stdio proxy, governance YAML policies.
+**Highest-priority gaps:** deep multi-language CFG/taint, prompt firewall, CycloneDX AI-BOM export, runtime stdio proxy, remote protocol fuzz (`mcts fuzz --url`), scan history/trends, hallucinated package detection, full Agno multi-agent pentest.
 
 See [Product Positioning](docs/more/product-positioning.md) and [Feature Expansion Plan — Part 11](docs/more/feature-expansion-plan.md#part-11--prioritized-backlog).
 
@@ -244,7 +331,7 @@ See [Product Positioning](docs/more/product-positioning.md) and [Feature Expansi
 | [Feature Expansion Plan](docs/more/feature-expansion-plan.md) | Full gap analysis, how to implement each capability, module layout, build order |
 | [Product Roadmap](docs/more/roadmap.md) | Phased deliverables: foundation → CI adoption → differentiation → platform |
 
-**Next up (Phase 2–3):** Semgrep SAST layer, skills scanning, `mcts-mcp` server mode, AI-BOM export, attack-graph dashboard UI, runtime stdio proxy, `mcts audit-config`, scan history/trends, `mcts pentest`, remote fuzz (`mcts fuzz --url`). Phase 0–1 foundation is shipped — see [Roadmap](docs/more/roadmap.md).
+**Next up (Phase 2–3):** CycloneDX AI-BOM export, scan history/trends, runtime stdio proxy, remote fuzz (`mcts fuzz --url`), prompt firewall, deep CFG/taint, `mcts audit-config`, interactive attack-graph UI. Phase 0–2 foundation is largely shipped — see [Roadmap](docs/more/roadmap.md).
 
 ## Contributing
 

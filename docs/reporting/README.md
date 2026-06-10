@@ -2,62 +2,48 @@
 
 > [Documentation](../index.md) → **Reporting**
 
-Reporting is how MCTS **presents** scan results — as a security score, categorized findings, and exportable files you can share with your team or plug into CI.
+How MCTS **presents** results — scores, exports, and shareable reports.
 
-> **Just ran your first scan?** Your terminal already showed a report. To share results, see [HTML Security Dashboard](html-report.md).
-> **Setting up CI gates?** See [Scoring Specification](scoring-spec.md).
-
----
-
-## Output formats at a glance
-
-| Format | How to generate | Best for |
-|--------|-------------------|----------|
-| **Terminal** | `mcts scan ./server.py` (default) | Quick developer feedback during development |
-| **JSON** | `mcts scan ./server.py -o report.json` | Automation, input for HTML report, custom tooling |
-| **SARIF** | `mcts scan ./server.py -f sarif -o report.sarif` | GitHub Code Scanning, GitLab, Azure DevOps |
-| **HTML** | `mcts report report.json -o report.html` | Sharing with security teams, leadership, auditors |
+> **Just ran your first scan?** The terminal already showed a summary. To share with others, generate [HTML](html-report.md).
 
 ---
 
-## Understanding your score
+## Output formats
 
-| Score range | Grade | Meaning |
-|-------------|-------|---------|
-| 76–100 | A–B | Good security posture |
-| 51–75 | C | Moderate issues — review before production |
-| 26–50 | D | Significant issues — remediation needed |
-| 0–25 | F | Critical issues — do not deploy |
+| Format | Command | Best for |
+|--------|---------|----------|
+| **Terminal** | `mcts scan ./server.py` | Quick feedback while coding |
+| **JSON** | `mcts scan … -o report.json` | Automation, input for HTML report |
+| **SARIF** | `mcts scan … -f sarif -o report.sarif` | GitHub / GitLab Code Scanning |
+| **HTML** | `mcts report report.json -o report.html` | Leadership and security reviews |
 
-The score is calculated from finding severities using a transparent formula — never hardcoded. See [Scoring Specification](scoring-spec.md) for the math and CI gate examples.
+---
+
+## Score at a glance
+
+| Score | Grade | Meaning |
+|-------|-------|---------|
+| 76–100 | A–B | Good posture |
+| 51–75 | C | Review before production |
+| 26–50 | D | Significant issues |
+| 0–25 | F | Do not deploy |
+
+Details: [Scoring specification](scoring-spec.md)
 
 ---
 
 ## Guides
 
-| Page | What you'll learn |
-|------|-------------------|
-| [Scoring Specification](scoring-spec.md) | How the 0–100 score is calculated, category breakdown, CI gate thresholds |
-| [Threat Taxonomy](taxonomy.md) | MCTS-T technique IDs and MCTS-M mitigation IDs on every finding |
-| [HTML Security Dashboard](html-report.md) | Generate and customize the executive HTML report |
-
----
-
-## Planned reporting features
-
-| Feature | Status |
-|---------|--------|
-| CycloneDX / AI-BOM export | Planned |
-| Scan history and trend charts | Planned |
-| Interactive attack-graph HTML | Planned |
-
-Full backlog: [Feature Expansion Plan](../more/feature-expansion-plan.md)
+| Page | When to read |
+|------|--------------|
+| [Scoring specification](scoring-spec.md) | CI gates and score formula |
+| [HTML dashboard](html-report.md) | Executive report layout |
+| [Threat taxonomy](taxonomy.md) | MCTS-T technique IDs on findings |
 
 ---
 
 ## Related
 
-- [CLI — output formats](../platform/cli.md)
-- [CI Integration](../platform/ci-integration.md)
-- [Glossary](../glossary.md)
+- [Getting started](../get-started/getting-started.md)
+- [CI integration](../platform/ci-integration.md)
 - [Documentation index](../index.md)

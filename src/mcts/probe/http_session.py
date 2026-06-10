@@ -48,9 +48,16 @@ async def probe_remote(config: RemoteServerConfig, timeout_seconds: int = 120) -
             async with client_ctx as (read, write, *_):
                 async with ClientSession(read, write) as session:
                     init_result = await asyncio.wait_for(session.initialize(), timeout=timeout_seconds)
-                    tools = await _list_tools(session, timeout_seconds)
-                    prompts = await _list_prompts(session, timeout_seconds)
-                    resources = await _list_resources(session, timeout_seconds)
+                    discovery_warnings: list[str] = []
+                    tools, tools_warning = await _list_tools(session, timeout_seconds)
+                    if tools_warning:
+                        discovery_warnings.append(tools_warning)
+                    prompts, prompts_warning = await _list_prompts(session, timeout_seconds)
+                    if prompts_warning:
+                        discovery_warnings.append(prompts_warning)
+                    resources, resources_warning = await _list_resources(session, timeout_seconds)
+                    if resources_warning:
+                        discovery_warnings.append(resources_warning)
                     from mcts.probe.resources import enrich_resources_with_content
 
                     resources = await enrich_resources_with_content(
@@ -66,6 +73,8 @@ async def probe_remote(config: RemoteServerConfig, timeout_seconds: int = 120) -
                         instructions=instructions,
                         transport=transport_label,
                         discovery_mode="live",
+                        discovery_warnings=discovery_warnings,
+                        initialize_succeeded=True,
                     )
     except TimeoutError as exc:
         raise MCPProbeError(f"Timed out connecting to {config.url}") from exc

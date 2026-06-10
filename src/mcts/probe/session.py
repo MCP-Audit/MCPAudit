@@ -5,21 +5,17 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+import tempfile
 from typing import Any
 
 from mcts.capability.inferrer import infer_capability
 from mcts.mcp.models import MCPPrompt, MCPResource, MCPServerInfo, MCPTool
+from mcts.probe.discovery_meta import list_failure_warning
+from mcts.probe.errors import MCPNotInstalledError, MCPProbeError
 from mcts.probe.models import LiveServerConfig
+from mcts.probe.startup_errors import classify_startup_failure, read_stderr_tail
 
 logger = logging.getLogger(__name__)
-
-
-class MCPProbeError(RuntimeError):
-    """Raised when live MCP probing fails."""
-
-
-class MCPNotInstalledError(MCPProbeError):
-    """Raised when the optional ``mcp`` package is not installed."""
 
 
 def probe_stdio_sync(config: LiveServerConfig, timeout_seconds: int = 120) -> MCPServerInfo:
@@ -38,9 +34,21 @@ async def probe_stdio(config: LiveServerConfig, timeout_seconds: int = 120) -> M
         ) from exc
 
     merged_env = {**os.environ, **config.env}
+    temp_stderr_path: str | None = None
+    stderr_path = config.stderr_file
     errlog = None
-    if config.stderr_file:
-        errlog = open(config.stderr_file, "w", encoding="utf-8")  # noqa: SIM115
+    if stderr_path:
+        errlog = open(stderr_path, "w", encoding="utf-8")  # noqa: SIM115
+    else:
+        tmp = tempfile.NamedTemporaryFile(  # noqa: SIM115
+            mode="w+",
+            encoding="utf-8",
+            delete=False,
+            suffix=".stderr",
+        )
+        temp_stderr_path = tmp.name
+        stderr_path = temp_stderr_path
+        errlog = tmp
     server_params = StdioServerParameters(
         command=config.command,
         args=config.args,
@@ -60,9 +68,22 @@ async def probe_stdio(config: LiveServerConfig, timeout_seconds: int = 120) -> M
                         session.initialize(),
                         timeout=session_timeout,
                     )
-                    tools = await _list_tools(session, session_timeout)
-                    prompts = await _list_prompts(session, session_timeout)
-                    resources = await _list_resources(session, session_timeout)
+                    discovery_warnings: list[str] = []
+                    tools, tools_warning = await _list_tools(
+                        session, session_timeout, stderr_file=config.stderr_file
+                    )
+                    if tools_warning:
+                        discovery_warnings.append(tools_warning)
+                    prompts, prompts_warning = await _list_prompts(
+                        session, session_timeout, stderr_file=config.stderr_file
+                    )
+                    if prompts_warning:
+                        discovery_warnings.append(prompts_warning)
+                    resources, resources_warning = await _list_resources(
+                        session, session_timeout, stderr_file=config.stderr_file
+                    )
+                    if resources_warning:
+                        discovery_warnings.append(resources_warning)
                     from mcts.probe.resources import enrich_resources_with_content
 
                     resources = await enrich_resources_with_content(
@@ -81,46 +102,85 @@ async def probe_stdio(config: LiveServerConfig, timeout_seconds: int = 120) -> M
                         instructions=instructions,
                         transport="stdio-live",
                         discovery_mode="live",
+                        discovery_warnings=discovery_warnings,
+                        initialize_succeeded=True,
                     )
     except TimeoutError as exc:
+        stderr_tail = read_stderr_tail(stderr_path)
+        startup = classify_startup_failure(
+            str(exc),
+            stderr_tail,
+            command=config.command,
+        )
+        if startup:
+            raise startup from exc
         raise MCPProbeError(
             f"Timed out connecting to MCP server '{config.command}' after {connect_timeout}s"
         ) from exc
     except MCPProbeError:
         raise
     except Exception as exc:
+        stderr_tail = read_stderr_tail(stderr_path)
+        startup = classify_startup_failure(
+            str(exc),
+            stderr_tail,
+            command=config.command,
+        )
+        if startup:
+            raise startup from exc
         raise MCPProbeError(f"Live probe failed for '{config.command}': {exc}") from exc
+    finally:
+        if errlog is not None and not config.stderr_file:
+            errlog.close()
 
 
-async def _list_tools(session: Any, timeout: int) -> list[MCPTool]:
+async def _list_tools(
+    session: Any,
+    timeout: int,
+    *,
+    stderr_file: str | None = None,
+) -> tuple[list[MCPTool], str | None]:
     try:
         result = await asyncio.wait_for(session.list_tools(), timeout=timeout)
     except Exception as exc:
-        logger.warning("list_tools failed: %s", exc)
-        return []
-    return [_tool_from_mcp(tool) for tool in result.tools]
+        warning = list_failure_warning("list_tools", exc, stderr_file)
+        logger.warning("%s", warning)
+        return [], warning
+    return [_tool_from_mcp(tool) for tool in result.tools], None
 
 
-async def _list_prompts(session: Any, timeout: int) -> list[MCPPrompt]:
+async def _list_prompts(
+    session: Any,
+    timeout: int,
+    *,
+    stderr_file: str | None = None,
+) -> tuple[list[MCPPrompt], str | None]:
     if not hasattr(session, "list_prompts"):
-        return []
+        return [], None
     try:
         result = await asyncio.wait_for(session.list_prompts(), timeout=timeout)
     except Exception as exc:
-        logger.warning("list_prompts failed: %s", exc)
-        return []
-    return [_prompt_from_mcp(prompt) for prompt in result.prompts]
+        warning = list_failure_warning("list_prompts", exc, stderr_file)
+        logger.warning("%s", warning)
+        return [], warning
+    return [_prompt_from_mcp(prompt) for prompt in result.prompts], None
 
 
-async def _list_resources(session: Any, timeout: int) -> list[MCPResource]:
+async def _list_resources(
+    session: Any,
+    timeout: int,
+    *,
+    stderr_file: str | None = None,
+) -> tuple[list[MCPResource], str | None]:
     if not hasattr(session, "list_resources"):
-        return []
+        return [], None
     try:
         result = await asyncio.wait_for(session.list_resources(), timeout=timeout)
     except Exception as exc:
-        logger.warning("list_resources failed: %s", exc)
-        return []
-    return [_resource_from_mcp(resource) for resource in result.resources]
+        warning = list_failure_warning("list_resources", exc, stderr_file)
+        logger.warning("%s", warning)
+        return [], warning
+    return [_resource_from_mcp(resource) for resource in result.resources], None
 
 
 def _extract_instructions(init_result: Any) -> str | None:

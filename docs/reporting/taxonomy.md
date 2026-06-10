@@ -33,7 +33,6 @@ You don't need to memorize these IDs — they appear automatically on every find
 5. URLs generated for HTML/SARIF: `https://github.com/MCP-Audit/MCTS/blob/main/docs/reporting/taxonomy.md`
 6. **Crosswalk** — `taxonomy/crosswalk.json` adds interoperable IDs to `finding.evidence`:
    - `aitech` / `aisubtech` — Cisco AI Threat Taxonomy
-   - `saf_mcp` — SAF-MCP technique reference
 
 Fuzz and inventory findings go through the same pipeline.
 
@@ -44,8 +43,7 @@ Fuzz and inventory findings go through the same pipeline.
   "technique_id": "MCTS-T-1001",
   "evidence": {
     "aitech": "AITech-PAI",
-    "aisubtech": "AISubtech-PAI-001",
-    "saf_mcp": "SAF-MCP-01"
+    "aisubtech": "AISubtech-PAI-001"
   }
 }
 ```
@@ -144,14 +142,11 @@ HTML **Recommendations** page groups findings by mitigation priority.
 
 ---
 
-## Sigma rule IDs (MCTS-S-*)
+## Sigma rule IDs
 
 Bundled metadata rules: `src/mcts/taxonomy/sigma/metadata_rules.json`
 
-When `sigma_metadata` matches a rule:
-
-- Finding may reference **MCTS-S-*** for pattern-only detections
-- Or map to full **MCTS-T-*** when dossier exists
+When `sigma_metadata` matches a rule, findings reference the corresponding **MCTS-T-*** technique ID. All bundled Sigma rules now have runtime analyzer coverage.
 
 ### Custom Sigma rules
 
@@ -193,7 +188,7 @@ Rules are deduplicated via `analyzers/sigma_dedupe.py` when multiple patterns hi
 
 | Asset | Purpose |
 |-------|---------|
-| `tests/fixtures/regression/MCTS-T-*/` | 34+ technique regression cases |
+| `tests/fixtures/regression/MCTS-T-*/` | 79 technique regression cases |
 | `src/mcts/testing/regression_harness.py` | CI enforces ≥80% detector accuracy |
 | `tests/fixtures/sigma_fixtures/` | Sigma rule validation |
 
@@ -203,11 +198,12 @@ When adding techniques, add a fixture directory matching the ID.
 
 | Capability | Status | GAP | Notes |
 |------------|--------|-----|-------|
-| Full 73 SAF Sigma rules in regression | Partial | GAP-137–141 | 34 fixtures today |
-| 53 SAF mitigation dossiers | Partial | GAP-138 | `mitigation_urls.py` links only |
-| Portable technique YAML packs | Missing | GAP-142 | SAF-Scan format |
+| Full bundled Sigma rules in regression | Partial | GAP-137–141 | 85+ fixtures today |
+| External mitigation dossiers | Partial | GAP-138 | `mitigation_urls.py` links only |
+| Portable technique YAML packs | Missing | GAP-142 | Custom rule pack format |
 | Dual E/W/X/TF code option | Missing | GAP-127 | Alongside MCTS-T |
-| OWASP MCP Top 10 full 10/10 map | Partial | GAP-230 | Complete category coverage |
+| OWASP MCP Top 10 full 10/10 map | Shipped | GAP-230 | MCP01–MCP10 compliance meta-findings |
+| Letter grade A–F | Shipped | GAP-234 | `score.grade` in JSON/HTML |
 | MITRE ATLAS mapping | Missing | L6-04 | Framework mapping |
 
 See [Feature Expansion Plan — Taxonomy](../more/feature-expansion-plan.md#taxonomy-8).

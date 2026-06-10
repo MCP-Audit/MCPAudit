@@ -9,6 +9,7 @@ from typing import Any
 from mcts.reporting.models import Severity
 
 INVISIBLE_CHAR_PATTERN = re.compile(r"[\u200b-\u200f\ufeff\u202a-\u202e\u2060-\u206f\u206a-\u206f]")
+_ANSI_ESCAPE_PATTERN = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
 
 # Cyrillic homoglyphs that visually mimic Latin letters (MCTS-T-1001 PoC values only)
 _HOMOGLYPH_CHARS = frozenset("аАсСеЕоОрРхХуУвВнНкКмМтТ")
@@ -80,6 +81,10 @@ def find_control_chars(text: str) -> list[str]:
 
 def has_hidden_unicode(text: str) -> bool:
     return bool(INVISIBLE_CHAR_PATTERN.search(text)) or has_unicode_tags(text) or has_control_chars(text)
+
+
+def has_ansi_smuggling(text: str) -> bool:
+    return bool(_ANSI_ESCAPE_PATTERN.search(text))
 
 
 def find_homoglyphs(text: str) -> list[str]:

@@ -66,7 +66,7 @@ jobs:
 
 ### What the action does
 
-1. Installs MCTS with dependencies
+1. Installs MCTS from the **pinned action ref** (the checked-out `MCTS` tag/commit), not from PyPI — so `@v1` always runs the matching scanner code
 2. Runs `mcts scan` on `target`
 3. Writes `mcts-report.json` and `mcts-report.sarif`
 4. Runs `mcts report` → `mcts-report.html`
@@ -150,7 +150,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: astral-sh/setup-uv@v4
+      - uses: astral-sh/setup-uv@v7
       - run: uv sync --all-extras
 
       - name: Static security scan
@@ -277,17 +277,18 @@ Pair MCTS gates with required CI checks on `main`. See [CONTRIBUTING.md](../../C
 
 From the gap backlog — planned for Phase 2–3:
 
-| Capability | GAP | Priority | Notes |
-|------------|-----|----------|-------|
-| Unified `--ci` preset bundle | GAP-024 | P1 | Single flag for gates + format |
-| Git-diff scoped scan in PR | GAP-010 | P1 | `--diff-base` / `mcts diff` |
-| PR comment markdown output | GAP-235 | P2 | PR comment format for CI |
-| `--ignore-issues-codes` allowlist | GAP-025 | P2 | Suppress W001 etc. in CI |
-| GitLab CI template | GAP-167 | P3 | Secondary to GitHub Action |
-| Inventory on scheduled self-hosted runners | GAP-006 | P0 | Machine-wide config audit |
-| Pre-commit hook installer | GAP-038 | P2 | `init-hooks` companion |
+| Capability | Status | GAP | Notes |
+|------------|--------|-----|-------|
+| Unified `--ci` preset bundle | Shipped | GAP-024 | Single flag for gates + format |
+| Governance `--policy` YAML | Shipped | GAP-222 | Allowlist + min-score in CI |
+| Machine-wide config audit | Shipped | GAP-006 | `mcts scan --machine-wide` |
+| Git-diff scoped scan in PR | Planned | GAP-010 | `--diff-base` / `mcts diff` |
+| PR comment markdown output | Planned | GAP-235 | PR comment format for CI |
+| `--ignore-issues-codes` allowlist | Planned | GAP-025 | Suppress W001 etc. in CI |
+| GitLab CI template | Planned | GAP-167 | Secondary to GitHub Action |
+| Pre-commit hook installer | Planned | GAP-038 | `init-hooks` companion |
 
-See [CLI planned flags](../platform/cli.md#planned-commands-and-flags) and [Roadmap Phase 2](../more/roadmap.md#phase-2--differentiation-in-progress).
+See [Planned CLI flags](../more/planned-cli.md) and [Roadmap Phase 2](../more/roadmap.md#phase-2--differentiation-in-progress).
 
 ---
 

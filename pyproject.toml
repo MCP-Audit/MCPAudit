@@ -1,14 +1,25 @@
 [project]
-name = "mcts"
-version = "0.1.0"
-description = "Model Context Threat Scanner — security analysis for MCP servers"
+name = "mcp-mcts"
+dynamic = ["version"]
+description = "Model Context Threat Scanner — local MCP security scanning, attack chains, inventory, CI gates, and optional Semgrep/LLM analysis"
 readme = "README.md"
-license = { text = "Apache-2.0" }
+license = "Apache-2.0"
 authors = [
-    { name = "MCTS Contributors" },
+    { name = "MCP-Audit" },
 ]
 requires-python = ">=3.11"
-keywords = ["mcp", "security", "red-team", "prompt-injection", "llm", "ai-agents"]
+keywords = [
+    "mcp",
+    "mcts",
+    "security",
+    "red-team",
+    "prompt-injection",
+    "llm",
+    "ai-agents",
+    "reasoning",
+    "agent",
+    "search",
+]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Environment :: Console",
@@ -58,6 +69,9 @@ yara = [
 llm = [
     "litellm>=1.80.0",
 ]
+semgrep = [
+    "semgrep>=1.60.0",
+]
 supplychain = [
     "pip-audit>=2.9.0",
 ]
@@ -67,9 +81,25 @@ sast = [
     "tree-sitter-go>=0.23.0",
     "tree-sitter-rust>=0.23.0",
 ]
+all = [
+    "fastapi>=0.115.0",
+    "mcp>=1.27.2",
+    "numpy>=1.24.0",
+    "pip-audit>=2.9.0",
+    "sentence-transformers>=3.0.0",
+    "tree-sitter>=0.24.0",
+    "tree-sitter-go>=0.23.0",
+    "tree-sitter-rust>=0.23.0",
+    "tree-sitter-typescript>=0.23.0",
+    "uvicorn>=0.32.0",
+    "yara-python>=4.5.0",
+    "litellm>=1.80.0",
+    "semgrep>=1.60.0",
+]
 
 [project.scripts]
 mcts = "mcts.cli.main:run"
+mcts-mcp = "mcts.mcp_server.main:run"
 
 [project.urls]
 Homepage = "https://github.com/MCP-Audit/MCTS"
@@ -79,11 +109,37 @@ Issues = "https://github.com/MCP-Audit/MCTS/issues"
 Changelog = "https://github.com/MCP-Audit/MCTS/blob/main/CHANGELOG.md"
 
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling>=1.27"]
 build-backend = "hatchling.build"
 
+[tool.hatch.version]
+path = "src/mcts/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/mcts"]
+
 [tool.hatch.build.targets.sdist]
-only-include = ["src", "tests", "README.md", "LICENSE", "NOTICE", "pyproject.toml"]
+only-include = [
+    "src",
+    "tests",
+    "docs",
+    "README.md",
+    "LICENSE",
+    "NOTICE",
+    "CHANGELOG.md",
+    "pyproject.toml",
+]
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.6.0",
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.25.0",
+    "pytest-cov>=7.1.0",
+    "ruff>=0.9.0",
+    "build>=1.2.0",
+    "twine>=6.1.0",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -105,6 +161,7 @@ select = ["E", "F", "I", "UP", "B", "SIM"]
 
 [tool.ruff.lint.per-file-ignores]
 "src/mcts/cli/main.py" = ["UP045"]
+"tests/fixtures/behavioral-eval/**/*.py" = ["F821"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["mcts"]
