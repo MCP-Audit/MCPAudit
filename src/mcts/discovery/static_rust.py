@@ -162,9 +162,7 @@ class RustStaticDiscovery:
         tools.extend(self._tools_from_tool_attrs(file_path, content, tools))
         return tools
 
-    def _tools_from_tool_attrs(
-        self, file_path: Path, content: str, existing: list[MCPTool]
-    ) -> list[MCPTool]:
+    def _tools_from_tool_attrs(self, file_path: Path, content: str, existing: list[MCPTool]) -> list[MCPTool]:
         known = {tool.name for tool in existing}
         tools: list[MCPTool] = []
         for match in TOOL_ATTR_PATTERN.finditer(content):

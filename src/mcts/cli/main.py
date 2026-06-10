@@ -83,8 +83,7 @@ def _check_strict_discovery(report, config: ScanConfig) -> None:
     incomplete = [
         finding
         for finding in report.findings
-        if finding.analyzer == "static_discovery"
-        and finding.severity in {Severity.HIGH, Severity.CRITICAL}
+        if finding.analyzer == "static_discovery" and finding.severity in {Severity.HIGH, Severity.CRITICAL}
     ]
     if not incomplete:
         return
