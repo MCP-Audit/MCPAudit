@@ -59,9 +59,11 @@ runs:
       working-directory: ${{ github.action_path }}/..
       run: |
         set -euo pipefail
+        REPO_ROOT="${{ github.action_path }}/.."
         TARGET="${{ inputs.target }}"
         JSON_OUT="${{ github.workspace }}/mcts-report.json"
         SARIF_OUT="${{ github.workspace }}/mcts-report.sarif"
+        HTML_OUT="${{ github.workspace }}/mcts-report.html"
         ARGS=(scan "$TARGET" --no-progress -o "$JSON_OUT")
 
         if [ "${{ inputs.fail-on-critical }}" = "true" ]; then
@@ -72,12 +74,8 @@ runs:
         fi
 
         uv run mcts "${ARGS[@]}"
-        uv run mcts scan "$TARGET" --no-progress --format sarif -o "$SARIF_OUT"
-
-    - name: Generate HTML dashboard
-      shell: bash
-      working-directory: ${{ github.action_path }}/..
-      run: uv run mcts report "${{ github.workspace }}/mcts-report.json" -o "${{ github.workspace }}/mcts-report.html"
+        cp "$REPO_ROOT/mcts_analysis/scan-report.sarif" "$SARIF_OUT"
+        cp "$REPO_ROOT/mcts_analysis/scan-report.html" "$HTML_OUT"
 
     - name: Upload JSON report
       if: always()
@@ -92,3 +90,10 @@ runs:
       with:
         name: mcts-report-html
         path: mcts-report.html
+
+    - name: Upload SARIF report
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: mcts-report-sarif
+        path: mcts-report.sarif

@@ -43,13 +43,12 @@ jobs:
 ## What the action does
 
 1. Installs MCTS with `uv sync --frozen` from the pinned action ref (reproducible lockfile; default extras: `mcp`, `sast`)
-2. Runs `mcts scan` on your target
-3. Writes `mcts-report.json` and `mcts-report.sarif`
-4. Generates `mcts-report.html` via `mcts report`
-5. Uploads JSON and HTML as workflow artifacts
-6. Fails the workflow if `fail-on-critical` or `min-score` thresholds are not met
+2. Runs `mcts scan` once on your target (JSON, SARIF, and HTML are derived from the same scan)
+3. Writes `mcts-report.json`, `mcts-report.sarif`, and `mcts-report.html` to the workflow workspace
+4. Uploads JSON, HTML, and SARIF as workflow artifacts
+5. Fails the workflow if `fail-on-critical` or `min-score` thresholds are not met
 
-You upload SARIF separately (step 2 above) to show findings in GitHub's Security tab.
+Upload SARIF to GitHub Code Scanning separately (see quick start) to show findings in the Security tab.
 
 ### Installed capabilities (default extras)
 
