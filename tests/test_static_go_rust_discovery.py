@@ -6,8 +6,8 @@ from pathlib import Path
 
 from mcts.core.config import ScanConfig
 from mcts.discovery.static_go import GoStaticDiscovery
-from mcts.discovery.static_rust import RustStaticDiscovery
 from mcts.discovery.static_runner import discover_static
+from mcts.discovery.static_rust import RustStaticDiscovery
 
 ROOT = Path(__file__).resolve().parents[1]
 GO_BENCH = ROOT / "examples" / "bench" / "go-mcp-server"

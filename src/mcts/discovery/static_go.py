@@ -5,7 +5,6 @@ from __future__ import annotations
 import re
 from fnmatch import fnmatch
 from pathlib import Path
-from typing import Any
 
 from mcts.capability.inferrer import infer_capability
 from mcts.core.config import ScanConfig
