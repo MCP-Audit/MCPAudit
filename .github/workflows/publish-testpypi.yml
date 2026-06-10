@@ -4,11 +4,17 @@ on:
   workflow_dispatch:
 
 permissions:
+  contents: read
   id-token: write
 
 jobs:
+  test:
+    uses: ./.github/workflows/test-gate.yml
+
   publish:
+    needs: test
     runs-on: ubuntu-latest
+    environment: testpypi
 
     steps:
       - uses: actions/checkout@v4
