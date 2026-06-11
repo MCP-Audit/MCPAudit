@@ -29,8 +29,7 @@ def resolve_auto_scan(
     if len(candidates) > 1:
         listed = ", ".join(str(path.relative_to(root)) for path in candidates[:5])
         raise AutoScanError(
-            f"Multiple MCP entrypoint candidates under {root}; pass TARGET explicitly. "
-            f"Candidates: {listed}"
+            f"Multiple MCP entrypoint candidates under {root}; pass TARGET explicitly. Candidates: {listed}"
         )
     if len(candidates) == 1:
         return base_config.model_copy(update={"target": candidates[0]})
