@@ -412,6 +412,8 @@ Exit **0** on pass/medium verdict; **1** on critical/high; **2** on errors.
 
 When `--scoring v2` or `both` and `score_v2` is present, **verdict** uses v2 `risk_level` instead of legacy `score.overall` bands. `absolute_risk` is always included on the pentest JSON when v2 ran.
 
+**Static-only coverage:** when static discovery finds **zero MCP tools** (e.g. prompt-only servers), the `attack_chains` phase is marked `skipped` in the JSON report. Check `pentest_limits.coverage` (`static-only` vs `full`) and `pentest_limits.attack_chains_available` to see what ran.
+
 ---
 
 ## `mcts fuzz`

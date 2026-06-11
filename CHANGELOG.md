@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Pentest marks `attack_chains` as `skipped` (not `complete`) when zero MCP tools are discovered; `pentest_limits` on `PentestReport` records coverage (`static-only` vs `full`) (#215)
 - Reject invalid `--snapshot` JSON such as scan-report artifacts, empty tool lists, or tool rows without names before scan analysis starts.
 - Validate governance `--policy` files before scan execution so missing or invalid policy files fail before reports are written.
 - Fail `--auto` with a clear error when multiple MCP config files or entrypoint candidates are found instead of silently scanning the repo root.
