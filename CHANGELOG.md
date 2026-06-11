@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Validate governance `--policy` files before scan execution so missing or invalid policy files fail before reports are written.
 - Warn in `mcts readiness` when `--opa` or `--llm-judge` is requested but optional dependencies are missing.
+- Fail `mcts readiness` when zero MCP tools are discovered instead of reporting production-ready with `tools_checked: 0`.
 
 ## [0.1.2] - 2026-06-10
 
