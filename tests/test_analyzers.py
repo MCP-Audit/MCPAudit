@@ -3,8 +3,10 @@
 from pathlib import Path
 
 from mcts.analyzers.command_execution import CommandExecutionAnalyzer
+from mcts.analyzers.data_leakage import DataLeakageAnalyzer
 from mcts.core.config import ScanConfig
 from mcts.discovery.static import StaticDiscovery
+from mcts.mcp.models import MCPServerInfo
 from mcts.reporting.models import Severity
 
 
@@ -26,10 +28,31 @@ def test_data_leakage_scans_source_files(example_server_path: Path) -> None:
     assert source_findings or any(f.analyzer == "data_leakage" for f in report.findings)
 
 
+def test_data_leakage_ignores_loopback_urls_in_log_messages() -> None:
+    server = MCPServerInfo(
+        name="perseus",
+        source_files={
+            "mcp.py": "\n".join(
+                [
+                    "print(f'Perseus MCP SSE server listening on http://127.0.0.1:{port}')",
+                    "print(f' SSE endpoint: http://127.0.0.1:{port}/sse')",
+                    "logger.info('Server card: http://localhost:9000/.well-known/mcp/server-card.json')",
+                    "callback_url = 'http://127.0.0.1:9000/message'",
+                ]
+            )
+        },
+    )
+
+    findings = DataLeakageAnalyzer().analyze(server)
+
+    assert len(findings) == 1
+    assert findings[0].location
+    assert findings[0].location.line == 4
+
+
 def test_docker_dedupe_dockerfile_and_containerfile(tmp_path: Path) -> None:
     """Dockerfile + Containerfile with same FROM → only 1 HIGH finding."""
     from mcts.analyzers.supply_chain import SupplyChainAnalyzer
-    from mcts.mcp.models import MCPServerInfo
 
     (tmp_path / "Dockerfile").write_text("FROM python:latest\n")
     (tmp_path / "Containerfile").write_text("FROM python:latest\n")
@@ -41,7 +64,6 @@ def test_docker_dedupe_dockerfile_and_containerfile(tmp_path: Path) -> None:
 def test_docker_dedupe_same_file_not_scanned_twice(tmp_path: Path) -> None:
     """Same Dockerfile must not produce duplicate findings."""
     from mcts.analyzers.supply_chain import SupplyChainAnalyzer
-    from mcts.mcp.models import MCPServerInfo
 
     (tmp_path / "Dockerfile").write_text("FROM python:latest\n")
     findings = SupplyChainAnalyzer(tmp_path).analyze(MCPServerInfo(name="x"))
@@ -52,7 +74,6 @@ def test_docker_dedupe_same_file_not_scanned_twice(tmp_path: Path) -> None:
 def test_docker_dedupe_multistage_same_image(tmp_path: Path) -> None:
     """Multi-stage build with same FROM → only 1 HIGH finding."""
     from mcts.analyzers.supply_chain import SupplyChainAnalyzer
-    from mcts.mcp.models import MCPServerInfo
 
     (tmp_path / "Dockerfile").write_text("FROM node:latest AS builder\nFROM node:latest AS runtime\n")
     findings = SupplyChainAnalyzer(tmp_path).analyze(MCPServerInfo(name="x"))
@@ -63,7 +84,6 @@ def test_docker_dedupe_multistage_same_image(tmp_path: Path) -> None:
 def test_docker_digest_pinned_not_flagged(tmp_path: Path) -> None:
     """Digest-pinned images must never be flagged."""
     from mcts.analyzers.supply_chain import SupplyChainAnalyzer
-    from mcts.mcp.models import MCPServerInfo
 
     (tmp_path / "Dockerfile").write_text("FROM python:3.11@sha256:abcdef1234567890\n")
     findings = SupplyChainAnalyzer(tmp_path).analyze(MCPServerInfo(name="x"))

@@ -22,10 +22,7 @@ from mcts.discovery.onboarding import find_entrypoint_candidates, find_mcp_confi
 
 console = Console()
 
-_OPTIONAL_EXTRA_CHECKS = (
-    ("[mcp] extra", "mcp", "mcp-mcts[mcp]"),
-    ("[api] extra", "fastapi", "mcp-mcts[api]"),
-)
+_OPTIONAL_EXTRA_CHECKS = (("[api] extra", "fastapi", "mcp-mcts[api]"),)
 _OPTIONAL_CLI_CHECKS = (
     ("semgrep CLI", "semgrep"),
     ("pip-audit CLI", "pip-audit"),
@@ -58,6 +55,14 @@ def run_doctor(
         failures += 1
 
     checks.append(("pass", "mcts", __version__))
+    if _append_optional_extra_check(
+        checks,
+        extra_label="Extra [mcp]",
+        module_name="mcp",
+        available_detail="installed — live scan / mcts-mcp available",
+        missing_detail='missing — install with `pip install "mcp-mcts[mcp]"` or `uv sync --extra mcp`',
+    ):
+        warnings += 1
 
     if root.is_dir():
         checks.append(("pass", "Target", str(root)))
@@ -227,3 +232,19 @@ def _rel(path: Path, root: Path) -> str:
         return path.relative_to(root).as_posix()
     except ValueError:
         return str(path)
+
+
+def _append_optional_extra_check(
+    checks: list[tuple[str, str, str]],
+    *,
+    extra_label: str,
+    module_name: str,
+    available_detail: str,
+    missing_detail: str,
+) -> bool:
+    if importlib_util.find_spec(module_name) is None:
+        checks.append(("warn", extra_label, missing_detail))
+        return True
+
+    checks.append(("pass", extra_label, available_detail))
+    return False
