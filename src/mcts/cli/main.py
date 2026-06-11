@@ -1321,6 +1321,9 @@ def readiness(
     )
     console.print(f"[green]Saved[/green] {output_path}")
 
+    if report.tools_checked == 0:
+        raise typer.Exit(code=1)
+
 
 @app.command(name="serve")
 def serve_api(
