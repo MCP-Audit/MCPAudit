@@ -59,12 +59,18 @@ def _load_combined_snapshot(path: Path) -> MCPServerInfo:
     if _looks_like_scan_report(payload):
         raise StaticJsonError("Invalid snapshot: file looks like a scan report, not a tools/list snapshot")
 
-    tools = _extract_snapshot_tools(payload)
     prompts = _extract_list(payload, ("prompts",))
     resources = _extract_list(payload, ("resources",))
     instructions = payload.get("instructions")
     if isinstance(instructions, dict):
         instructions = instructions.get("text") or instructions.get("instructions")
+    tools = _extract_snapshot_tools(payload)
+
+    if not any([tools, prompts, resources, instructions]):
+        raise StaticJsonError(
+            "Invalid snapshot: expected tools/list export or combined snapshot "
+            "with tools, prompts, resources, or instructions"
+        )
 
     return MCPServerInfo(
         name=str(payload.get("name") or payload.get("server_name") or "static-snapshot"),
@@ -83,17 +89,20 @@ def _looks_like_scan_report(payload: dict[str, Any]) -> bool:
 
 def _extract_snapshot_tools(payload: dict[str, Any]) -> list[dict[str, Any]]:
     for key in ("tools", "items"):
-        value = payload.get(key)
-        if isinstance(value, list):
-            return _validate_tool_rows(value)
+        if key in payload:
+            value = payload.get(key)
+            if isinstance(value, list):
+                return _validate_tool_rows(value)
+            raise StaticJsonError(f"Invalid snapshot: {key} must be an array")
 
     result = payload.get("result")
-    if isinstance(result, dict) and isinstance(result.get("tools"), list):
-        return _validate_tool_rows(result["tools"])
+    if isinstance(result, dict) and "tools" in result:
+        tools = result.get("tools")
+        if isinstance(tools, list):
+            return _validate_tool_rows(tools)
+        raise StaticJsonError("Invalid snapshot: result.tools must be an array")
 
-    raise StaticJsonError(
-        "Invalid snapshot: expected tools/list export from 'mcts snapshot' with a tools array"
-    )
+    return []
 
 
 def _validate_tool_rows(rows: list[Any]) -> list[dict[str, Any]]:
