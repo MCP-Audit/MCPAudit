@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - Validate governance `--policy` files before scan execution so missing or invalid policy files fail before reports are written.
+- Warn in `mcts readiness` when `--opa` or `--llm-judge` is requested but optional dependencies are missing.
 - Surface a clear skip reason when `--semgrep` is enabled but the Semgrep CLI is unavailable or the scan fails before producing results.
 - Return exit code 2 with a clear message when `mcts snapshot` cannot resolve a live launch configuration.
 - Log when `--pip-audit` is skipped (missing CLI or dependency manifest) and keep CVE findings when the audit runs successfully.
