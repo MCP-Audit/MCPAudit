@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Allow `mcts scan --url https://host/mcp` without an explicit TARGET positional argument.
 - Fail `mcts readiness` when zero MCP tools are discovered instead of reporting production-ready with `tools_checked: 0`.
 
+### Changed
+
+- Validate resolvable live launch configuration before the consent gate on `mcts snapshot` and `mcts fuzz`.
+
 ## [0.1.2] - 2026-06-10
 
 ### Added
