@@ -9,6 +9,7 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from mcts.mcp.models import MCPServerInfo
+from mcts.scoring.models import RiskScoreV2
 
 
 class Severity(StrEnum):
@@ -110,6 +111,8 @@ class ScanReport(BaseModel):
     findings: list[Finding]
     summary: ScanSummary
     score: RiskScore
+    score_v2: RiskScoreV2 | None = None
+    scoring_version: str = "legacy"
     attack_graph: dict[str, Any] = Field(default_factory=dict)
     scan_scope: str = "repository"
     scan_notes: list[str] = Field(default_factory=list)

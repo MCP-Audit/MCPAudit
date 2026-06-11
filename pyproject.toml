@@ -117,6 +117,7 @@ path = "src/mcts/__init__.py"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/mcts"]
+force-include = { "src/mcts/scoring/weights_v1.yaml" = "mcts/scoring/weights_v1.yaml", "src/mcts/scoring/weights_learned.yaml" = "mcts/scoring/weights_learned.yaml", "src/mcts/scoring/data/scoring_v2_corpus_stats.json" = "mcts/scoring/data/scoring_v2_corpus_stats.json" }
 
 [tool.hatch.build.targets.sdist]
 only-include = [

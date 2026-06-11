@@ -71,13 +71,26 @@ def compare_baselines(baseline_report_json: str, current_report_json: str) -> st
     """Compare two scan reports and summarize score and finding deltas."""
     baseline = _report_summary(json.loads(baseline_report_json))
     current = _report_summary(json.loads(current_report_json))
-    delta = {
+    delta: dict[str, Any] = {
         "baseline": baseline,
         "current": current,
         "score_delta": current["overall_score"] - baseline["overall_score"],
         "finding_delta": current["finding_count"] - baseline["finding_count"],
         "new_findings": _new_finding_ids(baseline, current),
     }
+    if baseline.get("absolute_risk") is not None and current.get("absolute_risk") is not None:
+        delta["absolute_risk_delta"] = current["absolute_risk"] - baseline["absolute_risk"]
+    if baseline.get("security_score") is not None and current.get("security_score") is not None:
+        delta["security_score_delta"] = current["security_score"] - baseline["security_score"]
+    if baseline.get("scoring_version") or current.get("scoring_version"):
+        delta["scoring_mode_note"] = (
+            "Legacy overall_score and v2 absolute_risk use different scales — compare like with like."
+        )
+    chain_delta = (current.get("critical") or 0) - (baseline.get("critical") or 0)
+    if chain_delta and delta.get("finding_delta", 0) != chain_delta:
+        delta["chain_meta_note"] = (
+            "Finding deltas may include attack_chains meta-rows excluded from v2 absolute_risk."
+        )
     return json.dumps(delta, indent=2)
 
 
@@ -103,14 +116,24 @@ def create_server():
 
 def _report_summary(payload: dict[str, Any]) -> dict[str, Any]:
     score = payload.get("score") or {}
+    score_v2 = payload.get("score_v2") or {}
     findings = payload.get("findings") or []
-    return {
+    summary: dict[str, Any] = {
         "overall_score": int(score.get("overall") or 0),
         "finding_count": len(findings),
         "finding_ids": sorted(str(row.get("id")) for row in findings if row.get("id")),
         "critical": int((payload.get("summary") or {}).get("critical") or 0),
         "high": int((payload.get("summary") or {}).get("high") or 0),
+        "scoring_version": payload.get("scoring_version") or "legacy",
     }
+    if score_v2:
+        if score_v2.get("absolute_risk") is not None:
+            summary["absolute_risk"] = int(score_v2["absolute_risk"])
+        if score_v2.get("security_score") is not None:
+            summary["security_score"] = int(score_v2["security_score"])
+        if score_v2.get("risk_level"):
+            summary["risk_level"] = str(score_v2["risk_level"])
+    return summary
 
 
 def _new_finding_ids(baseline: dict[str, Any], current: dict[str, Any]) -> list[str]:

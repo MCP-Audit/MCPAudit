@@ -38,6 +38,16 @@ def test_score_rating_low_risk() -> None:
     assert label == "LOW"
 
 
+def test_risk_level_rating_v2_bands() -> None:
+    theme = get_theme("cyber")
+    label, color = theme.risk_level_rating("critical")
+    assert label == "CRITICAL"
+    assert color == theme.palette.red
+    label, color = theme.risk_level_rating("low")
+    assert label == "LOW"
+    assert color == theme.palette.green
+
+
 def test_sort_findings_by_severity() -> None:
     findings = [
         Finding(

@@ -1,0 +1,35 @@
+{
+  "servers": [
+    {"server_id": "vulnerable", "path": "examples/vulnerable-mcp-server/server.py", "skip": false},
+    {"server_id": "medium", "path": "examples/medium-risk-mcp-server/server.py", "skip": false},
+    {"server_id": "baseline", "path": "examples/baseline-mcp-server/server.py", "skip": false},
+    {"server_id": "prompt_only", "path": "examples/prompt-only-server/server.py", "skip": false},
+    {"server_id": "python_mismatch", "path": "examples/behavioral-fixtures/python_mismatch/server.py", "skip": false},
+    {"server_id": "multi_file", "path": "examples/bench/multi-file-server/server.py", "skip": false},
+    {"server_id": "live", "path": "examples/live-mcp-server/server.py", "skip": false},
+    {
+      "server_id": "ts_bench",
+      "path": "examples/bench/multi-file-ts-server/server.ts",
+      "skip": false,
+      "scan_config": {"languages": ["typescript"]}
+    },
+    {
+      "server_id": "rust_bench",
+      "path": "examples/bench/rust-mcp-server/src/main.rs",
+      "skip": false,
+      "scan_config": {"languages": ["rust"]}
+    },
+    {
+      "server_id": "rust_rmcp",
+      "path": "examples/bench/rust-mcp-rmcp/src/lib.rs",
+      "skip": false,
+      "scan_config": {"languages": ["rust"]}
+    },
+    {
+      "server_id": "go_bench",
+      "path": "examples/bench/go-mcp-server/main.go",
+      "skip": false,
+      "scan_config": {"languages": ["go"]}
+    }
+  ]
+}

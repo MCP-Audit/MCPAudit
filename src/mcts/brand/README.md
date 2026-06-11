@@ -4,8 +4,6 @@ Canonical logos for the Model Context Threat Scanner.
 
 | File | Use |
 |------|-----|
-| `logo.png` | Full wordmark (1024×1024) — terminal header, large displays |
-| `logo-report.png` | Hex icon only (256×256, transparent) — HTML dashboard sidebar |
-| `logo.jpg` | Compressed full wordmark (716×716) — docs, README, presentations |
+| `Logo 2.jpg` | Canonical logo — terminal header, HTML dashboard, docs |
 
-Loaded in code via `mcts.brand.logo_data_uri()`.
+Loaded in code via `mcts.brand.logo_data_uri()` and `mcts.brand.LOGO_PATH`.

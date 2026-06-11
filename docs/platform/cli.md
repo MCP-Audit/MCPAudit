@@ -5,6 +5,7 @@
 Complete reference for every MCTS command and flag. Use this when you need to look up a specific option or understand exit codes.
 
 > **New to MCTS?** Start with [Getting Started](../get-started/getting-started.md) — you don't need this full reference yet.
+> **Confused by two scores or CI gates?** [Scoring developer guide](../reporting/scoring-guide.md) — read before memorizing flags.
 > **Choosing a scan mode?** See [Which scan mode should I use?](../scanning/README.md#which-scan-mode-should-i-use).
 > **Unfamiliar with a term?** See the [Glossary](../glossary.md).
 
@@ -84,11 +85,19 @@ When `-o` is set, format determines serialization. SARIF uses `reporting/sarif.p
 | Flag | Default | Description |
 |------|---------|-------------|
 | `--fail-on-critical` | false | Exit **1** if any critical finding |
-| `--min-score` | — | Exit **1** if `score.overall` < N (0–100) |
+| `--min-score` | — | Exit **1** if legacy `score.overall` < N (0–100) |
 | `--max-critical` | — | Exit **1** if critical count > N |
-| `--fail-on-category` | — | Repeatable. Format: `category:limit`. Exit **1** when category score ≥ limit |
+| `--fail-on-category` | — | Repeatable. Format: `category:limit`. Exit **1** when **legacy** category score ≥ limit |
+| `--scoring` | `both` | `legacy`, `v2`, or `both` — enable multi-factor scoring |
+| `--min-security-score` | — | Exit **1** if v2 benchmark security score < N (requires `--scoring v2` or `both`) |
+| `--max-absolute-risk` | — | Exit **1** if v2 `absolute_risk` > N (requires `--scoring v2` or `both`) |
+| `--max-risk-level` | — | Exit **1** if v2 `risk_level` exceeds band (`low` < `medium` < `high` < `critical`) |
+| `--min-category-score-v2` | — | Repeatable. Format: `category:min`. Exit **1** when v2 OWASP tile score &lt; min (100=good) |
+| `--weights` | `manual_v1` | v2 weights profile name |
+| `--corpus-stats-path` | packaged default | Override corpus stats JSON for v2 percentile scoring |
+| `--no-attack-chains` | false | Disable v2 **chain multiplier** only (`chain_factor_mode: disabled`). Under `--scoring v2\|both` the attack chains analyzer still runs for graph + meta-findings. Use `--scoring legacy` to omit chain meta-findings entirely. |
 
-Valid category keys: `permissions`, `injection`, `execution`, `data_leakage`, `attack_chains`, `shadowing`, `jailbreak`. See [Scoring Specification](../reporting/scoring-spec.md).
+Valid **legacy** category keys: `permissions`, `injection`, `execution`, `data_leakage`, `attack_chains`, `shadowing`, `jailbreak`. Category gates apply to v1 tiles only — not `category_scores_v2`. See [Scoring developer guide](../reporting/scoring-guide.md).
 
 ### Terminal UI flags
 
@@ -176,12 +185,14 @@ OAuth client credentials: set via config JSON or env (`oauth_token_url`, `oauth_
 
 ### Scoring output
 
-Each scan prints:
+Default (`--scoring both`) prints legacy and v2 lines:
 
-- **Overall Score** — 0–100, higher is better (`100 × e^(-raw_risk/50)`)
-- **Risk Index** — 0–100, higher is worse (`min(100, raw_risk)`)
-- **Scoring basis** — severity counts; compliance excluded
-- **Category breakdown** — per-dimension risk bars
+- **Overall Score** — legacy 0–100, higher is better (`100 × e^(-raw_risk/50)`)
+- **Absolute risk / risk level** — v2 multi-factor integer and band (when `score_v2` present)
+- **Security score (v2)** — corpus benchmark percentile when packaged stats available
+- **Risk Index** — legacy 0–100, higher is worse (`min(100, raw_risk)`)
+- **Scoring basis** — legacy severity counts; compliance excluded
+- **Category breakdown** — legacy per-dimension risk bars; v2 OWASP tiles in JSON/HTML when enabled
 
 ### Examples
 
@@ -399,6 +410,10 @@ mcts pentest ./repo --json -o pentest-report.json
 
 Exit **0** on pass/medium verdict; **1** on critical/high; **2** on errors.
 
+When `--scoring v2` or `both` and `score_v2` is present, **verdict** uses v2 `risk_level` instead of legacy `score.overall` bands. `absolute_risk` is always included on the pentest JSON when v2 ran.
+
+**Static-only coverage:** when static discovery finds **zero MCP tools** (e.g. prompt-only servers), the `attack_chains` phase is marked `skipped` in the JSON report. Check `pentest_limits.coverage` (`static-only` vs `full`) and `pentest_limits.attack_chains_available` to see what ran.
+
 ---
 
 ## `mcts fuzz`
@@ -440,7 +455,7 @@ See [Protocol Fuzzing](../scanning/fuzzing.md).
 | **1** | Gate failure; or critical/high fuzz/inventory findings |
 | **2** | Usage error, missing consent, probe/fuzz failure, invalid theme/format |
 
-Gate failures (`scan` only): `--fail-on-critical`, `--min-score`, `--max-critical`, `--fail-on-category`.
+Gate failures (`scan` only): `--fail-on-critical`, `--min-score`, `--max-critical`, `--fail-on-category` (legacy); `--min-security-score`, `--max-absolute-risk`, `--max-risk-level`, `--min-category-score-v2` (v2, require `--scoring v2` or `both`).
 
 ---
 
@@ -487,5 +502,6 @@ GitHub Action: [CI Integration](ci-integration.md) · [`action/action.yml`](../.
 - [Remote Scanning](../scanning/remote-scanning.md)
 - [Static Snapshot](../scanning/static-snapshot.md)
 - [REST API](rest-api.md)
-- [Scoring Specification](../reporting/scoring-spec.md)
+- **[Scoring developer guide](../reporting/scoring-guide.md)**
+- [Scoring Specification (legacy)](../reporting/scoring-spec.md)
 - [Getting Started](../get-started/getting-started.md)

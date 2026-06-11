@@ -7,6 +7,7 @@ import re
 from mcts.analyzers.base import BaseAnalyzer
 from mcts.mcp.models import MCPServerInfo, MCPTool
 from mcts.reporting.models import Finding, Severity
+from mcts.scoring.evidence_tags import tag_permission_finding
 
 DESTRUCTIVE_PATTERNS = re.compile(
     r"\b(delete|drop|remove|destroy|wipe|purge|truncate|kill|shutdown)\b",
@@ -27,7 +28,7 @@ class PermissionAnalyzer(BaseAnalyzer):
         findings: list[Finding] = []
         for tool in server.tools:
             findings.extend(self._analyze_tool(tool))
-        return findings
+        return [tag_permission_finding(f) for f in findings]
 
     def _analyze_tool(self, tool: MCPTool) -> list[Finding]:
         findings: list[Finding] = []

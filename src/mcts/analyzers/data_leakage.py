@@ -7,6 +7,7 @@ import re
 from mcts.analyzers.base import BaseAnalyzer
 from mcts.mcp.models import MCPServerInfo
 from mcts.reporting.models import Finding, Severity, SourceLocation
+from mcts.scoring.evidence_tags import tag_data_leakage_finding
 
 SECRET_PATTERNS: list[tuple[str, re.Pattern[str], Severity]] = [
     ("OpenAI API Key", re.compile(r"sk-[A-Za-z0-9]{20,}"), Severity.CRITICAL),
@@ -68,7 +69,7 @@ class DataLeakageAnalyzer(BaseAnalyzer):
         findings: list[Finding] = []
         findings.extend(self._scan_metadata(server))
         findings.extend(self._scan_source_files(server))
-        return findings
+        return [tag_data_leakage_finding(f) for f in findings]
 
     def _scan_metadata(self, server: MCPServerInfo) -> list[Finding]:
         findings: list[Finding] = []

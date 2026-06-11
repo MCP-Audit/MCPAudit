@@ -7,8 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-06-12
+
+### Added
+
+- **Scoring v2 (multi-factor risk)** — parallel `score_v2.absolute_risk` with factor classifiers, attack-chain multipliers, corpus-calibrated `security_score`, and explainable `top_contributors`; legacy `score.overall` unchanged (invariant I1)
+- **Default dual scoring** — `--scoring both` is the default in CLI, API, and GitHub Action; opt out with `--scoring legacy`
+- **v2 CI gates** — `--min-security-score`, `--max-absolute-risk`, `--max-risk-level`, `--min-category-score-v2`; API returns `gate_violations` and echoed `scoring_mode`
+- **Dashboard v2** — absolute risk header, factor-axis radar, OWASP `category_scores_v2` tiles, dual-score glossary when `both`
+- **Dashboard overview** — hero snapshot, issues/risk priority grid, quick-jump nav, plain-language zones (actions, risk breakdown, coverage, trends), and collapsible “How to read this report” guide for v2 and legacy scans
+- **Scan history trend table** — dynamic columns (date, absolute risk, risk level, security score, issues, critical, high, legacy score) from `history.json`; records severity counts per run
+- **SARIF `mcts/scoreV2`** — optional run properties; see [sarif-score-v2.md](docs/reporting/sarif-score-v2.md) for Code Scanning adoption
+- **Calibration** — 11-server corpus, Spearman gate (ρ ≥ 0.80), `scripts/calibrate_scoring_weights.py`, packaged `scoring_v2_corpus_stats.json`
+- **Docs** — [ADR-003](docs/analysis/adr-003-scoring-v2.md), [scoring-spec-v2](docs/reporting/scoring-spec-v2.md), [migration guide](docs/migration/scoring-v2.md)
+- **Pentest** — `verdict` follows `score_v2.risk_level` when v2 scoring is enabled
+- **CI** — `scoring-v2` workflow required on main CI (`ci.yml`) with Spearman ρ ≥ 0.80 gate
+
 ### Fixed
 
+- Pentest marks `attack_chains` as `skipped` (not `complete`) when zero MCP tools are discovered; `pentest_limits` on `PentestReport` records coverage (`static-only` vs `full`) ([#215](https://github.com/MCP-Audit/MCTS/issues/215), thanks [@sachinML](https://github.com/sachinML) — [PR #255](https://github.com/MCP-Audit/MCTS/pull/255))
+- Legacy security score card and gauge hidden when v2 scoring is active so the overview shows a single primary risk model
+- v2 dimension radar uses relative normalization so spoke scale reflects dominant factors on each scan (not absolute corpus scale)
 - Reject invalid `--snapshot` JSON such as scan-report artifacts, empty tool lists, or tool rows without names before scan analysis starts.
 - Validate governance `--policy` files before scan execution so missing or invalid policy files fail before reports are written.
 - Fail `--auto` with a clear error when multiple MCP config files or entrypoint candidates are found instead of silently scanning the repo root.
@@ -34,9 +53,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **HTML dashboard layout** — equal-height side-by-side panels across overview, risk breakdown, and trends; scrollable overflow (280px cap) for trend history, risk contributors, and category health; overview issue/pass lists capped at six rows
+- **Brand assets** — canonical `Logo 2.jpg` for terminal headers, HTML sidebar, and exports (replaces separate PNG/report variants)
+- **Trend sparkline** — chart width follows container size with resize handling
+- **Documentation** — added [Scoring developer guide](docs/reporting/scoring-guide.md) as single entry point; simplified glossary, getting started, and migration doc; synced architecture, CI, and [html-report](docs/reporting/html-report.md) docs for the reorganized dashboard
 - Print MCP Surface / Supply Chain / Dependency Hygiene breakdown when `--min-score` or `--ci` gate fails.
 - Validate resolvable live launch configuration before the consent gate on `mcts snapshot` and `mcts fuzz`.
 - **Doctor + MCP server startup hints** — `mcts doctor` now reports whether the optional `[mcp]` extra is installed, and `mcts-mcp` prints a direct install hint instead of a bare import failure when the extra is missing (#219).
+- **GitHub issue templates** — structured bug, feature, security, and documentation forms aligned with `type:*` / `priority:P*` label taxonomy
+- **Branch rulesets** — `main` + `main_*` release branches (maintainer merge) and admin-only `develop` integration branch
 
 ## [0.1.2] - 2026-06-10
 

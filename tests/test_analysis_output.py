@@ -182,3 +182,66 @@ def test_scan_history_builds_trend_chart(
 
     history = json.loads((tmp_path / ANALYSIS_DIR_NAME / "history.json").read_text(encoding="utf-8"))
     assert len(history["runs"]) >= 2
+
+
+def test_scan_scoring_both_writes_score_v2_json(
+    example_server_path: Path,
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    result = runner.invoke(
+        app,
+        ["scan", str(example_server_path), "--scoring", "both", "--no-progress"],
+    )
+    assert result.exit_code in (0, 1), result.stdout
+    payload = json.loads((tmp_path / ANALYSIS_DIR_NAME / "scan-report.json").read_text(encoding="utf-8"))
+    assert payload.get("scoring_version") == "both"
+    assert payload.get("score_v2") is not None
+    assert "absolute_risk" in payload["score_v2"]
+    assert payload["score_v2"].get("legacy_overall") is not None
+
+
+def test_analysis_output_accepts_synthetic_score_v2_report(tmp_path: Path) -> None:
+    from datetime import UTC, datetime
+
+    from mcts.mcp.models import MCPServerInfo
+    from mcts.reporting.models import RiskScore, ScanReport, ScanSummary, ScoreBasis
+    from mcts.scoring.models import RiskScoreV2, ScoreV2Basis
+
+    report = ScanReport(
+        version="0.0.0",
+        target="server.py",
+        scanned_at=datetime.now(UTC),
+        server=MCPServerInfo(name="demo"),
+        findings=[],
+        summary=ScanSummary(),
+        score=RiskScore(
+            overall=55,
+            risk_index=45,
+            raw_risk=120,
+            penalty=45,
+            basis=ScoreBasis(
+                critical=1,
+                high=0,
+                medium=0,
+                low=0,
+                scorable_total=1,
+                excluded_non_scorable=0,
+            ),
+        ),
+        score_v2=RiskScoreV2(
+            absolute_risk=366,
+            risk_range=(300, 420),
+            risk_level="high",
+            security_score=42,
+            legacy_overall=55,
+            basis=ScoreV2Basis(scorable_count=3, excluded_non_scorable=0),
+        ),
+        scoring_version="both",
+    )
+    out = tmp_path / "v2-report.json"
+    out.write_text(report.model_dump_json(), encoding="utf-8")
+    payload = json.loads(out.read_text(encoding="utf-8"))
+    assert payload["score_v2"]["absolute_risk"] == 366
+    assert payload["scoring_version"] == "both"

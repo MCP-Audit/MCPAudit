@@ -31,9 +31,13 @@ def run_machine_wide_cli(
     for row in summary.results:
         label = f"[{row.entry.client}] {row.entry.server_name}"
         if row.report is not None:
-            console.print(
-                f"  {label} — score {row.report.score.overall}/100, {len(row.report.findings)} finding(s)"
-            )
+            line = f"  {label} — score {row.report.score.overall}/100"
+            if row.report.score_v2 is not None:
+                line += f", absolute_risk {row.report.score_v2.absolute_risk}"
+                if row.report.score_v2.security_score is not None:
+                    line += f", security_score {row.report.score_v2.security_score}/100"
+            line += f", {len(row.report.findings)} finding(s)"
+            console.print(line)
         elif row.error:
             console.print(f"  {label} — [dim]skipped: {row.error}[/dim]")
 

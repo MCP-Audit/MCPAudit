@@ -9,6 +9,7 @@ from mcts.core.target import ScanTarget, TargetKind
 from mcts.discovery.language_detect import RUST_MCP_INDICATORS, detect_repo_languages
 from mcts.mcp.models import MCPServerInfo
 from mcts.reporting.models import Finding, Severity
+from mcts.scoring.evidence_tags import tag_static_discovery_finding
 
 
 def static_discovery_meta_findings(server: MCPServerInfo, config: ScanConfig) -> list[Finding]:
@@ -28,50 +29,54 @@ def static_discovery_meta_findings(server: MCPServerInfo, config: ScanConfig) ->
 
     if rust_sources and ("rust" in langs or "rs" in langs):
         return [
-            Finding(
-                id="static-discovery-rust-incomplete",
-                analyzer="static_discovery",
-                title="Rust MCP sources found but no tools discovered",
-                description=(
-                    "The repository contains Rust MCP indicators but static discovery "
-                    "returned zero tools. Handler analysis and behavioral SAST did not run."
-                ),
-                severity=Severity.HIGH,
-                recommendation=(
-                    "Verify rmcp #[tool] registration patterns are supported, pass "
-                    "--languages rust, or use --live --i-understand-live-risk for live discovery."
-                ),
-                technique_id="MCTS-T-1001",
-                confidence=0.9,
-                evidence={
-                    "languages": sorted(langs),
-                    "detected_languages": sorted(detected),
-                    "discovery_mode": server.discovery_mode,
-                },
+            tag_static_discovery_finding(
+                Finding(
+                    id="static-discovery-rust-incomplete",
+                    analyzer="static_discovery",
+                    title="Rust MCP sources found but no tools discovered",
+                    description=(
+                        "The repository contains Rust MCP indicators but static discovery "
+                        "returned zero tools. Handler analysis and behavioral SAST did not run."
+                    ),
+                    severity=Severity.HIGH,
+                    recommendation=(
+                        "Verify rmcp #[tool] registration patterns are supported, pass "
+                        "--languages rust, or use --live --i-understand-live-risk for live discovery."
+                    ),
+                    technique_id="MCTS-T-1001",
+                    confidence=0.9,
+                    evidence={
+                        "languages": sorted(langs),
+                        "detected_languages": sorted(detected),
+                        "discovery_mode": server.discovery_mode,
+                    },
+                )
             )
         ]
 
     if detected & langs:
         return [
-            Finding(
-                id="static-discovery-incomplete",
-                analyzer="static_discovery",
-                title="Static MCP tool discovery returned zero tools",
-                description=(
-                    "MCP source indicators were found for enabled languages but no tools "
-                    "were discovered. Security analysis may be incomplete."
-                ),
-                severity=Severity.MEDIUM,
-                recommendation=(
-                    "Use --live --i-understand-live-risk, export a tools/list snapshot, "
-                    "or verify static discovery supports your SDK registration patterns."
-                ),
-                confidence=0.8,
-                evidence={
-                    "languages": sorted(langs),
-                    "detected_languages": sorted(detected),
-                    "discovery_mode": server.discovery_mode,
-                },
+            tag_static_discovery_finding(
+                Finding(
+                    id="static-discovery-incomplete",
+                    analyzer="static_discovery",
+                    title="Static MCP tool discovery returned zero tools",
+                    description=(
+                        "MCP source indicators were found for enabled languages but no tools "
+                        "were discovered. Security analysis may be incomplete."
+                    ),
+                    severity=Severity.MEDIUM,
+                    recommendation=(
+                        "Use --live --i-understand-live-risk, export a tools/list snapshot, "
+                        "or verify static discovery supports your SDK registration patterns."
+                    ),
+                    confidence=0.8,
+                    evidence={
+                        "languages": sorted(langs),
+                        "detected_languages": sorted(detected),
+                        "discovery_mode": server.discovery_mode,
+                    },
+                )
             )
         ]
     return []

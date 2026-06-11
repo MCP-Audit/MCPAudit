@@ -64,6 +64,16 @@ def test_report_missing_file(tmp_path: Path, monkeypatch) -> None:
     assert "not found" in result.stdout.lower()
 
 
+def test_scan_scoring_both_prints_v2_summary(example_server_path: Path, tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    result = runner.invoke(
+        app,
+        ["scan", str(example_server_path), "--scoring", "both", "--no-progress", "--no-save"],
+    )
+    assert result.exit_code in (0, 1), result.stdout
+    assert "absolute_risk" in result.stdout.lower() or "Absolute Risk" in result.stdout
+
+
 def test_report_valid_json(tmp_path: Path) -> None:
     report_path = tmp_path / "report.json"
     report_path.write_text(_minimal_report().model_dump_json())

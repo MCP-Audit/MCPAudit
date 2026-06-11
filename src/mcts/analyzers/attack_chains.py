@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
-from collections import deque
 from typing import Any
 
 from mcts.analyzers.base import BaseAnalyzer
 from mcts.mcp.models import MCPServerInfo, MCPTool
 from mcts.reporting.models import Finding, Severity
+from mcts.scoring.evidence_tags import tag_attack_chain_finding
+from mcts.scoring.graph import bfs_path, build_paths
 
 
 class AttackChainAnalyzer(BaseAnalyzer):
@@ -28,7 +29,7 @@ class AttackChainAnalyzer(BaseAnalyzer):
         exec_tools = [t for t in server.tools if _cap(t, "executes_commands")]
 
         if read_tools and exfil_tools:
-            path = _find_path(self.last_graph, read_tools[0].name, exfil_tools[0].name)
+            path = bfs_path(self.last_graph, read_tools[0].name, exfil_tools[0].name)
             findings.append(
                 Finding(
                     id="chain-read-exfil",
@@ -81,7 +82,9 @@ class AttackChainAnalyzer(BaseAnalyzer):
                 )
             )
 
-        return findings
+        paths = build_paths(self.last_graph, findings)
+        self.last_graph = {**self.last_graph, "paths": paths}
+        return [tag_attack_chain_finding(f) for f in findings]
 
     def _build_graph(self, server: MCPServerInfo) -> dict[str, Any]:
         nodes: dict[str, dict[str, str]] = {}
@@ -135,9 +138,9 @@ def _can_chain(src: MCPTool, dst: MCPTool) -> bool:
     if not src.capability or not dst.capability:
         return False
     s, d = src.capability, dst.capability
-    return (s.reads_untrusted_input and (d.egresses_network or d.executes_commands)) or (
-        s.accesses_sensitive_data and d.egresses_network
-    )
+    return (
+        s.reads_untrusted_input and (d.egresses_network or d.executes_commands or d.accesses_sensitive_data)
+    ) or (s.accesses_sensitive_data and d.egresses_network)
 
 
 def _edge_label(src: MCPTool, dst: MCPTool) -> str:
@@ -148,23 +151,3 @@ def _edge_label(src: MCPTool, dst: MCPTool) -> str:
     if dst.capability and dst.capability.accesses_sensitive_data:
         return "→ cred"
     return "→ chain"
-
-
-def _find_path(graph: dict[str, Any], start: str, end: str) -> list[str]:
-    adjacency: dict[str, list[str]] = {}
-    for edge in graph.get("edges", []):
-        adjacency.setdefault(edge["from"], []).append(edge["to"])
-
-    queue: deque[list[str]] = deque([[start]])
-    visited = {start}
-    while queue:
-        path = queue.popleft()
-        node = path[-1]
-        if node == end:
-            return path
-        for neighbor in adjacency.get(node, []):
-            if neighbor in visited:
-                continue
-            visited.add(neighbor)
-            queue.append([*path, neighbor])
-    return [start, end]

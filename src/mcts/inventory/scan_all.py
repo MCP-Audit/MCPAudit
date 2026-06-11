@@ -27,14 +27,17 @@ def run_inventory_scan_all(base_config: ScanConfig) -> tuple[InventoryReport, li
         except Exception as exc:  # noqa: BLE001
             rows.append(_row(entry, error=str(exc)))
             continue
-        rows.append(
-            _row(
-                entry,
-                report=report,
-                score=report.score.overall,
-                findings=len(report.findings),
-            )
-        )
+        row_payload: dict = {
+            "score": report.score.overall,
+            "findings": len(report.findings),
+            "scoring_version": report.scoring_version,
+            "report": report.model_dump(mode="json"),
+        }
+        if report.score_v2 is not None:
+            row_payload["absolute_risk"] = report.score_v2.absolute_risk
+            row_payload["security_score"] = report.score_v2.security_score
+            row_payload["risk_level"] = report.score_v2.risk_level
+        rows.append(_row(entry, **row_payload))
     return inventory, rows
 
 

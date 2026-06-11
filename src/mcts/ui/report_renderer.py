@@ -71,7 +71,7 @@ class ReportRenderer:
         except OSError:
             return max(self.console.width, LOGO_MIN_TERMINAL_WIDTH)
 
-    def render_saved_notice(self, path: str) -> None:
+    def render_saved_notice(self, path: str, report: ScanReport | None = None) -> None:
         """Themed notice when JSON report is written."""
         p = self.theme.palette
         self.console.print(
@@ -79,3 +79,9 @@ class ReportRenderer:
             f"[{self.theme.style(p.muted)}]Report written to[/] "
             f"[{self.theme.style(p.command, bold=True)}]{path}[/]",
         )
+        if report is not None and report.score_v2 is not None:
+            v2 = report.score_v2
+            extra = f"absolute_risk={v2.absolute_risk} ({v2.risk_level})"
+            if v2.security_score is not None:
+                extra += f", security_score={v2.security_score}/100"
+            self.console.print(f"[{self.theme.style(p.muted)}]  v2: {extra}[/]")

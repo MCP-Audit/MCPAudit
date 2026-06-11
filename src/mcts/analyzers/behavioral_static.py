@@ -18,6 +18,7 @@ from mcts.sast.rust.sinks import detect_rust_sinks
 from mcts.sast.rust.taint import analyze_rust_taint
 from mcts.sast.typescript.sinks import detect_typescript_sinks
 from mcts.sast.typescript.taint import analyze_typescript_taint
+from mcts.scoring.evidence_tags import tag_behavioral_static_finding
 
 _BENIGN_CLAIMS = (
     (
@@ -83,7 +84,7 @@ class BehavioralStaticAnalyzer(BaseAnalyzer):
             if not snippet:
                 continue
             findings.extend(self._analyze_tool(tool, snippet, server))
-        return findings
+        return [tag_behavioral_static_finding(f) for f in findings]
 
     def _analyze_tool(
         self,

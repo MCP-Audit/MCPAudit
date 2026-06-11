@@ -4,7 +4,8 @@
 
 MCTS can run as a **REST API server** for programmatic scans — useful when you want other tools or services to trigger scans without using the CLI directly.
 
-> **Most users should use the CLI.** The REST API is for automation and integration scenarios.
+> **Most users should use the CLI.** The REST API is for automation and integration scenarios.  
+> **Scores & gates:** [Scoring developer guide](../reporting/scoring-guide.md) — `scoring_mode`, `gate_violations`, v2 fields.
 
 ---
 
@@ -123,6 +124,14 @@ All scan endpoints accept these fields (plus endpoint-specific fields where note
 | `analyzer_filter` | string[] | `[]` | Limit output to named analyzers |
 | `fanout_offset` | int | `0` | Pagination offset for batch scan endpoints |
 | `fanout_limit` | int | env max (50) | Page size for batch scan endpoints |
+| `scoring_mode` | string | `"both"` | `legacy`, `v2`, or `both` |
+| `weights_profile` | string | `"manual_v1"` | v2 weights profile when scoring is enabled |
+| `corpus_stats_path` | string | — | Optional path to corpus stats JSON for v2 percentiles |
+| `min_security_score` | int | — | Gate: fail when v2 security score below threshold (not enforced server-side by default) |
+| `max_absolute_risk` | int | — | Gate: fail when v2 absolute risk above threshold |
+| `max_risk_level` | string | — | Gate: fail when v2 risk level exceeds band |
+| `min_category_score_v2` | object | — | Map of OWASP category key → minimum tile score (100=good) |
+| `assets_path` | string | — | Optional `.mcts/assets.yaml` path for v2 asset-value overrides |
 
 Batch endpoints (`/scan-all-tools`, `/scan-all-prompts`, `/scan-all-resources`) run one full analyzer pass per item. Use `fanout_offset` and `fanout_limit` to paginate; responses include `truncated` and `truncation_warning` when more items remain.
 
@@ -163,7 +172,9 @@ Batch endpoints (`/scan-all-tools`, `/scan-all-prompts`, `/scan-all-resources`) 
 }
 ```
 
-Response: full `ScanReport` JSON (`model_dump()`).
+Response: `ScanResponse` shape — full `ScanReport` fields plus echoed `scoring_mode` and `gate_violations` (string array). When `scoring_mode` is `v2` or `both`, the payload includes `score_v2` (absolute risk, dimension scores, top contributors) and `scoring_version`. Legacy `score.overall` is always populated (invariant I1). The REST API does not fail HTTP status on gate violations — consumers inspect `gate_violations` or use the CLI for exit-code enforcement.
+
+Optional request field `min_category_score_v2`: map of OWASP category key → minimum health score (100=good).
 
 ### Planned API extensions
 

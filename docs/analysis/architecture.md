@@ -41,8 +41,8 @@ When you run `mcts scan ./server.py`:
 1. **Discover** — Build an `MCPServerInfo` snapshot (tools, prompts, resources, handler source, repo markdown instructions, optional live schemas)
 2. **Analyze** — Run security analyzers; each returns `Finding` objects
 3. **Post-process** — Dedupe, enrich with MCTS-T IDs, append OWASP compliance meta-findings
-4. **Score** — Compute 0–100 score (compliance findings excluded from score)
-5. **Report** — Terminal UI, JSON, SARIF, or HTML via `mcts report`
+4. **Score** — Legacy 0–100 `score.overall` (always) plus v2 `score_v2` when `scoring_mode` is `v2` or `both` (default); compliance excluded from both sums; `attack_chains` meta-rows excluded from v2 only
+5. **Report** — Terminal UI, JSON, SARIF (incl. `mcts/scoreV2`), or HTML via `mcts report`
 
 **Orchestrator:** `Scanner` in `src/mcts/core/scanner.py`  
 **Config:** `ScanConfig` in `src/mcts/core/config.py`  
@@ -72,21 +72,24 @@ flowchart LR
     ANA["Analyzers"]
     DEDUPE["Dedupe + enrich"]
     COMP["Compliance OWASP"]
-    ANA --> DEDUPE --> COMP
+    GRAPH["Attack graph + scan scope"]
+    ANA --> DEDUPE --> COMP --> GRAPH
   end
 
   subgraph output [Output]
-    SCORE["RiskScoringEngine"]
+    V1["RiskScoringEngine (legacy)"]
+    V2["RiskScoringEngineV2 (optional)"]
     REP["ScanReport"]
     OUT["Terminal · JSON · SARIF · HTML"]
-    SCORE --> REP --> OUT
+    GRAPH --> V1
+    V1 --> V2
+    V2 --> REP --> OUT
   end
 
   CLI --> CFG --> STATIC
   CFG --> LIVE
   CFG --> SNAP
   MERGE --> ANA
-  COMP --> SCORE
 ```
 
 ASCII equivalent:
@@ -101,7 +104,13 @@ ScanConfig ──► Discovery (static / live / snapshot) ──► MCPServerInf
               filters → dedupe → enrich (MCTS-T) → compliance
                               │
                               ▼
-                    RiskScoringEngine → ScanReport → outputs
+              attack_graph + scan_scope (paths when v2/both)
+                              │
+                              ▼
+         RiskScoringEngine (always) → RiskScoringEngineV2 (v2/both)
+                              │
+                              ▼
+                    ScanReport → terminal · JSON · SARIF · HTML
 ```
 
 ---
@@ -169,13 +178,18 @@ Optional: `probe_protocol_security()` when `--protocol-probe` + `--url`.
 | Enrich | `enrich_findings()` | Attach `technique_id`, `mitigation_ids`, crosswalk evidence |
 | Compliance | `ComplianceChecker.check()` | OWASP LLM + MCP meta-findings (**non-scoring**) |
 
-### 5. Score and verify
+### 5. Attack graph and scan scope
 
-`RiskScoringEngine.score()` → `ScoreBasis`; `verify()` asserts score matches findings (regression guard).
+Before scoring: `attack_graph` (with `paths` when chains ran) and `scan_scope` are set. Under v2/both, `AttackChainAnalyzer` always runs (whitelist/surface bypass).
 
-### 6. Build `ScanReport`
+### 6. Score and verify
 
-Includes `attack_graph` from `AttackChainAnalyzer`, partitioned `score_breakdown`, scan scope notes, and `analyzers_executed` audit list.
+1. `RiskScoringEngine.score()` → legacy `ScoreBasis`; `verify()` regression guard (always).
+2. When `scoring_mode` is `v2` or `both`: `build_scoring_context()` → `RiskScoringEngineV2.score()` → optional `score_v2`; `verify()` on deterministic core.
+
+### 7. Build `ScanReport`
+
+Includes canonical `attack_graph`, optional `score_v2`, partitioned legacy `score_breakdown`, scan scope notes, and `analyzers_executed` audit list.
 
 Optional: `--save-baseline` writes tool metadata snapshot for rug-pull detection on future scans.
 
@@ -290,7 +304,7 @@ See [Analyzers](#analyzers) below.
 
 ### Scoring (`scoring/`)
 
-Exponential decay formula; compliance excluded. Details: [Scoring spec](../reporting/scoring-spec.md).
+Legacy exponential decay (`engine.py`); v2 multi-factor engine (`engine_v2.py`, `graph.py`, `chains.py`, packaged corpus stats). Compliance excluded from both; `attack_chains` meta-rows excluded from v2 sum. Details: [Scoring spec](../reporting/scoring-spec.md) · [Scoring v2](../reporting/scoring-spec-v2.md).
 
 ### Reporting (`reporting/`, `report/`, `ui/`)
 
@@ -379,9 +393,31 @@ Used by `behavioral_static`. Python AST taint + optional tree-sitter for TS/Go/R
 
 `capability/inferrer.py` assigns per-tool flags (`reads_untrusted_input`, `egresses_network`, `executes_commands`, …). BFS finds paths like read → exfiltrate. Graph stored on `ScanReport.attack_graph`.
 
+When `scoring_mode` is `v2` or `both`, paths are built at scan time via `scoring/graph.build_paths()` and stored on the canonical graph:
+
+```json
+{
+  "nodes": [{"id": "read_file", "label": "read_file", "type": "tool"}],
+  "edges": [{"from": "read_file", "to": "send_webhook", "label": "read→exfil"}],
+  "paths": [{
+    "id": "path-chain-credential-theft-2",
+    "nodes": ["read_file", "get_env", "send_webhook"],
+    "tools_on_path": ["read_file", "get_env", "send_webhook"],
+    "hop_count": 2,
+    "finding_ids": ["chain-credential-theft"]
+  }]
+}
+```
+
+`hop_count` is validated edge hops only (`len(nodes) - 1`). Scanner, v2 engine, and HTML dashboard all use `canonical_attack_graph(report)` (invariant I3/I11).
+
 ---
 
 ## Scoring and reporting
+
+### Legacy engine (`scoring/engine.py`)
+
+Always runs. Populates `ScanReport.score` (invariant I1).
 
 | Metric | Formula | Notes |
 |--------|---------|-------|
@@ -389,14 +425,32 @@ Used by `behavioral_static`. Python AST taint + optional tree-sitter for TS/Go/R
 | Overall score | `round(100 × e^(-raw/50))` | Higher is better |
 | Risk index | `min(100, raw_risk)` | Higher is worse |
 
-`compliance` analyzer findings are **informational only** — they do not affect score.
+`compliance` analyzer findings are **informational only** — they do not affect legacy or v2 sums.
 
-Outputs:
+### v2 engine (`scoring/engine_v2.py`)
 
-- **Terminal** — Rich dashboard (`ui/`)
-- **JSON** — full `ScanReport` dump
-- **SARIF** — `--format sarif` for GitHub Code Scanning
-- **HTML** — `mcts report` executive dashboard
+Runs when `scoring_mode` is `v2` or `both` (default). Populates `ScanReport.score_v2`.
+
+Pipeline order (PR-1e): analyzers → compliance → **attack graph + scan scope** → legacy score → `build_scoring_context()` → v2 score. Canonical graph stored on report (I11).
+
+| Output | Notes |
+|--------|-------|
+| `absolute_risk` | Multi-factor bracket sum × `chain_factor` on tool-attributed findings |
+| `security_score` | Corpus percentile (packaged `scoring_v2_corpus_stats.json`) |
+| `dimension_scores` | Eight RFC factor axes for radar chart |
+| `top_contributors` | Finding + attack-chain explainability rows |
+| `category_scores_v2` | OWASP tiles (100=good), separate from legacy categories |
+
+`attack_chains` meta-findings appear in the report but are **excluded** from v2 sum (`NON_SCORING_V2`). Chain signal is `chain_factor` on tool rows via `scoring/chains.py` and `scoring/graph.py`.
+
+Gates: `governance/scan_gates.py` (CLI exit codes + API `gate_violations`). Docs: [Scoring developer guide](../reporting/scoring-guide.md) · [v2 spec](../reporting/scoring-spec-v2.md).
+
+### Report outputs
+
+- **Terminal** — Rich dashboard (`ui/`) — legacy + v2 lines when `both`
+- **JSON** — full `ScanReport` with optional `score_v2`
+- **SARIF** — `--format sarif`; run-level `mcts/scoreV2` when v2 present
+- **HTML** — `mcts report` executive dashboard with v2 primary header
 
 ---
 
@@ -409,7 +463,7 @@ These share discovery/models but use separate entry paths:
 | `mcts fuzz` | `fuzz/` | Protocol probes → `runtime_events` JSON |
 | `mcts inventory` | `inventory/` | Client config discovery; feeds cross-server / toxic-flow analyzers |
 | `mcts vet` | `vet/` | Pre-install PyPI/npm/OCI checks |
-| `mcts pentest` | `pentest/` | Structured recon + attack chains |
+| `mcts pentest` | `pentest/` | Structured recon + attack chains; `absolute_risk` + v2 `risk_level` verdict when v2/both |
 | `mcts readiness` | `readiness/` | HEUR-001–020 (separate from security score) |
 | `mcts serve` | `api/` | REST wrapper around `Scanner` |
 
@@ -427,7 +481,7 @@ src/mcts/
 ├── analyzers/     # Security checks (subclass BaseAnalyzer)
 ├── sast/          # Taint analysis + Semgrep rule pack
 ├── capability/    # Tool capability profiles
-├── scoring/       # RiskScoringEngine, category partitions
+├── scoring/       # engine.py (v1), engine_v2.py, graph.py, chains.py, corpus stats
 ├── compliance/    # OWASP mapping (non-scoring)
 ├── taxonomy/      # MCTS-T/M, Sigma, crosswalk, enrichment
 ├── reporting/     # Pydantic models, SARIF
@@ -437,7 +491,7 @@ src/mcts/
 ├── fuzz/          # Fuzz runner
 ├── vet/           # Package vetting
 ├── pentest/       # Pentest phases
-├── governance/    # YAML policy gates
+├── governance/    # policy.py, scan_gates.py (legacy + v2 YAML/CLI gates)
 ├── readiness/     # Production heuristics + OPA
 ├── api/           # FastAPI (mcts serve)
 ├── mcp_server/    # mcts-mcp stdio tools
@@ -493,7 +547,7 @@ Contributor quick start: [CONTRIBUTING.md](../../CONTRIBUTING.md#quick-start-for
 | Symptom | Where to look |
 |---------|---------------|
 | No tools discovered | Discovery logs; try `--auto`; check `--languages`, exclude dirs |
-| Score seems wrong | `score.basis` in JSON; compliance findings are non-scoring |
+| Score seems wrong | Legacy: `score.basis` in JSON. v2: `score_v2.basis` + `top_contributors`. Compliance non-scoring; `attack_chains` meta-rows excluded from v2 only. Dual scores diverging is expected — see [Scoring developer guide](../reporting/scoring-guide.md). |
 | Analyzer missing from report | `analyzers_executed` on `ScanReport`; check `--analyzers` subset and opt-in flags |
 | Live scan incomplete | `discovery_warnings` → `live_discovery` findings; `--strict-live` |
 | False positive | Analyzer module + fixture in `tests/fixtures/regression/` |
@@ -513,7 +567,8 @@ uv run pytest tests/fixtures/regression/ -q   # if applicable
 ## Related
 
 - [Security checks reference](security-checks.md) — what each analyzer looks for
-- [Scoring specification](../reporting/scoring-spec.md)
+- [Scoring specification](../reporting/scoring-spec.md) (legacy)
+- [Scoring v2](../reporting/scoring-spec-v2.md) · [Migration](../migration/scoring-v2.md)
 - [Threat taxonomy](../reporting/taxonomy.md)
 - [CLI reference](../platform/cli.md)
 - [CONTRIBUTING.md](../../CONTRIBUTING.md)

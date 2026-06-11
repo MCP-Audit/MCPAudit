@@ -1,0 +1,21 @@
+name: scoring-v2
+
+on:
+  push:
+  pull_request:
+  workflow_call:
+
+jobs:
+  scoring:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync --group dev
+      - run: uv run pytest tests/scoring/ tests/test_attack_graph.py tests/test_cli_gates_v2.py tests/test_cli_report.py tests/test_analysis_output.py tests/test_html_report.py tests/test_governance.py tests/test_mcp_server.py tests/test_api_gate_violations.py tests/test_inventory_scan_all.py -v
+      - run: uv run pytest tests/test_scoring.py -v
+      - run: uv run python scripts/calibrate_scoring_weights.py --min-rho 0.80
+      - run: uv build
+      - run: |
+          uv run python -c "from mcts.scoring.weights import load_weights; load_weights('manual_v1'); load_weights('weights_learned')"
+          uv run python -c "from mcts.scoring.corpus import load_corpus_stats; load_corpus_stats()"

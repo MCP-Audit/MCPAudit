@@ -8,6 +8,7 @@ from mcts.analyzers.base import BaseAnalyzer
 from mcts.mcp.models import MCPServerInfo, MCPTool
 from mcts.probe.jailbreak import summarize_jailbreak_events
 from mcts.reporting.models import Finding, Severity
+from mcts.scoring.evidence_tags import tag_jailbreak_finding
 
 
 class JailbreakAnalyzer(BaseAnalyzer):
@@ -26,7 +27,7 @@ class JailbreakAnalyzer(BaseAnalyzer):
         elif score >= 5:
             severity = Severity.MEDIUM
         else:
-            return findings
+            return [tag_jailbreak_finding(f) for f in findings]
 
         findings.append(
             Finding(
@@ -51,7 +52,7 @@ class JailbreakAnalyzer(BaseAnalyzer):
                 },
             )
         )
-        return findings
+        return [tag_jailbreak_finding(f) for f in findings]
 
     def _live_finding(self, summary: dict[str, Any]) -> Finding:
         accepted = int(summary["accepted_count"])
