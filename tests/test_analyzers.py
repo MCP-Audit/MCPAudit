@@ -48,3 +48,44 @@ def test_data_leakage_ignores_loopback_urls_in_log_messages() -> None:
     assert len(findings) == 1
     assert findings[0].location
     assert findings[0].location.line == 4
+
+
+def test_docker_dedupe_dockerfile_and_containerfile(tmp_path: Path) -> None:
+    """Dockerfile + Containerfile with same FROM → only 1 HIGH finding."""
+    from mcts.analyzers.supply_chain import SupplyChainAnalyzer
+
+    (tmp_path / "Dockerfile").write_text("FROM python:latest\n")
+    (tmp_path / "Containerfile").write_text("FROM python:latest\n")
+    findings = SupplyChainAnalyzer(tmp_path).analyze(MCPServerInfo(name="x"))
+    docker_highs = [f for f in findings if "Docker base" in f.title]
+    assert len(docker_highs) == 1
+
+
+def test_docker_dedupe_same_file_not_scanned_twice(tmp_path: Path) -> None:
+    """Same Dockerfile must not produce duplicate findings."""
+    from mcts.analyzers.supply_chain import SupplyChainAnalyzer
+
+    (tmp_path / "Dockerfile").write_text("FROM python:latest\n")
+    findings = SupplyChainAnalyzer(tmp_path).analyze(MCPServerInfo(name="x"))
+    docker_highs = [f for f in findings if "Docker base" in f.title]
+    assert len(docker_highs) == 1
+
+
+def test_docker_dedupe_multistage_same_image(tmp_path: Path) -> None:
+    """Multi-stage build with same FROM → only 1 HIGH finding."""
+    from mcts.analyzers.supply_chain import SupplyChainAnalyzer
+
+    (tmp_path / "Dockerfile").write_text("FROM node:latest AS builder\nFROM node:latest AS runtime\n")
+    findings = SupplyChainAnalyzer(tmp_path).analyze(MCPServerInfo(name="x"))
+    docker_highs = [f for f in findings if "Docker base" in f.title]
+    assert len(docker_highs) == 1
+
+
+def test_docker_digest_pinned_not_flagged(tmp_path: Path) -> None:
+    """Digest-pinned images must never be flagged."""
+    from mcts.analyzers.supply_chain import SupplyChainAnalyzer
+
+    (tmp_path / "Dockerfile").write_text("FROM python:3.11@sha256:abcdef1234567890\n")
+    findings = SupplyChainAnalyzer(tmp_path).analyze(MCPServerInfo(name="x"))
+    docker_highs = [f for f in findings if "Docker base" in f.title]
+    assert len(docker_highs) == 0
