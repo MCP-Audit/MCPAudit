@@ -12,6 +12,7 @@ from mcts.analyzers.tpa_patterns import (
 )
 from mcts.mcp.models import MCPServerInfo, MCPTool
 from mcts.reporting.models import Finding, Severity, SourceLocation
+from mcts.scoring.evidence_tags import tag_schema_surface_finding
 
 CREDENTIAL_PARAM_NAMES = re.compile(
     r"(?i)^(password|secret|token|api_key|apikey|credential|auth|private_key)$"
@@ -27,7 +28,7 @@ class SchemaSurfaceAnalyzer(BaseAnalyzer):
         findings: list[Finding] = []
         for tool in server.tools:
             findings.extend(self._analyze_tool(tool))
-        return findings
+        return [tag_schema_surface_finding(f) for f in findings]
 
     def _analyze_tool(self, tool: MCPTool) -> list[Finding]:
         findings: list[Finding] = []

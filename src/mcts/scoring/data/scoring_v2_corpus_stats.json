@@ -1,0 +1,50 @@
+{
+  "version": "corpus-2026-06",
+  "p25": 0,
+  "p50": 179,
+  "p75": 372,
+  "p90": 590,
+  "p95": 1842,
+  "distribution": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    179,
+    272,
+    368,
+    376,
+    590,
+    2260
+  ],
+  "dimension_p95": {
+    "exploitability": 3,
+    "reachability": 3,
+    "exposure": 2,
+    "blast_radius": 5,
+    "business_impact": 4,
+    "asset_value": 2,
+    "attack_preconditions": 3,
+    "threat_maturity": 1
+  },
+  "risk_bands": {
+    "low": [
+      0,
+      99
+    ],
+    "medium": [
+      100,
+      249
+    ],
+    "high": [
+      372,
+      590
+    ],
+    "critical": [
+      1842,
+      3260
+    ]
+  },
+  "server_count": 11
+}

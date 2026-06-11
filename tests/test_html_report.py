@@ -351,3 +351,22 @@ def test_legacy_string_input_schema_report_loads(tmp_path: Path) -> None:
     out = tmp_path / "legacy.html"
     write_via_reporting(report, out)
     assert "MCTS Security Report" in out.read_text(encoding="utf-8")
+
+
+def test_html_includes_v2_section_when_scoring_both(
+    example_server_path: Path, tmp_path: Path, monkeypatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    report = Scanner(ScanConfig(target=example_server_path, scoring_mode="both")).run()
+    assert report.score_v2 is not None
+    out = tmp_path / "v2-report.html"
+    write_html_report(report, out)
+    html = out.read_text(encoding="utf-8")
+    assert "v2-score-section" in html
+    assert "v2-dimension-radar" in html
+    assert "v2-contributors-table" in html
+    assert "v2-categories-card" in html
+    payload = build_dashboard_payload(report)
+    assert payload["score_v2"]["absolute_risk"] == report.score_v2.absolute_risk
+    assert payload["scoring_version"] == "both"
+    assert payload.get("category_scores_v2")

@@ -140,6 +140,16 @@ class Theme:
             return "HIGH", self.palette.orange
         return "CRITICAL", self.palette.red
 
+    def risk_level_rating(self, risk_level: str) -> tuple[str, str]:
+        """Map v2 risk_level band to terminal label and color."""
+        mapping = {
+            "low": ("LOW", self.palette.green),
+            "medium": ("MEDIUM", self.palette.yellow),
+            "high": ("HIGH", self.palette.orange),
+            "critical": ("CRITICAL", self.palette.red),
+        }
+        return mapping.get(risk_level.lower(), ("UNKNOWN", self.palette.grey))
+
     def risk_index_color(self, risk_index: int) -> str:
         if risk_index >= 75:
             return self.palette.red

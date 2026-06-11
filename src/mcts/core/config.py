@@ -5,7 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 DEFAULT_EXCLUDE_DIRS = (
     ".git",
@@ -123,3 +123,19 @@ class ScanConfig(BaseModel):
     instruction_files: list[Path] = Field(default_factory=list)
     skills_dirs: list[Path] = Field(default_factory=list)
     surface_scoped_analyzers: bool = True
+    scoring_mode: str = "both"
+    weights_profile: str = "manual_v1"
+    corpus_stats_path: Path | None = None
+    assets_path: Path | None = None
+    min_security_score: int | None = Field(default=None, ge=0, le=100)
+    max_absolute_risk: int | None = Field(default=None, ge=0)
+    max_risk_level: str | None = None
+    min_category_score_v2: dict[str, int] = Field(default_factory=dict)
+
+    @field_validator("scoring_mode")
+    @classmethod
+    def _validate_scoring_mode(cls, value: str) -> str:
+        normalized = value.lower()
+        if normalized not in {"legacy", "v2", "both"}:
+            raise ValueError("scoring_mode must be legacy, v2, or both")
+        return normalized

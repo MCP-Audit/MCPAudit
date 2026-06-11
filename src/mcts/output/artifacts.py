@@ -25,8 +25,13 @@ def _report_with_scan_history(report: ScanReport) -> ScanReport:
                 "date": scanned.strftime("%b %d"),
                 "score": report.score.overall,
                 "scanned_at": scanned.isoformat(),
+                "scoring_version": report.scoring_version,
             }
         ]
+        if report.score_v2 is not None:
+            points[0]["absolute_risk"] = report.score_v2.absolute_risk
+            if report.score_v2.security_score is not None:
+                points[0]["security_score"] = report.score_v2.security_score
     return report.model_copy(update={"scan_history": points})
 
 

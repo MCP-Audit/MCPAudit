@@ -20,7 +20,11 @@ from mcts.output.analysis_dir import (
     resolve_report_input_path,
 )
 from mcts.output.artifacts import persist_scan_artifacts
-from mcts.report.data import category_gate_failures, parse_category_gates
+from mcts.report.data import (
+    category_gate_failures,
+    parse_category_gates,
+    parse_min_category_score_v2,
+)
 from mcts.reporting.sarif import write_sarif_report
 from mcts.ui.progress import print_scan_command, run_with_progress
 from mcts.ui.report_renderer import ReportRenderer
@@ -186,25 +190,56 @@ def _print_min_score_gate_failure(report, min_score: int) -> None:
             f"[dim]Lowest bucket ({lowest_label}) is below the overall minimum; "
             "review findings in that area before changing MCP tool code.[/dim]"
         )
+    if report.score_v2 is not None:
+        console.print(
+            f"[dim]v2 absolute_risk={report.score_v2.absolute_risk}, "
+            f"risk_level={report.score_v2.risk_level}[/dim]"
+        )
+        if report.score_v2.legacy_overall is not None:
+            console.print(
+                f"[dim]Legacy overall (includes chain meta-findings): "
+                f"{report.score_v2.legacy_overall}[/dim]"
+            )
+
+
+_LEVEL_ORDER = {"low": 0, "medium": 1, "high": 2, "critical": 3}
+
+
+def _any_v2_gate(config: ScanConfig) -> bool:
+    from mcts.governance.scan_gates import _any_v2_gate as gate_any_v2
+
+    return gate_any_v2(config)
+
+
+def _level_exceeds(actual: str, maximum: str) -> bool:
+    return _LEVEL_ORDER.get(actual, 0) > _LEVEL_ORDER.get(maximum, 0)
 
 
 def _check_gates(report, config: ScanConfig) -> None:
-    if config.fail_on_critical and report.summary.critical > 0:
-        raise typer.Exit(code=1)
+    from mcts.governance.scan_gates import evaluate_scan_gate_violations
+
     if config.min_score is not None and report.score.overall < config.min_score:
         _print_min_score_gate_failure(report, config.min_score)
-        raise typer.Exit(code=1)
-    if config.max_critical is not None and report.summary.critical > config.max_critical:
-        console.print(
-            f"[red]Critical findings ({report.summary.critical}) exceed maximum ({config.max_critical})[/red]"
-        )
-        raise typer.Exit(code=1)
-    category_failures = category_gate_failures(report.findings, config.fail_on_category)
+
+    violations = evaluate_scan_gate_violations(report, config)
+    if not violations:
+        return
+
+    category_failures = [item for item in violations if "risk score" in item]
+    other_failures = [
+        item
+        for item in violations
+        if item not in category_failures and not item.startswith("legacy overall")
+    ]
     if category_failures:
         console.print("[red]Category risk thresholds exceeded:[/red]")
         for failure in category_failures:
             console.print(f"  [red]•[/red] {failure}")
-        raise typer.Exit(code=1)
+    if other_failures:
+        console.print("[red]CI gate failed:[/red]")
+        for failure in other_failures:
+            console.print(f"[red]{failure}[/red]")
+    raise typer.Exit(code=1)
 
 
 @app.callback()
@@ -289,9 +324,9 @@ def scan(
         typer.Option(
             "--fail-on-category",
             help=(
-                "Exit 1 when category risk score meets or exceeds threshold (inclusive). "
-                "e.g. permissions:0 fails when score is 0 or more. "
-                "Use permissions:1 to allow zero-point categories. Repeatable."
+                "Exit 1 when legacy category risk score meets or exceeds threshold (inclusive). "
+                "Legacy v1 tiles only — not category_scores_v2. "
+                "e.g. permissions:0 fails when score is 0 or more. Repeatable."
             ),
         ),
     ] = None,
@@ -568,6 +603,65 @@ def scan(
             help="When --surfaces is a subset, run only analyzers relevant to those surfaces",
         ),
     ] = True,
+    scoring: Annotated[
+        str,
+        typer.Option(
+            "--scoring",
+            help="Scoring mode: legacy, v2, or both (default: both)",
+            case_sensitive=False,
+        ),
+    ] = "both",
+    no_attack_chains: Annotated[
+        bool,
+        typer.Option(
+            "--no-attack-chains",
+            help="Disable chain multiplier (chain_factor=1.0); under v2/both the analyzer still runs",
+        ),
+    ] = False,
+    min_security_score: Annotated[
+        int | None,
+        typer.Option(
+            "--min-security-score",
+            help="Exit 1 when v2 security_score is below this (requires --scoring v2 or both)",
+        ),
+    ] = None,
+    max_absolute_risk: Annotated[
+        int | None,
+        typer.Option(
+            "--max-absolute-risk",
+            help="Exit 1 when v2 absolute_risk exceeds this (requires --scoring v2 or both)",
+        ),
+    ] = None,
+    max_risk_level: Annotated[
+        str | None,
+        typer.Option(
+            "--max-risk-level",
+            help="Exit 1 when v2 risk_level exceeds threshold (low|medium|high|critical)",
+            case_sensitive=False,
+        ),
+    ] = None,
+    min_category_score_v2: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--min-category-score-v2",
+            help=(
+                "Exit 1 when v2 OWASP category health score is below minimum (100=good). "
+                "e.g. injection:80. Requires --scoring v2 or both."
+            ),
+        ),
+    ] = None,
+    weights_profile: Annotated[
+        str,
+        typer.Option("--weights", help="Scoring weights profile (default: manual_v1)"),
+    ] = "manual_v1",
+    corpus_stats_path: Annotated[
+        Path | None,
+        typer.Option("--corpus-stats-path", help="Override packaged v2 corpus statistics JSON"),
+    ] = None,
+    assets_path: Annotated[
+        Path | None,
+        typer.Option("--assets-path", help="YAML asset value overrides for v2 scoring (.mcts/assets.yaml)"),
+    ] = None,
 ) -> None:
     """Run a full security scan against an MCP server."""
     import json
@@ -669,6 +763,12 @@ def scan(
         console.print(f"[red]Error:[/red] {exc}")
         raise typer.Exit(code=2) from exc
 
+    try:
+        category_gates_v2 = parse_min_category_score_v2(min_category_score_v2)
+    except ValueError as exc:
+        console.print(f"[red]Error:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
+
     output_format = format.lower()
     if output_format not in ("json", "sarif", "raw"):
         console.print(f"[red]Error:[/red] Unknown format {format!r}. Use json, sarif, or raw.")
@@ -758,6 +858,15 @@ def scan(
         instruction_files=instruction_file or [],
         skills_dirs=skills_dir or [],
         surface_scoped_analyzers=surface_scoped,
+        scoring_mode=scoring.lower(),
+        enable_attack_chains=not no_attack_chains,
+        min_security_score=min_security_score,
+        max_absolute_risk=max_absolute_risk,
+        max_risk_level=max_risk_level.lower() if max_risk_level else None,
+        min_category_score_v2=category_gates_v2,
+        weights_profile=weights_profile,
+        corpus_stats_path=corpus_stats_path,
+        assets_path=assets_path,
     )
 
     try:
@@ -872,9 +981,9 @@ def scan(
             raw_path = resolve_output_path(output, "scan-report.raw.json")
             _write_report(report, raw_path, "raw", target=str(display_target), remote_url=url)
             renderer.render_saved_notice(str(raw_path))
-        renderer.render_saved_notice(str(json_path))
-        renderer.render_saved_notice(str(html_path))
-        renderer.render_saved_notice(str(sarif_path))
+        renderer.render_saved_notice(str(json_path), report)
+        renderer.render_saved_notice(str(html_path), report)
+        renderer.render_saved_notice(str(sarif_path), report)
         console.print(f"[dim]  mcts report {json_path}[/dim]  [dim](or open {html_path})[/dim]")
 
     _print_discovery_warnings(report.server, stderr_file)
@@ -888,6 +997,9 @@ def scan(
             critical=report.summary.critical,
             high=report.summary.high,
             servers=[str(display_target)],
+            absolute_risk=report.score_v2.absolute_risk if report.score_v2 else None,
+            security_score=report.score_v2.security_score if report.score_v2 else None,
+            risk_level=report.score_v2.risk_level if report.score_v2 else None,
         )
         if violations:
             console.print("[red]Governance policy violations:[/red]")

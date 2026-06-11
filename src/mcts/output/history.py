@@ -78,12 +78,17 @@ def record_scan_run(report: ScanReport, root: Path | None = None) -> None:
     store = _load_store(root)
     runs: list[dict[str, Any]] = store["runs"]
     key = normalize_target(report.target)
-    entry = {
+    entry: dict[str, Any] = {
         "scanned_at": report.scanned_at.astimezone(UTC).isoformat(),
         "target": key,
+        "scoring_version": report.scoring_version,
         "score": report.score.overall,
         "findings_total": report.summary.total,
     }
+    if report.score_v2 is not None:
+        entry["absolute_risk"] = report.score_v2.absolute_risk
+        entry["security_score"] = report.score_v2.security_score
+        entry["risk_level"] = report.score_v2.risk_level
     if runs and runs[-1].get("scanned_at") == entry["scanned_at"] and runs[-1].get("target") == key:
         runs[-1] = entry
     else:
@@ -122,13 +127,19 @@ def trend_points_for_target(target: str, root: Path | None = None) -> list[dict[
         scanned_at = datetime.fromisoformat(str(raw))
         if scanned_at.tzinfo is None:
             scanned_at = scanned_at.replace(tzinfo=UTC)
-        points.append(
-            {
-                "date": _trend_label(scanned_at, day_counts),
-                "score": int(row.get("score", 0)),
-                "scanned_at": scanned_at.isoformat(),
-            }
-        )
+        point: dict[str, Any] = {
+            "date": _trend_label(scanned_at, day_counts),
+            "score": int(row.get("score", 0)),
+            "scanned_at": scanned_at.isoformat(),
+            "scoring_version": row.get("scoring_version", "legacy"),
+        }
+        if "absolute_risk" in row:
+            point["absolute_risk"] = int(row["absolute_risk"])
+        if row.get("security_score") is not None:
+            point["security_score"] = int(row["security_score"])
+        if row.get("risk_level"):
+            point["risk_level"] = str(row["risk_level"])
+        points.append(point)
     return points
 
 

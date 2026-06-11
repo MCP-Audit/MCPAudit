@@ -9,6 +9,7 @@ from mcts.core.target import ScanTarget, TargetKind
 from mcts.discovery.language_detect import RUST_MCP_INDICATORS, detect_repo_languages
 from mcts.mcp.models import MCPServerInfo
 from mcts.reporting.models import Finding, Severity
+from mcts.scoring.evidence_tags import tag_static_discovery_finding
 
 
 def static_discovery_meta_findings(server: MCPServerInfo, config: ScanConfig) -> list[Finding]:
@@ -28,6 +29,7 @@ def static_discovery_meta_findings(server: MCPServerInfo, config: ScanConfig) ->
 
     if rust_sources and ("rust" in langs or "rs" in langs):
         return [
+            tag_static_discovery_finding(
             Finding(
                 id="static-discovery-rust-incomplete",
                 analyzer="static_discovery",
@@ -48,11 +50,12 @@ def static_discovery_meta_findings(server: MCPServerInfo, config: ScanConfig) ->
                     "detected_languages": sorted(detected),
                     "discovery_mode": server.discovery_mode,
                 },
-            )
+            ))
         ]
 
     if detected & langs:
         return [
+            tag_static_discovery_finding(
             Finding(
                 id="static-discovery-incomplete",
                 analyzer="static_discovery",
@@ -72,7 +75,7 @@ def static_discovery_meta_findings(server: MCPServerInfo, config: ScanConfig) ->
                     "detected_languages": sorted(detected),
                     "discovery_mode": server.discovery_mode,
                 },
-            )
+            ))
         ]
     return []
 

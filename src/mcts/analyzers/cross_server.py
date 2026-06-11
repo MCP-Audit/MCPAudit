@@ -8,6 +8,7 @@ from mcts.analyzers.base import BaseAnalyzer
 from mcts.inventory.models import InventoryEntry
 from mcts.mcp.models import MCPServerInfo
 from mcts.reporting.models import Finding, Severity
+from mcts.scoring.evidence_tags import tag_cross_server_finding
 
 
 def _similarity(a: str, b: str) -> float:
@@ -87,4 +88,4 @@ class CrossServerAnalyzer(BaseAnalyzer):
                     )
                 )
 
-        return findings
+        return [tag_cross_server_finding(f) for f in findings]

@@ -7,6 +7,7 @@ from mcts.analyzers.path_traversal import SENSITIVE_PATH_TARGETS, TRAVERSAL_PAYL
 from mcts.analyzers.tool_classification import is_file_access_tool
 from mcts.mcp.models import MCPServerInfo
 from mcts.reporting.models import Finding, Severity
+from mcts.scoring.evidence_tags import tag_tool_abuse_finding
 
 
 class ToolAbuseAnalyzer(BaseAnalyzer):
@@ -37,4 +38,4 @@ class ToolAbuseAnalyzer(BaseAnalyzer):
                         },
                     )
                 )
-        return findings
+        return [tag_tool_abuse_finding(f) for f in findings]

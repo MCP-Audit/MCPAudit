@@ -60,6 +60,12 @@ def build_sarif(report: ScanReport) -> dict[str, Any]:
         run_props["mcts/scoreBreakdown"] = report.score_breakdown.model_dump()
     if report.tool_discovery_notice:
         run_props["mcts/toolDiscoveryNotice"] = report.tool_discovery_notice
+    if report.score_v2 is not None:
+        run_props["mcts/scoreV2"] = {
+            "absoluteRisk": report.score_v2.absolute_risk,
+            "securityScore": report.score_v2.security_score,
+            "riskLevel": report.score_v2.risk_level,
+        }
 
     run: dict[str, Any] = {
         "tool": {"driver": driver},

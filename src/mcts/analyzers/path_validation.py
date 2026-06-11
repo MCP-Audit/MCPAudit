@@ -8,6 +8,7 @@ from mcts.analyzers.base import BaseAnalyzer
 from mcts.analyzers.tool_classification import is_file_access_tool
 from mcts.mcp.models import MCPServerInfo
 from mcts.reporting.models import Finding, Severity, SourceLocation
+from mcts.scoring.evidence_tags import tag_path_validation_finding
 
 CANONICALIZATION_HINTS = re.compile(
     r"\b(resolve|realpath|abspath|canonicalize|normpath|is_relative_to|startswith)\b",
@@ -44,4 +45,4 @@ class PathValidationAnalyzer(BaseAnalyzer):
                         evidence={"missing": "path_canonicalization"},
                     )
                 )
-        return findings
+        return [tag_path_validation_finding(f) for f in findings]

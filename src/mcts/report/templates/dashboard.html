@@ -121,7 +121,7 @@
             <div class="card score-card card-interactive" id="score-card" data-card-action="scroll:score-breakdown-section" aria-label="View area sub-scores">
               <span class="card-cta">View sub-scores →</span>
               <div class="score-title-row">
-                <h3>Security Score</h3>
+                <h3 id="score-card-title">Security Score</h3>
                 <div class="score-info-wrap">
                   <button type="button" class="score-info" id="score-info" aria-describedby="score-tooltip">ⓘ</button>
                   <div class="score-tooltip" id="score-tooltip" role="tooltip"></div>
@@ -160,6 +160,56 @@
               <div class="tools-stat" id="tools-stat"></div>
             </div>
           </div>
+        </div>
+
+        <div class="v2-score-section" id="v2-score-section" hidden>
+          <h3 class="metrics-section-heading">Multi-factor risk (v2)</h3>
+          <p class="metrics-section-intro" id="v2-metrics-intro">
+            Absolute risk sums factor increments on tool-attributed findings. Higher = worse.
+          </p>
+          <div class="v2-metrics-primary-row">
+            <div class="card v2-score-card" id="v2-primary-card">
+              <h3 class="card-heading">Absolute Risk</h3>
+              <div class="v2-absolute-risk" id="v2-absolute-risk">—</div>
+              <div class="risk-pill critical" id="v2-risk-pill">—</div>
+              <p class="score-brief" id="v2-risk-range">—</p>
+              <dl class="v2-meta-dl">
+                <dt>Security score</dt><dd id="v2-security-score">—</dd>
+                <dt>Confidence</dt><dd id="v2-confidence">—</dd>
+                <dt>Risk percentile</dt><dd id="v2-percentile">—</dd>
+              </dl>
+            </div>
+            <div class="card v2-dimension-card">
+              <h3 class="card-heading">Risk factor dimensions</h3>
+              <p class="score-scale-hint">0 = best · 100 = worst per axis</p>
+              <div class="chart-box v2-radar-box">
+                <canvas id="v2-dimension-radar" aria-label="V2 factor dimension radar"></canvas>
+              </div>
+            </div>
+          </div>
+          <div class="card v2-categories-card" id="v2-categories-card">
+            <h3 class="card-heading">OWASP category health (v2)</h3>
+            <p class="score-scale-hint">100 = good · lower = more findings in that bucket</p>
+            <ul class="category-list" id="v2-category-list"></ul>
+          </div>
+          <div class="card v2-contributors-card" id="v2-contributors-card">
+            <h3 class="card-heading">Top risk contributors</h3>
+            <table class="data-table" id="v2-contributors-table" aria-label="Top v2 risk contributors">
+              <thead>
+                <tr>
+                  <th>Finding</th>
+                  <th>Tool</th>
+                  <th>Contribution</th>
+                  <th>Factors</th>
+                </tr>
+              </thead>
+              <tbody id="v2-contributors-body"></tbody>
+            </table>
+          </div>
+          <p class="v2-legacy-note" id="v2-legacy-note" hidden>
+            Legacy security index (deprecated) is shown in the gauge above.
+            Area partition sub-scores (MCP Surface / Supply Chain / Dependency Hygiene) use the v1 formula.
+          </p>
         </div>
 
         <div class="score-breakdown-section" id="score-breakdown-section" hidden>

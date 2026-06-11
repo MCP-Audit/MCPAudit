@@ -47,14 +47,18 @@ from mcts.mcp.client import MCPClient
 from mcts.mcp.models import MCPServerInfo, SurfaceScanOptions
 from mcts.probe.protocol_checks import probe_protocol_security
 from mcts.report.scan_meta import (
+    append_chain_scan_notes,
     build_scan_notes,
     infer_scan_scope,
     is_config_static_scan,
     tool_discovery_notice_text,
 )
 from mcts.reporting.models import Finding, ScanReport, ScanSummary
+from mcts.scoring.context import build_scoring_context
 from mcts.scoring.engine import RiskScoringEngine
+from mcts.scoring.engine_v2 import RiskScoringEngineV2
 from mcts.scoring.partitions import score_partitioned
+from mcts.scoring.pipeline_trace import record as _trace_pipeline
 from mcts.taxonomy.mapper import enrich_findings
 
 
@@ -205,19 +209,51 @@ class Scanner:
         findings = enrich_findings(findings)
         findings.extend(self.compliance.check(findings, tools_discovered=len(server_info.tools)))
         analyzers_executed.append("compliance")
-        score = self.scoring.score(findings)
-        summary = ScanSummary.from_findings(findings)
 
+        if "attack_chains" in analyzers_executed:
+            raw_graph = self.attack_chains.last_graph
+        else:
+            raw_graph = {}
+        _trace_pipeline("graph")
+
+        scan_scope = infer_scan_scope(self.config)
+        from mcts.scoring.evidence_emit import enrich_scoring_evidence
+
+        findings = enrich_scoring_evidence(
+            findings, attack_graph=raw_graph, scan_scope=scan_scope
+        )
+        _trace_pipeline("scope")
+        scan_notes = build_scan_notes(self.config)
+
+        score = self.scoring.score(findings)
+        _trace_pipeline("v1")
         if not RiskScoringEngine.verify(findings, score):
             raise RuntimeError("Risk score does not match findings — scoring regression")
 
-        attack_graph = self.attack_chains.last_graph if self.config.enable_attack_chains else {}
+        score_v2 = None
+        report_attack_graph = raw_graph
+        if self.config.scoring_mode in {"v2", "both"}:
+            chain_factor_mode = "paths_v1" if self.config.enable_attack_chains else "disabled"
+            ctx = build_scoring_context(
+                findings=findings,
+                server=server_info,
+                attack_graph=raw_graph,
+                scan_scope=scan_scope,
+                config=self.config,
+                chain_factor_mode=chain_factor_mode,
+            )
+            score_v2 = RiskScoringEngineV2().score(ctx, legacy_overall=score.overall)
+            if not RiskScoringEngineV2.verify(ctx, score_v2):
+                raise RuntimeError(
+                    "Risk score v2 does not match context — scoring regression"
+                )
+            report_attack_graph = ctx.attack_graph
+            _trace_pipeline("v2")
+
+        summary = ScanSummary.from_findings(findings)
 
         if self.config.save_baseline_path is not None:
             save_baseline(server_info, self.config.save_baseline_path, target=str(self.config.target))
-
-        scan_scope = infer_scan_scope(self.config)
-        scan_notes = build_scan_notes(self.config)
         if server_info.agent_skills or server_info.instruction_sources:
             scan_notes.append(
                 "Instruction discovery: found "
@@ -226,7 +262,7 @@ class Scanner:
                 f"{len(server_info.instruction_sources)} system instruction file(s) in repository markdown."
             )
 
-        return ScanReport(
+        report = ScanReport(
             version=__version__,
             target=str(self.config.target),
             scanned_at=datetime.now(UTC),
@@ -234,13 +270,17 @@ class Scanner:
             findings=findings,
             summary=summary,
             score=score,
-            attack_graph=attack_graph,
+            score_v2=score_v2,
+            scoring_version=self.config.scoring_mode,
+            attack_graph=report_attack_graph,
             scan_scope=scan_scope,
             scan_notes=scan_notes,
             score_breakdown=score_partitioned(findings),
             tool_discovery_notice=tool_discovery_notice_text(server_info, scan_scope=scan_scope),
             analyzers_executed=analyzers_executed,
         )
+        append_chain_scan_notes(report.scan_notes, report, self.config)
+        return report
 
     def _attach_surface_options(self, server_info: MCPServerInfo) -> MCPServerInfo:
         cfg = self.config
@@ -266,6 +306,8 @@ class Scanner:
         if name == "JailbreakAnalyzer":
             return self.config.enable_jailbreak
         if name == "AttackChainAnalyzer":
+            if self.config.scoring_mode in {"v2", "both"}:
+                return True
             return self.config.enable_attack_chains
         if name == "MetadataDiffAnalyzer":
             return self.config.baseline_path is not None
@@ -276,6 +318,11 @@ class Scanner:
         return True
 
     def _analyzer_allowed(self, analyzer: object) -> bool:
+        if (
+            self.config.scoring_mode in {"v2", "both"}
+            and getattr(analyzer, "name", None) == "attack_chains"
+        ):
+            return True
         if self.config.analyzers:
             name = getattr(analyzer, "name", type(analyzer).__name__)
             if name not in self.config.analyzers and type(analyzer).__name__ not in self.config.analyzers:

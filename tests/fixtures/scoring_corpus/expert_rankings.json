@@ -1,0 +1,17 @@
+{
+  "version": "calibration-2026-06",
+  "methodology": "Provisional security-review ordering aligned to v2 absolute_risk pilot; replace with formal expert panel before production GA sign-off.",
+  "rankings": [
+    {"server_id": "vulnerable", "rank": 1, "expert_score": 95},
+    {"server_id": "ts_bench", "rank": 2, "expert_score": 78},
+    {"server_id": "python_mismatch", "rank": 3, "expert_score": 62},
+    {"server_id": "rust_rmcp", "rank": 4, "expert_score": 58},
+    {"server_id": "medium", "rank": 5, "expert_score": 48},
+    {"server_id": "rust_bench", "rank": 6, "expert_score": 38},
+    {"server_id": "live", "rank": 7, "expert_score": 18},
+    {"server_id": "multi_file", "rank": 8, "expert_score": 14},
+    {"server_id": "go_bench", "rank": 9, "expert_score": 12},
+    {"server_id": "prompt_only", "rank": 10, "expert_score": 8},
+    {"server_id": "baseline", "rank": 11, "expert_score": 3}
+  ]
+}

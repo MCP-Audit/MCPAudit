@@ -228,6 +228,29 @@ def _score_brief(score: int) -> str:
     return "Strong security posture maintained"
 
 
+def risk_description_v2(risk_level: str, absolute_risk: int) -> str:
+    level = risk_level.lower()
+    if level == "critical":
+        return (
+            f"Critical multi-factor risk (absolute risk {absolute_risk}). "
+            "Remediate tool-attributed findings on attack paths immediately."
+        )
+    if level == "high":
+        return (
+            f"High multi-factor risk (absolute risk {absolute_risk}). "
+            "Prioritize high-severity tool findings and chain-exposed tools."
+        )
+    if level == "medium":
+        return (
+            f"Moderate multi-factor risk (absolute risk {absolute_risk}). "
+            "Schedule hardening for elevated factor dimensions."
+        )
+    return (
+        f"Low multi-factor risk (absolute risk {absolute_risk}). "
+        "Maintain controls; re-scan after material changes."
+    )
+
+
 def risk_description(score: int) -> str:
     if score <= 25:
         return "Your MCP server has critical security issues that require immediate attention."
@@ -398,6 +421,117 @@ def parse_category_gates(raw_values: list[str] | None) -> dict[str, int]:
                 raise ValueError(f"Category limit must be >= 0, got {limit}")
             gates[category] = limit
     return gates
+
+
+CATEGORY_TAGS_V2: dict[str, frozenset[str]] = {
+    "injection": frozenset({
+        "prompt_injection", "jailbreak", "schema_surface", "metadata_integrity",
+        "skill_md", "sigma_metadata", "surface_metadata",
+    }),
+    "exfiltration": frozenset({"data_leakage", "embedding_secrets"}),
+    "privilege": frozenset({
+        "permission_analyzer", "command_execution", "path_validation", "tool_abuse",
+    }),
+    "supply_chain": frozenset({
+        "supply_chain", "vulnerable_package", "npm_audit", "virustotal", "semgrep_sast",
+    }),
+    "protocol": frozenset({"oauth_config", "runtime_events", "cloud_inspect"}),
+}
+CATEGORY_PRIORITY_V2 = ("injection", "exfiltration", "privilege", "supply_chain", "protocol")
+CATEGORY_LABELS_V2: dict[str, str] = {
+    "injection": "Injection & Metadata",
+    "exfiltration": "Data Exfiltration",
+    "privilege": "Privilege & Execution",
+    "supply_chain": "Supply Chain",
+    "protocol": "Protocol & Runtime",
+}
+_CATEGORY_V2_PENALTY = {
+    Severity.CRITICAL: 35,
+    Severity.HIGH: 20,
+    Severity.MEDIUM: 10,
+    Severity.LOW: 5,
+}
+
+
+def assign_category_v2(analyzer: str) -> str | None:
+    """First-match category assignment for v2 OWASP tiles."""
+    for cat in CATEGORY_PRIORITY_V2:
+        if analyzer in CATEGORY_TAGS_V2[cat]:
+            return cat
+    return None
+
+
+def category_scores_v2_gate_keys() -> frozenset[str]:
+    return frozenset(CATEGORY_PRIORITY_V2)
+
+
+def parse_min_category_score_v2(raw_values: list[str] | None) -> dict[str, int]:
+    """Parse `--min-category-score-v2 injection:80` style minimum health scores."""
+    gates: dict[str, int] = {}
+    if not raw_values:
+        return gates
+    valid = category_scores_v2_gate_keys()
+    for raw in raw_values:
+        for part in raw.split(","):
+            part = part.strip()
+            if not part:
+                continue
+            if ":" not in part:
+                raise ValueError(
+                    f"Invalid --min-category-score-v2 value {part!r}. Use category:min_score."
+                )
+            category, limit_text = part.split(":", 1)
+            category = category.strip()
+            if category not in valid:
+                valid_list = ", ".join(sorted(valid))
+                raise ValueError(f"Unknown v2 category {category!r}. Valid categories: {valid_list}")
+            minimum = int(limit_text.strip())
+            if not 0 <= minimum <= 100:
+                raise ValueError(f"v2 category minimum must be 0–100, got {minimum}")
+            gates[category] = minimum
+    return gates
+
+
+def category_scores_v2_gate_failures(findings: list[Finding], gates: dict[str, int]) -> list[str]:
+    """Fail when OWASP v2 tile score falls below minimum (100 = good polarity)."""
+    if not gates:
+        return []
+    by_key = {row["key"]: row for row in category_scores_v2(findings)}
+    failures: list[str] = []
+    for category, minimum in gates.items():
+        row = by_key.get(category)
+        if not row:
+            continue
+        if row["score"] < minimum:
+            failures.append(
+                f"{row['label']}: v2 category score {row['score']} below minimum {minimum} "
+                f"(100=good; {row['findings_count']} findings)"
+            )
+    return failures
+
+
+def category_scores_v2(findings: list[Finding]) -> list[dict[str, Any]]:
+    """OWASP category health scores — 100 = good (RFC §4.15 polarity)."""
+    from mcts.scoring.context import scorable_findings_v2
+
+    scorable = scorable_findings_v2(findings)
+    rows: list[dict[str, Any]] = []
+    for key in CATEGORY_PRIORITY_V2:
+        matched = [f for f in scorable if assign_category_v2(f.analyzer) == key]
+        penalty = sum(_CATEGORY_V2_PENALTY.get(f.severity, 5) for f in matched)
+        score = max(0, 100 - min(100, penalty))
+        passed = len(matched) == 0
+        rows.append(
+            {
+                "key": key,
+                "label": CATEGORY_LABELS_V2[key],
+                "score": score,
+                "display": "100/100" if passed else f"{score}/100",
+                "findings_count": len(matched),
+                "passed": passed,
+            }
+        )
+    return rows
 
 
 def category_gate_failures(findings: list[Finding], gates: dict[str, int]) -> list[str]:
@@ -763,72 +897,153 @@ def build_recommendations(findings: list[Finding]) -> list[dict[str, Any]]:
 
 
 def build_attack_graph(report: ScanReport) -> dict[str, Any]:
-    if report.attack_graph.get("edges") or report.attack_graph.get("nodes"):
-        return report.attack_graph
+    from mcts.scoring.graph import canonical_attack_graph
 
-    nodes: dict[str, dict[str, str]] = {}
-    edges: list[dict[str, str]] = []
+    return canonical_attack_graph(report)
 
-    for tool in report.server.tools:
-        nodes[tool.name] = {"id": tool.name, "label": tool.name, "type": "tool"}
 
-    for finding in report.findings:
-        if finding.analyzer != "attack_chains":
-            continue
-        evidence = finding.evidence
-        read_tools = evidence.get("read_tools", [])
-        exfil_tools = evidence.get("exfil_tools", [])
-        cred_tools = evidence.get("credential_tools", [])
-        exec_tools = evidence.get("exec_tools", [])
+def _trend_series_key(points: list[dict[str, Any]]) -> str:
+    """Pick Y-axis metric — never mix legacy score with v2 absolute_risk."""
+    if not points:
+        return "score"
+    versions = {str(row.get("scoring_version", "legacy")) for row in points}
+    if versions == {"legacy"}:
+        return "score"
+    if versions.isdisjoint({"legacy"}) and all("absolute_risk" in row for row in points):
+        return "absolute_risk"
+    if versions.isdisjoint({"legacy"}) and all(row.get("security_score") is not None for row in points):
+        return "security_score"
+    return "score"
 
-        for name in read_tools + exfil_tools + cred_tools + exec_tools:
-            nodes[name] = {"id": name, "label": name, "type": "tool"}
 
-        for src in read_tools:
-            for dst in exfil_tools:
-                edges.append({"from": src, "to": dst, "label": "exfil"})
-        for src in cred_tools:
-            for dst in exfil_tools:
-                edges.append({"from": src, "to": dst, "label": "credential → exfil"})
-        for src in read_tools:
-            for dst in cred_tools:
-                edges.append({"from": src, "to": dst, "label": "read → cred"})
-        for src in read_tools:
-            for dst in exec_tools:
-                edges.append({"from": src, "to": dst, "label": "read → exec"})
-
-    return {
-        "nodes": list(nodes.values()),
-        "edges": edges,
-    }
+def _trend_value(row: dict[str, Any], series_key: str) -> int:
+    if series_key == "absolute_risk":
+        return int(row.get("absolute_risk", 0))
+    if series_key == "security_score":
+        return int(row.get("security_score", 0))
+    return int(row.get("score", 0))
 
 
 def score_trend(report: ScanReport) -> list[dict[str, Any]]:
     if report.scan_history:
-        return list(report.scan_history)
-    from mcts.output.history import trend_points_for_target
+        points = list(report.scan_history)
+    else:
+        from mcts.output.history import trend_points_for_target
 
-    points = trend_points_for_target(report.target)
+        points = trend_points_for_target(report.target)
     if points:
+        series_key = _trend_series_key(points)
+        for row in points:
+            row["trend_value"] = _trend_value(row, series_key)
         return points
     label = report.scanned_at.strftime("%b %d")
-    return [{"date": label, "score": report.score.overall}]
+    row: dict[str, Any] = {
+        "date": label,
+        "score": report.score.overall,
+        "scoring_version": report.scoring_version,
+        "trend_value": report.score.overall,
+    }
+    if report.score_v2 is not None:
+        row["absolute_risk"] = report.score_v2.absolute_risk
+        if report.score_v2.security_score is not None:
+            row["security_score"] = report.score_v2.security_score
+        row["risk_level"] = report.score_v2.risk_level
+        series_key = _trend_series_key([row])
+        row["trend_value"] = _trend_value(row, series_key)
+    return [row]
 
 
 def trend_meta(report: ScanReport, points: list[dict[str, Any]]) -> dict[str, Any]:
-    scores = [int(row.get("score", 0)) for row in points]
-    unique_scores = sorted(set(scores))
+    series_key = _trend_series_key(points)
+    values = [_trend_value(row, series_key) for row in points]
+    unique_values = sorted(set(values))
+    latest = values[-1] if values else (
+        report.score_v2.absolute_risk
+        if series_key == "absolute_risk" and report.score_v2 is not None
+        else report.score.overall
+    )
+    labels = {
+        "score": "Security score (legacy, 0–100 pts, higher=better)",
+        "absolute_risk": "Absolute risk (v2, higher=worse)",
+        "security_score": "Security score (v2 benchmark, 0–100, higher=better)",
+    }
     return {
         "runs": len(points),
-        "unique_scores": len(unique_scores),
-        "latest_score": scores[-1] if scores else report.score.overall,
-        "score_unchanged": len(unique_scores) <= 1 and len(points) > 1,
+        "unique_scores": len(unique_values),
+        "latest_score": latest,
+        "score_unchanged": len(unique_values) <= 1 and len(points) > 1,
+        "series_key": series_key,
+        "series_label": labels.get(series_key, labels["score"]),
+        "mixed_metrics": len({str(row.get("scoring_version", "legacy")) for row in points}) > 1
+        if points
+        else False,
     }
+
+
+def _score_v2_payload(report: ScanReport) -> dict[str, Any] | None:
+    if report.score_v2 is None:
+        return None
+    score = report.score_v2
+    return {
+        "absolute_risk": score.absolute_risk,
+        "risk_range": list(score.risk_range),
+        "risk_range_confidence": score.risk_range_confidence,
+        "risk_level": score.risk_level,
+        "security_score": score.security_score,
+        "risk_percentile": score.risk_percentile,
+        "confidence_score": score.confidence_score,
+        "legacy_overall": score.legacy_overall,
+        "dimension_scores": score.dimension_scores,
+        "top_contributors": [c.model_dump() for c in score.top_contributors[:10]],
+        "weights_profile": score.weights_profile,
+        "chain_factor_mode": score.chain_factor_mode,
+        "benchmark_corpus_version": score.benchmark_corpus_version,
+        "basis": score.basis.model_dump(),
+    }
+
+
+def _build_score_help(report: ScanReport) -> dict[str, Any]:
+    items = [
+        "Security points from 0–100 (not a percentage of tests passed)",
+        "Critical, High, Medium, and Low findings (severity-weighted)",
+        "Attack chain detections",
+        "Exponential decay: more severe findings lower the score",
+    ]
+    if report.score_v2 is not None:
+        items.extend(
+            [
+                "Absolute risk: multi-factor sum on tool-attributed findings (higher = worse)",
+                "Security score: benchmark percentile when corpus stats are available",
+                "Chain multiplier applies to tool findings on validated attack paths only",
+            ]
+        )
+        if report.score_v2.legacy_overall is not None:
+            items.append(
+                "Legacy overall includes attack_chains meta-findings; absolute risk excludes them"
+            )
+    title = "Score derived from:"
+    if report.score_v2 is not None:
+        title = "Scores derived from:"
+    return {"title": title, "items": items}
+
+
+def _primary_risk_header(report: ScanReport) -> tuple[str, str, str]:
+    if report.score_v2 is not None:
+        level = report.score_v2.risk_level.upper()
+        badge = f"{level} RISK"
+        brief = (
+            f"Absolute risk {report.score_v2.absolute_risk} "
+            f"(range {report.score_v2.risk_range[0]}–{report.score_v2.risk_range[1]})"
+        )
+        return badge, level.lower(), brief
+    return risk_rating(report.score.overall)[0], risk_rating(report.score.overall)[1], _score_brief(
+        report.score.overall
+    )
 
 
 def build_dashboard_payload(report: ScanReport) -> dict[str, Any]:
     scanned_at: datetime = report.scanned_at
-    badge, level = risk_rating(report.score.overall)
+    badge, level, score_brief = _primary_risk_header(report)
     executed = list(report.analyzers_executed) or sorted({f.analyzer for f in report.findings})
     analyzer_results = build_analyzer_results(report.findings, executed, report=report)
     categories = category_scores(report.findings)
@@ -907,24 +1122,27 @@ def build_dashboard_payload(report: ScanReport) -> dict[str, Any]:
             "grade": security_grade(report.score.overall),
             "breakdown": breakdown_payload,
         },
+        **({"score_v2": _score_v2_payload(report)} if report.score_v2 is not None else {}),
+        **(
+            {"category_scores_v2": category_scores_v2(report.findings)}
+            if report.score_v2 is not None
+            else {}
+        ),
+        "scoring_version": report.scoring_version,
         "summary": report.summary.model_dump(),
         "risk": {
             "badge": badge,
             "level": level,
-            "description": risk_description(report.score.overall),
-            "brief": _score_brief(report.score.overall),
+            "description": (
+                risk_description_v2(report.score_v2.risk_level, report.score_v2.absolute_risk)
+                if report.score_v2 is not None
+                else risk_description(report.score.overall)
+            ),
+            "brief": score_brief,
         },
         "executive_summary": executive,
         "checks_summary": checks_summary,
-        "score_help": {
-            "title": "Score derived from:",
-            "items": [
-                "Security points from 0–100 (not a percentage of tests passed)",
-                "Critical, High, Medium, and Low findings (severity-weighted)",
-                "Attack chain detections",
-                "Exponential decay: more severe findings lower the score",
-            ],
-        },
+        "score_help": _build_score_help(report),
         "categories": categories,
         "trend": trend_points,
         "trend_meta": trend_meta(report, trend_points),

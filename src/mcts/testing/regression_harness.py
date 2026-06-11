@@ -1146,3 +1146,10 @@ def write_regression_report(path: Path) -> list[RegressionResult]:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     return summary
+
+
+def scoring_corpus_absolute_risks(*, scoring_mode: str = "v2") -> dict[str, int]:
+    """Delegate to corpus_runner — same data path as scripts/run_scoring_corpus.py."""
+    from mcts.scoring.corpus_runner import scan_corpus_absolute_risks
+
+    return scan_corpus_absolute_risks(scoring_mode=scoring_mode)

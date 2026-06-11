@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import Depends, FastAPI, HTTPException, Request
 from pydantic import BaseModel, Field, field_validator
@@ -52,6 +52,14 @@ class ScanRequest(BaseModel):
     runtime_events: list[dict[str, Any]] = Field(default_factory=list)
     fail_on_critical: bool = False
     min_score: int | None = Field(default=None, ge=0, le=100)
+    scoring_mode: Literal["legacy", "v2", "both"] = "both"
+    weights_profile: str = "manual_v1"
+    corpus_stats_path: str | None = None
+    min_security_score: int | None = Field(default=None, ge=0, le=100)
+    max_absolute_risk: int | None = Field(default=None, ge=0)
+    max_risk_level: Literal["low", "medium", "high", "critical"] | None = None
+    min_category_score_v2: dict[str, int] = Field(default_factory=dict)
+    assets_path: str | None = None
     understand_live_risk: bool = False
     fanout_offset: int = Field(default=0, ge=0)
     fanout_limit: int | None = Field(default=None, ge=1)
@@ -63,6 +71,13 @@ class ScanRequest(BaseModel):
         if len(value) > limit:
             raise ValueError(f"runtime_events exceeds maximum length of {limit}")
         return value
+
+
+class ScanResponse(ScanReport):
+    """REST scan payload with echoed scoring mode and gate violations."""
+
+    scoring_mode: str = "both"
+    gate_violations: list[str] = Field(default_factory=list)
 
 
 class ToolScanRequest(ScanRequest):
@@ -123,6 +138,14 @@ def _build_config(req: ScanRequest, *, request: Request | None = None) -> ScanCo
         runtime_events=req.runtime_events,
         fail_on_critical=req.fail_on_critical,
         min_score=req.min_score,
+        scoring_mode=req.scoring_mode,
+        weights_profile=req.weights_profile,
+        corpus_stats_path=Path(req.corpus_stats_path) if req.corpus_stats_path else None,
+        min_security_score=req.min_security_score,
+        max_absolute_risk=req.max_absolute_risk,
+        max_risk_level=req.max_risk_level,
+        min_category_score_v2=req.min_category_score_v2,
+        assets_path=Path(req.assets_path) if req.assets_path else None,
         oauth_client_id=req.oauth_client_id,
         oauth_client_secret=req.oauth_client_secret,
         oauth_token_url=req.oauth_token_url,
@@ -149,7 +172,13 @@ def _scan_server(
         report: ScanReport = Scanner(config).analyze_server(server)
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-    return report.model_dump()
+    from mcts.governance.scan_gates import evaluate_scan_gate_violations
+
+    return ScanResponse(
+        **report.model_dump(),
+        scoring_mode=config.scoring_mode,
+        gate_violations=evaluate_scan_gate_violations(report, config),
+    ).model_dump()
 
 
 async def _discover_async(req: ScanRequest, *, request: Request) -> MCPServerInfo:

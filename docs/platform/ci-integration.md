@@ -113,7 +113,30 @@ mcts scan ./repo/ \
   --fail-on-category execution:10
 ```
 
-Category semantics: [Scoring Specification](../reporting/scoring-spec.md).
+Category semantics: [Scoring Specification](../reporting/scoring-spec.md). Category gates apply to **legacy** v1 tiles only.
+
+### Scoring v2 gates (opt-in)
+
+Enable multi-factor scoring, then gate on v2 fields:
+
+```bash
+mcts scan ./server.py \
+  --scoring v2 \
+  --max-absolute-risk 500 \
+  --max-risk-level high \
+  --min-security-score 40 \
+  -o report.json
+```
+
+| Flag | Metric |
+|------|--------|
+| `--scoring v2\|both` | Enables `score_v2` in report JSON |
+| `--min-score` | Legacy `score.overall` only (unchanged) |
+| `--min-security-score` | v2 benchmark percentile score |
+| `--max-absolute-risk` | v2 stable integer risk sum |
+| `--max-risk-level` | v2 band (`low` < `medium` < `high` < `critical`) |
+
+GitHub Action equivalents: `scoring`, `min-security-score`, `max-absolute-risk`, `max-risk-level` inputs. See [Scoring v2 migration](../migration/scoring-v2.md).
 
 ### SARIF for code scanning
 

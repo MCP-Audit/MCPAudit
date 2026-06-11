@@ -21,6 +21,7 @@ from mcts.analyzers.tpa_patterns import (
 )
 from mcts.mcp.models import MCPServerInfo, MCPTool
 from mcts.reporting.models import Finding, Severity
+from mcts.scoring.evidence_tags import tag_prompt_injection_finding
 
 INSTRUCTION_LIKE = re.compile(
     r"(?i)\b(ignore|disregard|forget|override|system prompt|you must|always|never reveal)\b"
@@ -36,7 +37,7 @@ class PromptInjectionAnalyzer(BaseAnalyzer):
         findings: list[Finding] = []
         for surface in scan_surfaces(server):
             findings.extend(self._analyze_surface(server, surface))
-        return findings
+        return [tag_prompt_injection_finding(f) for f in findings]
 
     def _analyze_surface(self, server: MCPServerInfo, surface: ScanSurface) -> list[Finding]:
         findings: list[Finding] = []

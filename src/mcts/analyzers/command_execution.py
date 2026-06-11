@@ -7,6 +7,7 @@ import ast
 from mcts.analyzers.base import BaseAnalyzer
 from mcts.mcp.models import MCPServerInfo, MCPTool
 from mcts.reporting.models import Finding, Severity, SourceLocation
+from mcts.scoring.evidence_tags import tag_command_execution_finding
 
 DANGEROUS_CALLS: dict[str, tuple[str, Severity]] = {
     "subprocess": ("subprocess invocation", Severity.CRITICAL),
@@ -25,7 +26,7 @@ class CommandExecutionAnalyzer(BaseAnalyzer):
         findings: list[Finding] = []
         for tool in server.tools:
             findings.extend(self._analyze_tool(tool, server.source_files))
-        return findings
+        return [tag_command_execution_finding(f) for f in findings]
 
     def _analyze_tool(self, tool: MCPTool, source_files: dict[str, str]) -> list[Finding]:
         if not tool.source_file or tool.source_file not in source_files:

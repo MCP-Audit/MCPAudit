@@ -379,6 +379,24 @@ Used by `behavioral_static`. Python AST taint + optional tree-sitter for TS/Go/R
 
 `capability/inferrer.py` assigns per-tool flags (`reads_untrusted_input`, `egresses_network`, `executes_commands`, …). BFS finds paths like read → exfiltrate. Graph stored on `ScanReport.attack_graph`.
 
+When `scoring_mode` is `v2` or `both`, paths are built at scan time via `scoring/graph.build_paths()` and stored on the canonical graph:
+
+```json
+{
+  "nodes": [{"id": "read_file", "label": "read_file", "type": "tool"}],
+  "edges": [{"from": "read_file", "to": "send_webhook", "label": "read→exfil"}],
+  "paths": [{
+    "id": "path-chain-credential-theft-2",
+    "nodes": ["read_file", "get_env", "send_webhook"],
+    "tools_on_path": ["read_file", "get_env", "send_webhook"],
+    "hop_count": 2,
+    "finding_ids": ["chain-credential-theft"]
+  }]
+}
+```
+
+`hop_count` is validated edge hops only (`len(nodes) - 1`). Scanner, v2 engine, and HTML dashboard all use `canonical_attack_graph(report)` (invariant I3/I11).
+
 ---
 
 ## Scoring and reporting

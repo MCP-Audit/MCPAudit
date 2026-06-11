@@ -1,0 +1,9 @@
+{
+  "description": "RFC §4.1 three-finding chain example — expect absolute_risk 366 with chain_factor 1.35",
+  "findings": [
+    {"id": "prompt-injection", "severity": "high", "base_risk": 90, "chain_factor": 1.35, "finding_risk": 122},
+    {"id": "tool-abuse", "severity": "high", "base_risk": 70, "chain_factor": 1.35, "finding_risk": 95},
+    {"id": "data-exfil", "severity": "critical", "base_risk": 110, "chain_factor": 1.35, "finding_risk": 149}
+  ],
+  "absolute_risk": 366
+}

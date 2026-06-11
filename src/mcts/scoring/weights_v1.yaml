@@ -1,0 +1,39 @@
+version: manual_v1
+severity:
+  critical: 100
+  high: 40
+  medium: 10
+  low: 2
+classifiers:
+  exploitability:
+    command_execution: 0.50
+    permission: 0.40
+    prompt_injection: 0.30
+    data_exfiltration: 0.40
+    metadata: 0.15
+    hygiene: 0.05
+    behavioral_static: 0.30
+    default: 0.05
+  reachability:
+    network_exposed: 0.50
+    local_only: 0.10
+    default: 0.35
+  exposure:
+    public_endpoint: 0.45
+    default: 0.20
+  business_impact:
+    high: 0.40
+    medium: 0.25
+    default: 0.20
+  asset_value:
+    default: 0.25
+  attack_preconditions:
+    none: 0.50
+    some: 0.25
+    multiple: 0.10
+    default: 0.25
+  threat_maturity:
+    active_exploit: 0.50
+    poc: 0.30
+    theoretical: 0.10
+    default: 0.10

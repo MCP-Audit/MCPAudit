@@ -11,6 +11,9 @@ from pydantic import BaseModel, Field
 
 class GovernancePolicy(BaseModel):
     min_score: int | None = Field(default=None, ge=0, le=100)
+    min_security_score: int | None = Field(default=None, ge=0, le=100)
+    max_absolute_risk: int | None = Field(default=None, ge=0)
+    max_risk_level: str | None = Field(default=None)
     max_critical: int | None = Field(default=None, ge=0)
     max_high: int | None = Field(default=None, ge=0)
     allowed_servers: list[str] = Field(default_factory=list)
@@ -40,10 +43,41 @@ def evaluate_policy(
     critical: int,
     high: int,
     servers: list[str],
+    absolute_risk: int | None = None,
+    security_score: int | None = None,
+    risk_level: str | None = None,
 ) -> list[str]:
+    _LEVEL_ORDER = {"low": 0, "medium": 1, "high": 2, "critical": 3}
     violations: list[str] = []
     if policy.min_score is not None and score < policy.min_score:
-        violations.append(f"score {score} below minimum {policy.min_score}")
+        violations.append(f"legacy score {score} below minimum {policy.min_score}")
+    if policy.min_security_score is not None:
+        if security_score is None:
+            violations.append(
+                f"min_security_score {policy.min_security_score} requires v2 scoring (use --scoring v2 or both)"
+            )
+        elif security_score < policy.min_security_score:
+            violations.append(
+                f"security score {security_score} below minimum {policy.min_security_score}"
+            )
+    if policy.max_absolute_risk is not None:
+        if absolute_risk is None:
+            violations.append(
+                f"max_absolute_risk {policy.max_absolute_risk} requires v2 scoring (use --scoring v2 or both)"
+            )
+        elif absolute_risk > policy.max_absolute_risk:
+            violations.append(
+                f"absolute risk {absolute_risk} exceeds maximum {policy.max_absolute_risk}"
+            )
+    if policy.max_risk_level is not None:
+        if risk_level is None:
+            violations.append(
+                f"max_risk_level {policy.max_risk_level!r} requires v2 scoring (use --scoring v2 or both)"
+            )
+        elif _LEVEL_ORDER.get(risk_level, 0) > _LEVEL_ORDER.get(policy.max_risk_level, 0):
+            violations.append(
+                f"risk level {risk_level!r} exceeds maximum {policy.max_risk_level!r}"
+            )
     if policy.max_critical is not None and critical > policy.max_critical:
         violations.append(f"critical findings {critical} exceed max {policy.max_critical}")
     if policy.max_high is not None and high > policy.max_high:

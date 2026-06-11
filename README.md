@@ -113,7 +113,7 @@ MCTS is **alpha** software with a local-first MCP security pipeline — no cloud
 
 | Capability | How |
 |------------|-----|
-| Risk scoring | Exponential 0–100 score, risk index, category breakdown |
+| Risk scoring | Legacy 0–100 index (default) + opt-in v2 multi-factor `absolute_risk` (`--scoring v2\|both`) |
 | Compliance mapping | OWASP LLM Top 10 + OWASP MCP Top 10 (non-scoring meta-findings) |
 | Terminal UI | Rich dashboard — themes, progress, `--terminal-format` views |
 | Export formats | JSON, SARIF (`--format sarif`), raw envelope, HTML (`mcts report`) |

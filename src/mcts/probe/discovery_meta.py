@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from mcts.mcp.models import MCPServerInfo
 from mcts.reporting.models import Finding, Severity
+from mcts.scoring.evidence_tags import tag_live_discovery_finding
 
 
 def list_failure_warning(operation: str, exc: Exception, stderr_file: str | None) -> str:
@@ -42,6 +43,7 @@ def discovery_meta_findings(server: MCPServerInfo) -> list[Finding]:
         )
 
     return [
+        tag_live_discovery_finding(
         Finding(
             id="live-discovery-incomplete",
             analyzer="live_discovery",
@@ -61,7 +63,7 @@ def discovery_meta_findings(server: MCPServerInfo) -> list[Finding]:
                 "initialize_succeeded": server.initialize_succeeded,
             },
             confidence=1.0,
-        )
+        ))
     ]
 
 

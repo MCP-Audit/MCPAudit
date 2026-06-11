@@ -79,12 +79,181 @@
     return `<span class="score-pts-value">${value}</span><span class="score-pts-suffix"> / 100 pts</span>`;
   }
 
+  const V2_DIMENSION_LABELS = {
+    exploitability: "Exploitability",
+    reachability: "Reachability",
+    exposure: "Exposure",
+    blast_radius: "Blast radius",
+    business_impact: "Business impact",
+    asset_value: "Asset value",
+    attack_preconditions: "Preconditions",
+    threat_maturity: "Threat maturity",
+  };
+
+  function fillScoreV2() {
+    const v2 = DATA.score_v2;
+    const section = document.getElementById("v2-score-section");
+    if (!section || !v2) return;
+    section.hidden = false;
+
+    const absEl = document.getElementById("v2-absolute-risk");
+    const pill = document.getElementById("v2-risk-pill");
+    const rangeEl = document.getElementById("v2-risk-range");
+    const secEl = document.getElementById("v2-security-score");
+    const confEl = document.getElementById("v2-confidence");
+    const pctEl = document.getElementById("v2-percentile");
+    const legacyNote = document.getElementById("v2-legacy-note");
+    const titleEl = document.getElementById("score-card-title");
+
+    if (absEl) absEl.textContent = String(v2.absolute_risk);
+    if (pill) {
+      pill.textContent = `${String(v2.risk_level || "low").toUpperCase()} RISK`;
+      pill.className = `risk-pill ${v2.risk_level || "low"}`;
+    }
+    if (rangeEl && Array.isArray(v2.risk_range)) {
+      const rangeConf = v2.risk_range_confidence != null ? String(v2.risk_range_confidence) : "—";
+      rangeEl.textContent = `Estimated range ${v2.risk_range[0]}–${v2.risk_range[1]} (confidence ${rangeConf})`;
+    }
+    if (secEl) {
+      secEl.textContent = v2.security_score != null ? `${v2.security_score} / 100 pts` : "—";
+    }
+    if (confEl) {
+      confEl.textContent = v2.confidence_score != null ? `${v2.confidence_score}%` : "—";
+    }
+    if (pctEl) {
+      pctEl.textContent = v2.risk_percentile != null ? `${v2.risk_percentile}th percentile` : "—";
+    }
+    if (legacyNote) {
+      legacyNote.hidden = !(DATA.scoring_version === "both" || v2.legacy_overall != null);
+    }
+    if (titleEl && (DATA.scoring_version === "both" || v2.legacy_overall != null)) {
+      titleEl.textContent = "Legacy Security Index (deprecated)";
+    }
+
+    const metricsRow = document.querySelector(".metrics-primary-row");
+    if (metricsRow && metricsRow.parentNode && section) {
+      metricsRow.parentNode.insertBefore(section, metricsRow);
+    }
+    const legacyCard = document.getElementById("score-card");
+    if (legacyCard && DATA.scoring_version === "both") {
+      legacyCard.classList.add("legacy-score-secondary");
+    }
+
+    fillV2Contributors(v2.top_contributors || []);
+    fillV2Categories(DATA.category_scores_v2 || []);
+    initV2DimensionRadar(v2.dimension_scores || {});
+  }
+
+  function fillV2Categories(categories) {
+    const list = document.getElementById("v2-category-list");
+    const card = document.getElementById("v2-categories-card");
+    if (!list || !card) return;
+    if (!categories.length) {
+      card.hidden = true;
+      return;
+    }
+    card.hidden = false;
+    list.innerHTML = categories
+      .map((c) => {
+        const pct = Math.max(0, Math.min(100, Number(c.score) || 0));
+        const barColor = pct >= 80 ? COLORS.low : pct >= 50 ? COLORS.medium : COLORS.critical;
+        return `<li class="category-item">
+          <div class="category-item-header">
+            <span class="name">${escapeHtml(c.label)}</span>
+            <span class="score-val">${escapeHtml(c.display)}</span>
+          </div>
+          <div class="category-bar"><span style="width:${pct}%;background:${barColor}"></span></div>
+        </li>`;
+      })
+      .join("");
+  }
+
+  function fillV2Contributors(contributors) {
+    const tbody = document.getElementById("v2-contributors-body");
+    const card = document.getElementById("v2-contributors-card");
+    if (!tbody || !card) return;
+    if (!contributors.length) {
+      card.hidden = true;
+      return;
+    }
+    card.hidden = false;
+    const findingById = Object.fromEntries((DATA.findings || []).map((f) => [f.id, f]));
+    tbody.innerHTML = contributors
+      .map((row) => {
+        const finding = row.finding_id ? findingById[row.finding_id] : null;
+        const title = finding ? finding.title : row.type === "attack_chain" ? "Attack path" : row.finding_id || "—";
+        const tool = finding ? finding.tool : row.nodes ? row.nodes.join(" → ") : "—";
+        const factors = row.factors
+          ? Object.entries(row.factors)
+              .filter(([, v]) => Number(v) > 0)
+              .map(([k, v]) => `${k}: ${v}`)
+              .join(", ")
+          : row.hop_count != null
+            ? `hop_count: ${row.hop_count}`
+            : "—";
+        return `<tr>
+          <td>${escapeHtml(title)}</td>
+          <td>${escapeHtml(tool || "—")}</td>
+          <td>${escapeHtml(String(row.risk_contribution ?? "—"))}</td>
+          <td>${escapeHtml(factors)}</td>
+        </tr>`;
+      })
+      .join("");
+  }
+
+  function initV2DimensionRadar(dimensions) {
+    const canvas = document.getElementById("v2-dimension-radar");
+    if (!canvas || typeof Chart === "undefined") return;
+    const keys = Object.keys(V2_DIMENSION_LABELS).filter((k) => k in dimensions);
+    if (!keys.length) return;
+    const labels = keys.map((k) => V2_DIMENSION_LABELS[k]);
+    const values = keys.map((k) => Number(dimensions[k]) || 0);
+    new Chart(canvas, {
+      type: "radar",
+      data: {
+        labels,
+        datasets: [
+          {
+            label: "Factor load",
+            data: values,
+            borderColor: COLORS.high,
+            backgroundColor: "rgba(249,115,22,0.15)",
+            borderWidth: 2,
+            pointRadius: 3,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          r: {
+            beginAtZero: true,
+            max: 100,
+            ticks: { display: false, stepSize: 25 },
+            grid: { color: COLORS.grid },
+            angleLines: { color: COLORS.grid },
+            pointLabels: { color: COLORS.text, font: { size: 10 } },
+          },
+        },
+        plugins: { legend: { display: false } },
+      },
+    });
+  }
+
   function fillScoreBreakdown() {
     const section = document.getElementById("score-breakdown-section");
     const row = document.getElementById("score-breakdown-row");
     const b = DATA.score && DATA.score.breakdown;
     if (!section || !row || !b) return;
     section.hidden = false;
+    if (DATA.score_v2) {
+      const intro = section.querySelector(".metrics-section-intro");
+      if (intro) {
+        intro.textContent +=
+          " Partition scores use the legacy v1 formula and may shift when attack chains run.";
+      }
+    }
     const cards = [
       ["MCP Surface", b.mcp_surface],
       ["Supply Chain", b.supply_chain],
@@ -122,11 +291,18 @@
     const pill = document.getElementById("risk-pill");
     const gaugeScore = document.getElementById("gauge-score-value");
     const gradeEl = document.getElementById("security-grade");
-    const scoreText = String(DATA.score.overall);
+    const v2 = DATA.score_v2;
+    const useV2Primary = v2 && DATA.scoring_version === "v2";
+    const scoreText = useV2Primary && v2.security_score != null
+      ? String(v2.security_score)
+      : String(DATA.score.overall);
 
-    if (pill) {
+    if (pill && !useV2Primary) {
       pill.textContent = DATA.risk.badge;
       pill.className = `risk-pill ${DATA.risk.level}`;
+    } else if (pill && useV2Primary) {
+      pill.textContent = `${String(v2.risk_level || "low").toUpperCase()} RISK`;
+      pill.className = `risk-pill ${v2.risk_level || "low"}`;
     }
     if (gaugeScore) gaugeScore.textContent = scoreText;
 
@@ -136,7 +312,11 @@
       gradeEl.className = `grade-badge grade-${(grade.letter || "f").toLowerCase()}`;
     }
     const briefEl = document.getElementById("score-brief");
-    if (briefEl) briefEl.textContent = DATA.risk.brief || DATA.risk.description || "—";
+    if (briefEl) {
+      briefEl.textContent = useV2Primary
+        ? `Absolute risk ${v2.absolute_risk} — see v2 section below`
+        : DATA.risk.brief || DATA.risk.description || "—";
+    }
 
     const detailEl = document.getElementById("score-detail");
     const basis = DATA.score?.basis;
@@ -161,10 +341,22 @@
       s.low ? `${s.low} low` : null,
     ].filter(Boolean);
     const breakdown = parts.length ? ` (${parts.join(" + ")})` : "";
+    let scoreLine = `Security score: <strong>${score} / 100 points</strong> (rating, not a percentage).`;
+    if (DATA.score_v2) {
+      scoreLine =
+        `Absolute risk: <strong>${DATA.score_v2.absolute_risk}</strong> (${DATA.score_v2.risk_level})` +
+        (DATA.score_v2.security_score != null
+          ? ` · benchmark security score <strong>${DATA.score_v2.security_score}/100</strong>`
+          : "") +
+        (DATA.scoring_version === "both"
+          ? ` · legacy index <strong>${score}/100</strong>`
+          : "") +
+        ".";
+    }
     el.innerHTML =
       `<strong>${s.total || 0} issue${s.total === 1 ? "" : "s"}</strong> (count) across ` +
       `<strong>${tools} MCP tool${tools === 1 ? "" : "s"}</strong>${breakdown}. ` +
-      `Security score: <strong>${score} / 100 points</strong> (rating, not a percentage).`;
+      scoreLine;
   }
 
   function fillIssuesSummary() {
@@ -747,36 +939,58 @@
     });
   }
 
+  function trendSeriesKey() {
+    return (DATA.trend_meta && DATA.trend_meta.series_key) || "score";
+  }
+
+  function trendValue(point) {
+    if (point.trend_value != null) return Number(point.trend_value);
+    const key = trendSeriesKey();
+    if (key === "absolute_risk") return Number(point.absolute_risk) || 0;
+    if (key === "security_score") return Number(point.security_score) || 0;
+    return Number(point.score) || 0;
+  }
+
+  function trendValueLabel(value) {
+    const key = trendSeriesKey();
+    if (key === "absolute_risk") return `${value} risk`;
+    return `${value} / 100 pts`;
+  }
+
   function renderTrendTable(points) {
     const wrap = document.getElementById("trend-table-wrap");
     if (!wrap || !points.length) return;
     wrap.hidden = false;
+    const col = trendSeriesKey() === "absolute_risk" ? "Absolute risk" : "Score";
     const rows = points
       .map(
         (point) =>
-          `<tr><td>${escapeHtml(point.date)}</td><td>${scorePtsHtml(point.score)}</td></tr>`
+          `<tr><td>${escapeHtml(point.date)}</td><td>${escapeHtml(trendValueLabel(trendValue(point)))}</td></tr>`
       )
       .join("");
-    wrap.innerHTML = `<table class="trend-table" aria-label="Scan history"><thead><tr><th>Date</th><th>Score</th></tr></thead><tbody>${rows}</tbody></table>`;
+    wrap.innerHTML = `<table class="trend-table" aria-label="Scan history"><thead><tr><th>Date</th><th>${escapeHtml(col)}</th></tr></thead><tbody>${rows}</tbody></table>`;
   }
 
   function trendYRange(values) {
     if (!values.length) return { min: 0, max: 100 };
     const minVal = Math.min(...values);
     const maxVal = Math.max(...values);
+    const isLegacyScore = trendSeriesKey() === "score" || trendSeriesKey() === "security_score";
     if (minVal === maxVal) {
-      if (minVal <= 5) return { min: 0, max: 25 };
-      if (minVal >= 95) return { min: 75, max: 100 };
-      const pad = Math.max(8, Math.round(minVal * 0.15));
+      if (isLegacyScore) {
+        if (minVal <= 5) return { min: 0, max: 25 };
+        if (minVal >= 95) return { min: 75, max: 100 };
+      }
+      const pad = Math.max(8, Math.round(Math.max(minVal * 0.15, 10)));
       return {
         min: Math.max(0, minVal - pad),
-        max: Math.min(100, maxVal + pad),
+        max: isLegacyScore ? Math.min(100, maxVal + pad) : maxVal + pad,
       };
     }
     const pad = Math.max(4, Math.round((maxVal - minVal) * 0.12));
     return {
       min: Math.max(0, minVal - pad),
-      max: Math.min(100, maxVal + pad),
+      max: isLegacyScore ? Math.min(100, maxVal + pad) : maxVal + pad,
     };
   }
 
@@ -784,7 +998,7 @@
     const wrap = document.getElementById("trend-chart-wrap");
     if (!wrap || !points.length) return;
 
-    const values = points.map((p) => Number(p.score) || 0);
+    const values = points.map((p) => trendValue(p));
     const { min: yMin, max: yMax } = trendYRange(values);
     const width = 640;
     const height = 220;
@@ -818,7 +1032,7 @@
     const dots = coords
       .map(
         (pt, index) =>
-          `<circle class="trend-dot" cx="${pt.x.toFixed(1)}" cy="${pt.y.toFixed(1)}" r="${count === 1 ? 7 : 5}" tabindex="0"><title>${escapeHtml(points[index].date)}: ${values[index]} / 100 pts</title></circle>`
+          `<circle class="trend-dot" cx="${pt.x.toFixed(1)}" cy="${pt.y.toFixed(1)}" r="${count === 1 ? 7 : 5}" tabindex="0"><title>${escapeHtml(points[index].date)}: ${escapeHtml(trendValueLabel(values[index]))}</title></circle>`
       )
       .join("");
     const gridLines = [0, 0.5, 1]
@@ -839,7 +1053,7 @@
         : `<text class="trend-axis-label" x="${pad.left.toFixed(1)}" y="${(height - 10).toFixed(1)}" text-anchor="start">${escapeHtml(points[0].date)}</text><text class="trend-axis-label" x="${(pad.left + innerW).toFixed(1)}" y="${(height - 10).toFixed(1)}" text-anchor="end">${escapeHtml(points[count - 1].date)}</text>`;
     const flatLabel =
       allSame && count > 1
-        ? `<text class="trend-flat-label" x="${(pad.left + innerW / 2).toFixed(1)}" y="${(pad.top + 14).toFixed(1)}" text-anchor="middle">Score flat at ${values[0]} / 100 pts across ${count} scans</text>`
+        ? `<text class="trend-flat-label" x="${(pad.left + innerW / 2).toFixed(1)}" y="${(pad.top + 14).toFixed(1)}" text-anchor="middle">Flat at ${escapeHtml(trendValueLabel(values[0]))} across ${count} scans</text>`
         : "";
 
     wrap.hidden = false;
@@ -858,14 +1072,22 @@
         "1 scan recorded — run mcts scan again from the same project folder to compare over time.";
       return;
     }
+    if (meta.mixed_metrics) {
+      note.hidden = false;
+      note.textContent =
+        "History mixes legacy and v2 scoring — chart shows legacy security score only. Re-scan with a consistent --scoring mode for comparable trends.";
+      return;
+    }
     if (meta.score_unchanged && points.length > 1) {
       note.hidden = false;
-      note.textContent = `${meta.runs} scans recorded — score unchanged at ${meta.latest_score} / 100 pts.`;
+      const suffix = meta.series_label ? ` (${meta.series_label})` : "";
+      note.textContent = `${meta.runs} scans recorded — value unchanged at ${trendValueLabel(meta.latest_score)}${suffix}.`;
       return;
     }
     if (meta.runs >= 2) {
       note.hidden = false;
-      note.textContent = `${meta.runs} scans recorded for this target.`;
+      const suffix = meta.series_label ? ` ${meta.series_label}` : "";
+      note.textContent = `${meta.runs} scans recorded for this target.${suffix}`;
       return;
     }
     note.hidden = true;
@@ -911,6 +1133,27 @@
   function fillRiskGuide() {
     const container = document.getElementById("risk-guide");
     if (!container) return;
+    if (DATA.score_v2) {
+      const bands = [
+        ["low", "0 – 99", COLORS.low],
+        ["medium", "100 – 249", COLORS.medium],
+        ["high", "250 – 499", COLORS.high],
+        ["critical", "500+", COLORS.critical],
+      ];
+      const active = String(DATA.score_v2.risk_level || "low").toLowerCase();
+      container.innerHTML = bands
+        .map(([key, range, color]) => {
+          const isActive = key === active;
+          return `<div class="guide-card${isActive ? " active" : ""}">
+            <h4>${escapeHtml(key.toUpperCase())}</h4>
+            <div class="range">Absolute risk ${escapeHtml(range)}</div>
+            <div class="guide-badge" style="color:${color}">${isActive ? "Current band" : ""}</div>
+            <p>v2 multi-factor sum — higher = worse. Legacy 0–100 gauge may differ.</p>
+          </div>`;
+        })
+        .join("");
+      return;
+    }
     const score = DATA.score.overall;
     const iconMap = {
       critical: "critical",
@@ -1522,6 +1765,7 @@
     fillMetricsHeadline();
     fillIssuesSummary();
     fillScoreBreakdown();
+    fillScoreV2();
     fillChecksSummary();
     fillOverviewPanels();
     fillScanMeta();

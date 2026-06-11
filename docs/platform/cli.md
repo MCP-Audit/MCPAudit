@@ -84,11 +84,19 @@ When `-o` is set, format determines serialization. SARIF uses `reporting/sarif.p
 | Flag | Default | Description |
 |------|---------|-------------|
 | `--fail-on-critical` | false | Exit **1** if any critical finding |
-| `--min-score` | — | Exit **1** if `score.overall` < N (0–100) |
+| `--min-score` | — | Exit **1** if legacy `score.overall` < N (0–100) |
 | `--max-critical` | — | Exit **1** if critical count > N |
-| `--fail-on-category` | — | Repeatable. Format: `category:limit`. Exit **1** when category score ≥ limit |
+| `--fail-on-category` | — | Repeatable. Format: `category:limit`. Exit **1** when **legacy** category score ≥ limit |
+| `--scoring` | `both` | `legacy`, `v2`, or `both` — enable multi-factor scoring |
+| `--min-security-score` | — | Exit **1** if v2 benchmark security score < N (requires `--scoring v2` or `both`) |
+| `--max-absolute-risk` | — | Exit **1** if v2 `absolute_risk` > N (requires `--scoring v2` or `both`) |
+| `--max-risk-level` | — | Exit **1** if v2 `risk_level` exceeds band (`low` < `medium` < `high` < `critical`) |
+| `--min-category-score-v2` | — | Repeatable. Format: `category:min`. Exit **1** when v2 OWASP tile score &lt; min (100=good) |
+| `--weights` | `manual_v1` | v2 weights profile name |
+| `--corpus-stats-path` | packaged default | Override corpus stats JSON for v2 percentile scoring |
+| `--no-attack-chains` | false | Disable attack-chain analyzer (v2 still runs; chain multiplier = 1.0) |
 
-Valid category keys: `permissions`, `injection`, `execution`, `data_leakage`, `attack_chains`, `shadowing`, `jailbreak`. See [Scoring Specification](../reporting/scoring-spec.md).
+Valid **legacy** category keys: `permissions`, `injection`, `execution`, `data_leakage`, `attack_chains`, `shadowing`, `jailbreak`. Category gates apply to v1 tiles only — not `category_scores_v2`. See [Scoring Specification](../reporting/scoring-spec.md) and [Scoring v2 migration](../migration/scoring-v2.md).
 
 ### Terminal UI flags
 

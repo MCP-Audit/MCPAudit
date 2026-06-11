@@ -5,6 +5,7 @@
 This document explains how MCTS calculates the **security score** (0–100) and **risk index** from findings. Use it to set CI gate thresholds, explain scores to stakeholders, or verify that scoring is working correctly.
 
 > **Just want to set a CI gate?** Use `--min-score 70 --fail-on-critical`. See [CI Integration](../platform/ci-integration.md).
+> **Multi-factor scoring (v2)?** See [Scoring v2 specification](scoring-spec-v2.md) and [migration guide](../migration/scoring-v2.md).
 > **Unfamiliar with terms?** See the [Glossary](../glossary.md).
 
 ---

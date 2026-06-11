@@ -14,7 +14,31 @@ inputs:
     required: false
     default: "true"
   min-score:
-    description: Fail if security score is below this value (0-100). Leave empty to skip.
+    description: Fail if legacy security score is below this value (0-100). Leave empty to skip.
+    required: false
+    default: ""
+  scoring:
+    description: Scoring mode — legacy, v2, or both (default both)
+    required: false
+    default: "both"
+  min-security-score:
+    description: Fail if v2 benchmark security score is below this value (requires scoring v2 or both)
+    required: false
+    default: ""
+  max-absolute-risk:
+    description: Fail if v2 absolute risk exceeds this value (requires scoring v2 or both)
+    required: false
+    default: ""
+  max-risk-level:
+    description: Fail if v2 risk level exceeds this band (low, medium, high, critical)
+    required: false
+    default: ""
+  weights-profile:
+    description: v2 weights profile (default manual_v1)
+    required: false
+    default: "manual_v1"
+  assets-path:
+    description: Optional .mcts/assets.yaml path for v2 asset-value overrides
     required: false
     default: ""
   extras:
@@ -71,6 +95,24 @@ runs:
         fi
         if [ -n "${{ inputs.min-score }}" ]; then
           ARGS+=(--min-score "${{ inputs.min-score }}")
+        fi
+        if [ -n "${{ inputs.scoring }}" ] && [ "${{ inputs.scoring }}" != "legacy" ]; then
+          ARGS+=(--scoring "${{ inputs.scoring }}")
+        fi
+        if [ -n "${{ inputs.min-security-score }}" ]; then
+          ARGS+=(--min-security-score "${{ inputs.min-security-score }}")
+        fi
+        if [ -n "${{ inputs.max-absolute-risk }}" ]; then
+          ARGS+=(--max-absolute-risk "${{ inputs.max-absolute-risk }}")
+        fi
+        if [ -n "${{ inputs.max-risk-level }}" ]; then
+          ARGS+=(--max-risk-level "${{ inputs.max-risk-level }}")
+        fi
+        if [ -n "${{ inputs.weights-profile }}" ] && [ "${{ inputs.weights-profile }}" != "manual_v1" ]; then
+          ARGS+=(--weights "${{ inputs.weights-profile }}")
+        fi
+        if [ -n "${{ inputs.assets-path }}" ]; then
+          ARGS+=(--assets-path "${{ inputs.assets-path }}")
         fi
 
         uv run mcts "${ARGS[@]}"

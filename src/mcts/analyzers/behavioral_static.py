@@ -8,6 +8,7 @@ import re
 from mcts.analyzers.base import BaseAnalyzer
 from mcts.mcp.models import MCPServerInfo, MCPTool
 from mcts.reporting.models import Finding, Severity, SourceLocation
+from mcts.scoring.evidence_tags import tag_behavioral_static_finding
 from mcts.sast.go.sinks import detect_go_sinks
 from mcts.sast.go.taint import analyze_go_taint
 from mcts.sast.python.crossfile import expand_python_handler
@@ -83,7 +84,7 @@ class BehavioralStaticAnalyzer(BaseAnalyzer):
             if not snippet:
                 continue
             findings.extend(self._analyze_tool(tool, snippet, server))
-        return findings
+        return [tag_behavioral_static_finding(f) for f in findings]
 
     def _analyze_tool(
         self,
