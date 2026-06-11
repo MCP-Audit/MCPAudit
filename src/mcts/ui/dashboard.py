@@ -155,14 +155,6 @@ def build_score_block(report: ScanReport, theme: Theme) -> Table:
                 "Security Score:",
                 Text(f"{v2.security_score}/100", style=theme.style(p.yellow, bold=True)),
             )
-        if report.scoring_version == "both" and report.score_v2.legacy_overall is not None:
-            grid.add_row(
-                "Legacy Index:",
-                Text(
-                    f"{v2.legacy_overall}/100 (deprecated)",
-                    style=theme.style(p.muted),
-                ),
-            )
     if basis.excluded_non_scorable:
         grid.add_row(
             "",

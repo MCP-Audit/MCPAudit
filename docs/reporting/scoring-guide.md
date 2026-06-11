@@ -73,7 +73,6 @@ Risk Index:      100/100              ← legacy linear burden (higher = worse)
 Scoring basis:   5 Critical, 11 High, 1 Medium (17 scorable findings)
 Absolute Risk:   2260 (critical)      ← v2 headline; gates: --max-absolute-risk
 Security Score:  9/100                ← v2 benchmark vs corpus; gates: --min-security-score
-Legacy Index:    1/100 (deprecated)   ← shown when both; same as overall
 MCP Surface:     1/100                ← legacy partition only
 ```
 
@@ -172,7 +171,7 @@ Full CI patterns: [CI integration](../platform/ci-integration.md)
 |----------|--------|------------|
 | **Absolute risk + risk pill** | `score_v2` | Primary when v2 present |
 | **Factor radar + contributors** | `score_v2` | v2/both |
-| **Legacy gauge + letter grade** | `score.overall` | Always; labeled "deprecated" when `both` |
+| **Legacy gauge + letter grade** | `score.overall` | Legacy-only scans; hidden when `score_v2` present |
 | **Category bars (7 dimensions)** | Legacy | Always |
 | **v2 OWASP tiles** | `category_scores_v2` | v2/both |
 
@@ -212,7 +211,7 @@ Fuzz and runtime events are **not** merged into the default static scan v2 sum t
 
 ### Letter grade (A–F) in HTML
 
-The letter grade and doughnut gauge still use **legacy** `score.overall`. When `both` is on, the **v2 header** (absolute risk + risk pill) is the primary posture signal.
+The letter grade and doughnut gauge use **legacy** `score.overall` and appear only on **legacy-only** scans. When `score_v2` is present, the HTML report shows the v2 block (absolute risk + risk pill) instead.
 
 ### `--ci` preset
 

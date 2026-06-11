@@ -102,9 +102,6 @@
     const secEl = document.getElementById("v2-security-score");
     const confEl = document.getElementById("v2-confidence");
     const pctEl = document.getElementById("v2-percentile");
-    const legacyNote = document.getElementById("v2-legacy-note");
-    const titleEl = document.getElementById("score-card-title");
-
     if (absEl) absEl.textContent = String(v2.absolute_risk);
     if (pill) {
       pill.textContent = `${String(v2.risk_level || "low").toUpperCase()} RISK`;
@@ -123,20 +120,13 @@
     if (pctEl) {
       pctEl.textContent = v2.risk_percentile != null ? `${v2.risk_percentile}th percentile` : "—";
     }
-    if (legacyNote) {
-      legacyNote.hidden = !(DATA.scoring_version === "both" || v2.legacy_overall != null);
-    }
-    if (titleEl && (DATA.scoring_version === "both" || v2.legacy_overall != null)) {
-      titleEl.textContent = "Legacy Security Index (deprecated)";
-    }
-
     const metricsRow = document.querySelector(".metrics-primary-row");
     if (metricsRow && metricsRow.parentNode && section) {
       metricsRow.parentNode.insertBefore(section, metricsRow);
     }
     const legacyCard = document.getElementById("score-card");
-    if (legacyCard && DATA.scoring_version === "both") {
-      legacyCard.classList.add("legacy-score-secondary");
+    if (legacyCard) {
+      legacyCard.hidden = true;
     }
 
     fillV2Contributors(v2.top_contributors || []);
@@ -347,9 +337,6 @@
         `Absolute risk: <strong>${DATA.score_v2.absolute_risk}</strong> (${DATA.score_v2.risk_level})` +
         (DATA.score_v2.security_score != null
           ? ` · benchmark security score <strong>${DATA.score_v2.security_score}/100</strong>`
-          : "") +
-        (DATA.scoring_version === "both"
-          ? ` · legacy index <strong>${score}/100</strong>`
           : "") +
         ".";
     }
@@ -677,12 +664,25 @@
     const total = s.total || 0;
     const tools = DATA.meta?.tools_discovered || 0;
 
-    let scoreLine =
-      score >= 80
-        ? `Security rating: ${score}/100 points — strong posture with ${total} issue(s) to review (not a %).`
-        : score >= 50
-          ? `Security rating: ${score}/100 points — moderate risk (not a %). Address High findings to improve.`
-          : `Security rating: ${score}/100 points — serious risk (not a %). Treat Critical and High findings as urgent.`;
+    let scoreLine;
+    const v2 = DATA.score_v2;
+    if (v2) {
+      const band = String(v2.risk_level || "low");
+      scoreLine =
+        band === "low" || band === "medium"
+          ? `Absolute risk ${v2.absolute_risk} (${band}) — review findings and harden before production.`
+          : `Absolute risk ${v2.absolute_risk} (${band}) — treat Critical and High findings as urgent.`;
+      if (v2.security_score != null) {
+        scoreLine += ` Benchmark security score: ${v2.security_score}/100.`;
+      }
+    } else {
+      scoreLine =
+        score >= 80
+          ? `Security rating: ${score}/100 points — strong posture with ${total} issue(s) to review (not a %).`
+          : score >= 50
+            ? `Security rating: ${score}/100 points — moderate risk (not a %). Address High findings to improve.`
+            : `Security rating: ${score}/100 points — serious risk (not a %). Treat Critical and High findings as urgent.`;
+    }
 
     lead.textContent = `MCTS scanned ${tools} tool(s), ran ${cs.analyzers_run || "—"} checks, and counted ${total} issue(s). ${scoreLine}`;
 
@@ -843,6 +843,7 @@
   }
 
   function initGaugeChart() {
+    if (DATA.score_v2) return;
     const canvas = document.getElementById("gauge-chart");
     if (!canvas || typeof Chart === "undefined") return;
 
@@ -1148,7 +1149,7 @@
             <h4>${escapeHtml(key.toUpperCase())}</h4>
             <div class="range">Absolute risk ${escapeHtml(range)}</div>
             <div class="guide-badge" style="color:${color}">${isActive ? "Current band" : ""}</div>
-            <p>v2 multi-factor sum — higher = worse. Legacy 0–100 gauge may differ.</p>
+            <p>v2 multi-factor sum — higher = worse.</p>
           </div>`;
         })
         .join("");

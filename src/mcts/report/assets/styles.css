@@ -1205,14 +1205,6 @@ body.modal-open {
   margin-bottom: var(--section-gap);
 }
 
-.legacy-score-secondary {
-  opacity: 0.92;
-}
-
-.legacy-score-secondary #score-card-title {
-  color: var(--muted, #94a3b8);
-}
-
 .v2-metrics-primary-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1252,12 +1244,6 @@ body.modal-open {
 
 .v2-radar-box {
   min-height: 260px;
-}
-
-.v2-legacy-note {
-  color: var(--muted);
-  font-size: 13px;
-  margin-top: 12px;
 }
 
 .score-card {

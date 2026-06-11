@@ -191,7 +191,6 @@ Risk Index:      100/100
 Scoring basis:   5 Critical, 11 High, 1 Medium, 0 Low (17 scorable findings)
 Absolute Risk:   2260 (critical)
 Security Score:  9/100
-Legacy Index:    1/100 (deprecated)
 
 ● Critical    5
 ● High       11

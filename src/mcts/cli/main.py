@@ -195,11 +195,6 @@ def _print_min_score_gate_failure(report, min_score: int) -> None:
             f"[dim]v2 absolute_risk={report.score_v2.absolute_risk}, "
             f"risk_level={report.score_v2.risk_level}[/dim]"
         )
-        if report.score_v2.legacy_overall is not None:
-            console.print(
-                f"[dim]Legacy overall (includes chain meta-findings): "
-                f"{report.score_v2.legacy_overall}[/dim]"
-            )
 
 
 _LEVEL_ORDER = {"low": 0, "medium": 1, "high": 2, "critical": 3}

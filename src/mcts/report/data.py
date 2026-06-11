@@ -1017,10 +1017,6 @@ def _build_score_help(report: ScanReport) -> dict[str, Any]:
                 "Chain multiplier applies to tool findings on validated attack paths only",
             ]
         )
-        if report.score_v2.legacy_overall is not None:
-            items.append(
-                "Legacy overall includes attack_chains meta-findings; absolute risk excludes them"
-            )
     title = "Score derived from:"
     if report.score_v2 is not None:
         title = "Scores derived from:"

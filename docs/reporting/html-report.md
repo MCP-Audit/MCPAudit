@@ -5,7 +5,7 @@
 The HTML dashboard turns a JSON scan report into a **shareable, self-contained web page** — suitable for security reviews, leadership briefings, or audit documentation.
 
 > **Haven't generated a report yet?** Run `mcts scan ./server.py -o report.json` first, then `mcts report report.json -o report.html`.  
-> **Two scores on the page?** See [Scoring developer guide](scoring-guide.md) — v2 block is primary; legacy gauge is secondary when `both`.
+> **Scores on the page?** See [Scoring developer guide](scoring-guide.md) — v2 block is primary when `score_v2` is present; legacy gauge appears on legacy-only scans.
 
 ---
 
@@ -14,7 +14,7 @@ The HTML dashboard turns a JSON scan report into a **shareable, self-contained w
 After scanning, you get a JSON file with all findings and scores. The HTML dashboard converts that JSON into a polished web page with:
 
 - **v2 multi-factor scoring** (default scans): absolute risk header, risk level pill, factor-axis radar, top contributors, OWASP `category_scores_v2` tiles
-- Legacy visual score gauge and letter grade (A–F) — secondary when `--scoring both`
+- Legacy visual score gauge and letter grade (A–F) — **legacy-only** scans (`--scoring legacy`)
 - Partitioned area scores (MCP Surface, Supply Chain, Dependency Hygiene) when present — legacy formula only
 - Severity breakdown, category radar chart, and scan history trend (axis switches to `absolute_risk` when all history entries are v2)
 - A searchable findings table with **location**, **MCTS-T technique links**, and remediation advice
@@ -54,8 +54,8 @@ The output is one HTML file with **inlined CSS and JavaScript**. Chart.js and In
 | **Header** | MCTS logo, target path, scan timestamp, export menu |
 | **Report guide** | How to read scores vs counts, quick-jump links |
 | **v2 score section** | Primary when `score_v2` present: `absolute_risk`, `risk_level` pill, `security_score`, confidence, factor radar, top contributors |
-| **Score gauge** | Legacy doughnut chart showing `score.overall` (0–100); labeled "Legacy Security Index (deprecated)" when `both` |
-| **Grade card** | Letter grade A–F derived from legacy `score.overall` |
+| **Score gauge** | Legacy doughnut chart showing `score.overall` (0–100); hidden when `score_v2` is present |
+| **Grade card** | Letter grade A–F derived from legacy `score.overall`; hidden when `score_v2` is present |
 | **Posture badge** | v2: `risk_level` from `score_v2`; legacy-only scans use overall-score bands |
 | **Issues summary** | Severity table with counts and meanings |
 | **Area sub-scores** | MCP Surface, Supply Chain, Dependency Hygiene, Composite (when `score_breakdown` present) |
@@ -114,7 +114,7 @@ Search matches title, category, tool, location, technique ID, CWE, and evidence 
 
 ### Dual scoring (default: `--scoring both`)
 
-When `score_v2` is present, the dashboard promotes v2 metrics and demotes legacy to a secondary card:
+When `score_v2` is present, the dashboard shows v2 metrics only (legacy gauge and letter grade are hidden):
 
 | Element | Source field | Notes |
 |---------|--------------|-------|
@@ -124,9 +124,7 @@ When `score_v2` is present, the dashboard promotes v2 metrics and demotes legacy
 | Factor radar | `score_v2.dimension_scores` | Eight RFC factor axes (exploitability, reachability, …) |
 | Top contributors | `score_v2.top_contributors` | Max 10 in JSON; expandable factor breakdown in HTML |
 | v2 OWASP tiles | `category_scores_v2` | 100 = good polarity; separate from legacy category bars |
-| Dual glossary | `score_help` | Explains why legacy and v2 numbers differ (scorable-set divergence) |
-| Legacy gauge | `score.overall` | Higher is better (0–100 points); deprecated label when `both` |
-| Letter grade | `security_grade(score.overall)` | A=90+, F&lt;60 — legacy only today |
+| Score glossary | `score_help` | Factor and severity inputs for v2 |
 
 ### Legacy-only elements (unchanged formula)
 
