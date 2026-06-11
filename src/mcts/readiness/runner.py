@@ -34,7 +34,9 @@ def run_readiness(config: ScanConfig) -> ReadinessReport:
                 check_id="readiness-opa-unavailable",
                 title="OPA readiness checks skipped",
                 description=_opa_unavailable_reason(opa),
-                recommendation="Install the opa CLI on PATH or omit --opa when policy checks are not required.",
+                recommendation=(
+                    "Install the opa CLI on PATH or omit --opa when policy checks are not required."
+                ),
             )
         )
     if config.readiness_llm and (llm is None or not llm.is_available()):
