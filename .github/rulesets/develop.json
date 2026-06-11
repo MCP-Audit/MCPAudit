@@ -1,10 +1,10 @@
 {
-  "name": "Protect release branches",
+  "name": "Protect develop",
   "target": "branch",
   "enforcement": "active",
   "conditions": {
     "ref_name": {
-      "include": ["~DEFAULT_BRANCH", "refs/heads/main_*"],
+      "include": ["refs/heads/develop"],
       "exclude": []
     }
   },
@@ -22,17 +22,6 @@
       "type": "non_fast_forward"
     },
     {
-      "type": "pull_request",
-      "parameters": {
-        "required_approving_review_count": 0,
-        "dismiss_stale_reviews_on_push": false,
-        "require_code_owner_review": false,
-        "require_last_push_approval": false,
-        "required_review_thread_resolution": false,
-        "allowed_merge_methods": ["merge", "squash", "rebase"]
-      }
-    },
-    {
       "type": "required_status_checks",
       "parameters": {
         "required_status_checks": [
@@ -43,17 +32,12 @@
             "context": "scoring-v2"
           }
         ],
-        "strict_required_status_checks_policy": true,
+        "strict_required_status_checks_policy": false,
         "do_not_enforce_on_create": true
       }
     }
   ],
   "bypass_actors": [
-    {
-      "actor_id": 2,
-      "actor_type": "RepositoryRole",
-      "bypass_mode": "pull_request"
-    },
     {
       "actor_id": 5,
       "actor_type": "RepositoryRole",

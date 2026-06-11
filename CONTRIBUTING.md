@@ -148,27 +148,34 @@ Use the repo templates when possible: [bug report](https://github.com/MCP-Audit/
 
 ## Branch Protection
 
-Pull requests to `main` require the **test** CI check to pass.
+| Branch | Who can update | Policy |
+|--------|----------------|--------|
+| `main` (current release) | **Maintainers** (`maintain`) and **Admins** | PRs required; **`test`** + **`scoring-v2`** must pass; branch up to date; no force-push or deletion |
+| `main_*` (pinned releases, e.g. `main_0.1.2`) | **Maintainers** and **Admins** | Same as `main` — for version-specific hotfix lines |
+| `develop` (integration) | **Admins only** | **`test`** + **`scoring-v2`** must pass; no force-push or deletion; contributors land work via PRs from feature branches |
+
+Contributors typically have **Write** (feature branches only). Assign **Maintain** to release maintainers who merge into `main`. Assign **Admin** to owners who push integration work to `develop`.
+
+Definitions live in [`.github/rulesets/`](.github/rulesets/) (`main.json`, `develop.json`). See [rulesets README](.github/rulesets/README.md) for bypass actors and role IDs.
 
 ### Enable on GitHub (one-time, repo admin)
 
-**Option A — Script**
+**Option A — Script (recommended)**
 
 ```bash
 ./scripts/enable-branch-protection.sh MCP-Audit/MCTS
 ```
 
-The script is **idempotent**: re-running it updates the existing `Protect main` ruleset instead of creating duplicates. Use `--dry-run` to preview without applying changes.
+The script is **idempotent**: re-running it updates existing rulesets (`Protect release branches`, `Protect develop`) instead of creating duplicates. Use `--dry-run` to preview without applying changes.
 
 **Option B — GitHub UI**
 
 1. Go to **Settings → Rules → Rulesets → New branch ruleset**
-2. Target: default branch (`main`)
-3. Add rule: **Require status checks to pass**
-4. Required check: `test`
-5. Save and enable enforcement
-
-The ruleset definition lives in `.github/rulesets/main.json`.
+2. Target: default branch (`main`) or `develop`
+3. Add rules: **Restrict updates** (role bypass), **Require pull request** (`main` only), **Require status checks**, **Block force pushes**, **Restrict deletions**
+4. Bypass actors: `main` → Maintain (PR merge) + Admin; `develop` → Admin only
+5. Required checks: `test`, `scoring-v2`
+6. Save and enable enforcement
 
 ---
 
