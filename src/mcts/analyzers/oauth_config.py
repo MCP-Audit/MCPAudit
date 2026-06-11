@@ -536,11 +536,13 @@ def _walk_json(node: object, prefix: str, out: list[tuple[str, str]]) -> None:
     if isinstance(node, dict):
         for key, value in node.items():
             key_path = f"{prefix}.{key}"
-            if isinstance(value, str):
-                if key.lower() in _OAUTH_KEY_NAMES or "oauth" in key.lower():
-                    if value.startswith("http"):
-                        out.append((value, key_path))
-            else:
+            if (
+                isinstance(value, str)
+                and (key.lower() in _OAUTH_KEY_NAMES or "oauth" in key.lower())
+                and value.startswith("http")
+            ):
+                out.append((value, key_path))
+            elif not isinstance(value, str):
                 _walk_json(value, key_path, out)
     elif isinstance(node, list):
         for index, item in enumerate(node):
