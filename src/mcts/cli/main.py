@@ -1580,6 +1580,9 @@ def snapshot(
     except MCPStartupError as exc:
         _print_startup_error(exc)
         raise typer.Exit(code=2) from exc
+    except ValueError as exc:
+        console.print(f"[red]Error:[/red] {exc}")
+        raise typer.Exit(code=2) from exc
     except RuntimeError as exc:
         console.print(f"[red]Error:[/red] {exc}")
         raise typer.Exit(code=2) from exc
