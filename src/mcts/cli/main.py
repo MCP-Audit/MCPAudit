@@ -529,8 +529,8 @@ def scan(
         )
         raise typer.Exit(code=2)
 
-    if not machine_wide and target is None:
-        console.print("[red]Error:[/red] TARGET is required unless --machine-wide is set.")
+    if not machine_wide and target is None and not url:
+        console.print("[red]Error:[/red] TARGET is required unless --machine-wide or --url is set.")
         raise typer.Exit(code=2)
 
     if target is None:
