@@ -23,16 +23,14 @@ def _vector(**kwargs: float) -> RiskFactorVector:
 
 def test_rfc_worked_example_fixture_matches_engine() -> None:
     """Golden test using tests/fixtures/rfc_worked_example.json (RFC §4.1)."""
-    fixture = json.loads(
-        Path("tests/fixtures/rfc_worked_example.json").read_text(encoding="utf-8")
-    )
+    fixture = json.loads(Path("tests/fixtures/rfc_worked_example.json").read_text(encoding="utf-8"))
     weights = load_weights("manual_v1")
     findings = [
         Finding(
             id=row["id"],
-            analyzer="prompt_injection" if "injection" in row["id"] else (
-                "tool_abuse" if "abuse" in row["id"] else "data_leakage"
-            ),
+            analyzer="prompt_injection"
+            if "injection" in row["id"]
+            else ("tool_abuse" if "abuse" in row["id"] else "data_leakage"),
             title="RFC",
             description="d",
             severity=Severity.HIGH if row["severity"] == "high" else Severity.CRITICAL,
@@ -49,9 +47,7 @@ def test_rfc_worked_example_fixture_matches_engine() -> None:
     ctx = ScoringContext(
         findings=findings,
         tools=[],
-        attack_graph={
-            "paths": [{"hop_count": 3, "tools_on_path": ["read_file", "run_cmd", "send_webhook"]}]
-        },
+        attack_graph={"paths": [{"hop_count": 3, "tools_on_path": ["read_file", "run_cmd", "send_webhook"]}]},
         scan_scope="repository",
         weights=weights,
         corpus_stats=None,
@@ -104,9 +100,7 @@ def test_bracket_matches_rfc_example() -> None:
     ctx = ScoringContext(
         findings=findings,
         tools=[],
-        attack_graph={
-            "paths": [{"hop_count": 3, "tools_on_path": ["read_file", "run_cmd", "send_webhook"]}]
-        },
+        attack_graph={"paths": [{"hop_count": 3, "tools_on_path": ["read_file", "run_cmd", "send_webhook"]}]},
         scan_scope="repository",
         weights=weights,
         corpus_stats=None,

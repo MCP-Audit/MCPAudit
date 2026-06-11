@@ -137,7 +137,16 @@ def build_factor_vector(finding: Finding, ctx: ScoringContext) -> RiskFactorVect
 
 
 def bracket(factors: RiskFactorVector) -> float:
-    return 1.0 + sum(getattr(factors, name) for name in (
-        "exploitability", "reachability", "exposure", "blast_radius",
-        "business_impact", "asset_value", "threat_maturity", "attack_preconditions",
-    ))
+    return 1.0 + sum(
+        getattr(factors, name)
+        for name in (
+            "exploitability",
+            "reachability",
+            "exposure",
+            "blast_radius",
+            "business_impact",
+            "asset_value",
+            "threat_maturity",
+            "attack_preconditions",
+        )
+    )

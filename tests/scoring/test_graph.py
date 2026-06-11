@@ -57,9 +57,7 @@ def test_canonical_graph_builds_paths_when_edges_only() -> None:
             risk_index=100,
             raw_risk=100,
             penalty=100,
-            basis=ScoreBasis(
-                critical=1, high=0, medium=0, low=0, scorable_total=1, excluded_non_scorable=0
-            ),
+            basis=ScoreBasis(critical=1, high=0, medium=0, low=0, scorable_total=1, excluded_non_scorable=0),
         ),
         attack_graph={
             "nodes": [

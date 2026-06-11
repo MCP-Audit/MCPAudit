@@ -24,9 +24,7 @@ def test_inventory_row_json_serializable() -> None:
             risk_index=0,
             raw_risk=0,
             penalty=0,
-            basis=ScoreBasis(
-                critical=0, high=0, medium=0, low=0, scorable_total=0, excluded_non_scorable=0
-            ),
+            basis=ScoreBasis(critical=0, high=0, medium=0, low=0, scorable_total=0, excluded_non_scorable=0),
         ),
         scoring_version="legacy",
     )

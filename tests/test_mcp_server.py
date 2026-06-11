@@ -69,12 +69,8 @@ def test_compare_baselines_tool() -> None:
 
 
 def test_compare_baselines_v2_deltas() -> None:
-    baseline = Scanner(
-        ScanConfig(target="examples/baseline-mcp-server/server.py", scoring_mode="v2")
-    ).run()
-    current = Scanner(
-        ScanConfig(target="examples/vulnerable-mcp-server/server.py", scoring_mode="v2")
-    ).run()
+    baseline = Scanner(ScanConfig(target="examples/baseline-mcp-server/server.py", scoring_mode="v2")).run()
+    current = Scanner(ScanConfig(target="examples/vulnerable-mcp-server/server.py", scoring_mode="v2")).run()
 
     raw = compare_baselines(
         json.dumps(baseline.model_dump(mode="json")),

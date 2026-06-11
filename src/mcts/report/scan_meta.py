@@ -86,9 +86,7 @@ def tool_discovery_context(report: ScanReport, *, live: bool, snapshot: bool) ->
     }
 
 
-def append_chain_scan_notes(
-    scan_notes: list[str], report: ScanReport, config: ScanConfig
-) -> None:
+def append_chain_scan_notes(scan_notes: list[str], report: ScanReport, config: ScanConfig) -> None:
     if config.scoring_mode == "legacy":
         return
     if "attack_chains" in report.analyzers_executed:

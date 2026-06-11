@@ -221,9 +221,7 @@ def _check_gates(report, config: ScanConfig) -> None:
 
     category_failures = [item for item in violations if "risk score" in item]
     other_failures = [
-        item
-        for item in violations
-        if item not in category_failures and not item.startswith("legacy overall")
+        item for item in violations if item not in category_failures and not item.startswith("legacy overall")
     ]
     if category_failures:
         console.print("[red]Category risk thresholds exceeded:[/red]")

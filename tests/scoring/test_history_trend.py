@@ -24,9 +24,7 @@ def _minimal_report(**kwargs) -> ScanReport:
             risk_index=20,
             raw_risk=10,
             penalty=0,
-            basis=ScoreBasis(
-                critical=0, high=0, medium=0, low=0, scorable_total=0, excluded_non_scorable=0
-            ),
+            basis=ScoreBasis(critical=0, high=0, medium=0, low=0, scorable_total=0, excluded_non_scorable=0),
         ),
     )
     defaults.update(kwargs)

@@ -35,9 +35,7 @@ def test_command_execution_analyzer_emits_exploitability_evidence() -> None:
 
 
 def test_permission_analyzer_emits_precondition_evidence() -> None:
-    server = MCPServerInfo(
-        tools=[MCPTool(name="wipe_db", description="Delete all records permanently")]
-    )
+    server = MCPServerInfo(tools=[MCPTool(name="wipe_db", description="Delete all records permanently")])
     findings = PermissionAnalyzer().analyze(server)
     destructive = [f for f in findings if "destructive" in f.id]
     assert destructive
@@ -91,9 +89,7 @@ def test_data_leakage_emits_exfiltration_class() -> None:
 
 
 def test_tool_abuse_emits_reachability_tag() -> None:
-    server = MCPServerInfo(
-        tools=[MCPTool(name="read_file", description="Read any file from disk")]
-    )
+    server = MCPServerInfo(tools=[MCPTool(name="read_file", description="Read any file from disk")])
     findings = ToolAbuseAnalyzer().analyze(server)
     assert findings
     assert findings[0].evidence.get("reachability_tag") == "default"

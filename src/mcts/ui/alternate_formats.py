@@ -79,9 +79,7 @@ def _render_grouped(findings: list[Finding], console: Console, key) -> None:
 def _render_summary(report: ScanReport, findings: list[Finding], console: Console) -> None:
     line = f"Legacy score: {report.score.overall}/100 — {len(findings)} finding(s)"
     if report.score_v2 is not None:
-        line += (
-            f" | absolute_risk {report.score_v2.absolute_risk} ({report.score_v2.risk_level})"
-        )
+        line += f" | absolute_risk {report.score_v2.absolute_risk} ({report.score_v2.risk_level})"
         if report.score_v2.security_score is not None:
             line += f" | security_score {report.score_v2.security_score}/100"
     console.print(line)

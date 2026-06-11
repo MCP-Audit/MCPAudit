@@ -12,8 +12,6 @@ def percentile_rank(value: int, distribution: list[int]) -> int:
     return min(100, round(100 * below / len(distribution)))
 
 
-def security_score_from_absolute(
-    absolute_risk: int, stats: CorpusStats
-) -> tuple[int, int]:
+def security_score_from_absolute(absolute_risk: int, stats: CorpusStats) -> tuple[int, int]:
     percentile = percentile_rank(absolute_risk, stats.distribution)
     return max(0, min(100, 100 - percentile)), percentile

@@ -210,19 +210,13 @@ class Scanner:
         findings.extend(self.compliance.check(findings, tools_discovered=len(server_info.tools)))
         analyzers_executed.append("compliance")
 
-        raw_graph = (
-            self.attack_chains.last_graph
-            if "attack_chains" in analyzers_executed
-            else {}
-        )
+        raw_graph = self.attack_chains.last_graph if "attack_chains" in analyzers_executed else {}
         _trace_pipeline("graph")
 
         scan_scope = infer_scan_scope(self.config)
         from mcts.scoring.evidence_emit import enrich_scoring_evidence
 
-        findings = enrich_scoring_evidence(
-            findings, attack_graph=raw_graph, scan_scope=scan_scope
-        )
+        findings = enrich_scoring_evidence(findings, attack_graph=raw_graph, scan_scope=scan_scope)
         _trace_pipeline("scope")
         scan_notes = build_scan_notes(self.config)
 
@@ -245,9 +239,7 @@ class Scanner:
             )
             score_v2 = RiskScoringEngineV2().score(ctx, legacy_overall=score.overall)
             if not RiskScoringEngineV2.verify(ctx, score_v2):
-                raise RuntimeError(
-                    "Risk score v2 does not match context — scoring regression"
-                )
+                raise RuntimeError("Risk score v2 does not match context — scoring regression")
             report_attack_graph = ctx.attack_graph
             _trace_pipeline("v2")
 
@@ -319,10 +311,7 @@ class Scanner:
         return True
 
     def _analyzer_allowed(self, analyzer: object) -> bool:
-        if (
-            self.config.scoring_mode in {"v2", "both"}
-            and getattr(analyzer, "name", None) == "attack_chains"
-        ):
+        if self.config.scoring_mode in {"v2", "both"} and getattr(analyzer, "name", None) == "attack_chains":
             return True
         if self.config.analyzers:
             name = getattr(analyzer, "name", type(analyzer).__name__)

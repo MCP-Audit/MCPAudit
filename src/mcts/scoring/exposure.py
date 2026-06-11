@@ -17,9 +17,7 @@ def classify_exposure(finding: Finding, weights: ScoringWeights) -> float:
     return table.get("default", 0.20)
 
 
-def apply_reachability_exposure_dedup(
-    reachability: float, exposure: float, evidence: dict
-) -> float:
+def apply_reachability_exposure_dedup(reachability: float, exposure: float, evidence: dict) -> float:
     """Keep higher of reachability/exposure when tags overlap."""
     tags = set(evidence.get("risk_tags") or [])
     if "reachability_tag" in tags and "exposure_tag" in tags:

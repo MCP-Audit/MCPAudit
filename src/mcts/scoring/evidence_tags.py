@@ -6,19 +6,21 @@ from typing import Any
 
 from mcts.reporting.models import Finding
 
-V2_EVIDENCE_KEYS = frozenset({
-    "precondition_level",
-    "confidence",
-    "reachability_tag",
-    "exposure_tag",
-    "exploitability_class",
-    "ciafc_hints",
-    "threat_maturity",
-    "analysis_mode",
-    "path",
-    "hop_count",
-    "risk_tags",
-})
+V2_EVIDENCE_KEYS = frozenset(
+    {
+        "precondition_level",
+        "confidence",
+        "reachability_tag",
+        "exposure_tag",
+        "exploitability_class",
+        "ciafc_hints",
+        "threat_maturity",
+        "analysis_mode",
+        "path",
+        "hop_count",
+        "risk_tags",
+    }
+)
 
 V2_COMMAND_EXECUTION = {
     "exploitability_class": "command_execution",

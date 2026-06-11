@@ -64,9 +64,7 @@ def test_report_missing_file(tmp_path: Path, monkeypatch) -> None:
     assert "not found" in result.stdout.lower()
 
 
-def test_scan_scoring_both_prints_v2_summary(
-    example_server_path: Path, tmp_path: Path, monkeypatch
-) -> None:
+def test_scan_scoring_both_prints_v2_summary(example_server_path: Path, tmp_path: Path, monkeypatch) -> None:
     monkeypatch.chdir(tmp_path)
     result = runner.invoke(
         app,

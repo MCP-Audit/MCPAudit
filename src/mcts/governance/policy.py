@@ -62,36 +62,26 @@ def evaluate_policy(
                 "(use --scoring v2 or both)"
             )
         elif security_score < policy.min_security_score:
-            violations.append(
-                f"security score {security_score} below minimum {policy.min_security_score}"
-            )
+            violations.append(f"security score {security_score} below minimum {policy.min_security_score}")
     if policy.max_absolute_risk is not None:
         if absolute_risk is None:
             violations.append(
                 f"max_absolute_risk {policy.max_absolute_risk} requires v2 scoring (use --scoring v2 or both)"
             )
         elif absolute_risk > policy.max_absolute_risk:
-            violations.append(
-                f"absolute risk {absolute_risk} exceeds maximum {policy.max_absolute_risk}"
-            )
+            violations.append(f"absolute risk {absolute_risk} exceeds maximum {policy.max_absolute_risk}")
     if policy.max_risk_level is not None:
         if risk_level is None:
             violations.append(
                 f"max_risk_level {policy.max_risk_level!r} requires v2 scoring (use --scoring v2 or both)"
             )
         elif _LEVEL_ORDER.get(risk_level, 0) > _LEVEL_ORDER.get(policy.max_risk_level, 0):
-            violations.append(
-                f"risk level {risk_level!r} exceeds maximum {policy.max_risk_level!r}"
-            )
+            violations.append(f"risk level {risk_level!r} exceeds maximum {policy.max_risk_level!r}")
     if policy.min_category_score_v2:
         if absolute_risk is None:
-            violations.append(
-                "min_category_score_v2 requires v2 scoring (use --scoring v2 or both)"
-            )
+            violations.append("min_category_score_v2 requires v2 scoring (use --scoring v2 or both)")
         elif findings is not None:
-            violations.extend(
-                category_scores_v2_gate_failures(findings, policy.min_category_score_v2)
-            )
+            violations.extend(category_scores_v2_gate_failures(findings, policy.min_category_score_v2))
     if policy.max_critical is not None and critical > policy.max_critical:
         violations.append(f"critical findings {critical} exceed max {policy.max_critical}")
     if policy.max_high is not None and high > policy.max_high:

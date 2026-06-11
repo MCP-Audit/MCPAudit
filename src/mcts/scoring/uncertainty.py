@@ -30,9 +30,7 @@ def effective_confidence(finding: Finding) -> float:
 
 
 def confidence_score(findings: list[Finding], per_finding_risks: list[int]) -> int:
-    pairs = [
-        (r, f) for f, r in zip(findings, per_finding_risks, strict=True) if r > 0
-    ]
+    pairs = [(r, f) for f, r in zip(findings, per_finding_risks, strict=True) if r > 0]
     if not pairs:
         return 100
     total_w = sum(r for r, _ in pairs)
@@ -68,13 +66,9 @@ def compute_risk_range(
 ) -> tuple[tuple[int, int], str]:
     if absolute_risk == 0:
         return (0, 0), "high"
-    pairs = [
-        (r, f) for f, r in zip(findings, per_finding_risks, strict=True) if r > 0
-    ]
+    pairs = [(r, f) for f, r in zip(findings, per_finding_risks, strict=True) if r > 0]
     mean_conf = (
-        sum(effective_confidence(f) * r for r, f in pairs) / sum(r for r, _ in pairs)
-        if pairs
-        else 1.0
+        sum(effective_confidence(f) * r for r, f in pairs) / sum(r for r, _ in pairs) if pairs else 1.0
     )
     base_spread = absolute_risk * (1 - mean_conf) * 0.35
     spread = base_spread * evidence_quality_factor(findings) * analyzer_disagreement_factor(findings)

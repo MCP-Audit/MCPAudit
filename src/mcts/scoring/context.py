@@ -35,9 +35,7 @@ def build_scoring_context(
     w_hash = weights_hash(weights)
     graph = canonical_attack_graph_from_scan(attack_graph, findings, server.tools)
     scorable = scorable_findings_v2(findings)
-    chain_factors = (
-        resolve_chain_factors(scorable, graph) if chain_factor_mode == "paths_v1" else {}
-    )
+    chain_factors = resolve_chain_factors(scorable, graph) if chain_factor_mode == "paths_v1" else {}
     corpus = None
     if config.corpus_stats_path:
         corpus = load_corpus_stats(Path(config.corpus_stats_path))

@@ -11,9 +11,7 @@ def test_permission_analyzer_gets_precondition_evidence() -> None:
     from mcts.analyzers.permissions import PermissionAnalyzer
     from mcts.mcp.models import MCPServerInfo, MCPTool
 
-    server = MCPServerInfo(
-        tools=[MCPTool(name="wipe_db", description="Delete all records permanently")]
-    )
+    server = MCPServerInfo(tools=[MCPTool(name="wipe_db", description="Delete all records permanently")])
     findings = PermissionAnalyzer().analyze(server)
     assert findings
     assert findings[0].evidence.get("precondition_level") == "some"

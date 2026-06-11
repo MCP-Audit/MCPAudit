@@ -11,17 +11,13 @@ PathRecord = dict[str, Any]
 
 
 def _has_edge(graph: dict[str, Any], src: str, dst: str) -> bool:
-    return any(
-        edge.get("from") == src and edge.get("to") == dst for edge in graph.get("edges", [])
-    )
+    return any(edge.get("from") == src and edge.get("to") == dst for edge in graph.get("edges", []))
 
 
 def _path_validated(graph: dict[str, Any], nodes: list[str]) -> bool:
     if len(nodes) < 2:
         return False
-    return all(
-        _has_edge(graph, a, b) for a, b in zip(nodes, nodes[1:], strict=False)
-    )
+    return all(_has_edge(graph, a, b) for a, b in zip(nodes, nodes[1:], strict=False))
 
 
 def bfs_path(graph: dict[str, Any], start: str, end: str) -> list[str] | None:
@@ -45,9 +41,7 @@ def bfs_path(graph: dict[str, Any], start: str, end: str) -> list[str] | None:
     return None
 
 
-def _bfs_paths(
-    graph: dict[str, Any], start: str, end: str, *, max_hops: int = 4
-) -> list[list[str]]:
+def _bfs_paths(graph: dict[str, Any], start: str, end: str, *, max_hops: int = 4) -> list[list[str]]:
     """All simple paths up to max_hops (for read-exec semantic pick)."""
     results: list[list[str]] = []
     direct = bfs_path(graph, start, end)

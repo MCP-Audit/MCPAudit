@@ -32,9 +32,7 @@ def evaluate_scan_gate_violations(report: ScanReport, config: ScanConfig) -> lis
         violations.append(f"critical findings present ({report.summary.critical})")
 
     if config.min_score is not None and report.score.overall < config.min_score:
-        violations.append(
-            f"legacy overall score {report.score.overall}/100 below minimum {config.min_score}"
-        )
+        violations.append(f"legacy overall score {report.score.overall}/100 below minimum {config.min_score}")
 
     if _any_v2_gate(config):
         if report.score_v2 is None:
@@ -56,13 +54,11 @@ def evaluate_scan_gate_violations(report: ScanReport, config: ScanConfig) -> lis
                     f"absolute_risk {report.score_v2.absolute_risk} "
                     f"exceeds maximum {config.max_absolute_risk}"
                 )
-            if (
-                config.max_risk_level is not None
-                and _level_exceeds(report.score_v2.risk_level, config.max_risk_level)
+            if config.max_risk_level is not None and _level_exceeds(
+                report.score_v2.risk_level, config.max_risk_level
             ):
                 violations.append(
-                    f"risk_level {report.score_v2.risk_level} "
-                    f"exceeds maximum {config.max_risk_level}"
+                    f"risk_level {report.score_v2.risk_level} exceeds maximum {config.max_risk_level}"
                 )
 
     if config.max_critical is not None and report.summary.critical > config.max_critical:
@@ -72,7 +68,5 @@ def evaluate_scan_gate_violations(report: ScanReport, config: ScanConfig) -> lis
 
     violations.extend(category_gate_failures(report.findings, config.fail_on_category))
     if config.min_category_score_v2 and report.score_v2 is not None:
-        violations.extend(
-            category_scores_v2_gate_failures(report.findings, config.min_category_score_v2)
-        )
+        violations.extend(category_scores_v2_gate_failures(report.findings, config.min_category_score_v2))
     return violations

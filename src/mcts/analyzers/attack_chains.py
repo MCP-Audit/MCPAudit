@@ -139,8 +139,7 @@ def _can_chain(src: MCPTool, dst: MCPTool) -> bool:
         return False
     s, d = src.capability, dst.capability
     return (
-        s.reads_untrusted_input
-        and (d.egresses_network or d.executes_commands or d.accesses_sensitive_data)
+        s.reads_untrusted_input and (d.egresses_network or d.executes_commands or d.accesses_sensitive_data)
     ) or (s.accesses_sensitive_data and d.egresses_network)
 
 
@@ -152,5 +151,3 @@ def _edge_label(src: MCPTool, dst: MCPTool) -> str:
     if dst.capability and dst.capability.accesses_sensitive_data:
         return "→ cred"
     return "→ chain"
-
-

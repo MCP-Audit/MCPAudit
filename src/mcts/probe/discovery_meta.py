@@ -44,26 +44,27 @@ def discovery_meta_findings(server: MCPServerInfo) -> list[Finding]:
 
     return [
         tag_live_discovery_finding(
-        Finding(
-            id="live-discovery-incomplete",
-            analyzer="live_discovery",
-            title="Live MCP discovery incomplete",
-            description=description,
-            severity=severity,
-            recommendation=(
-                "Investigate MCP server list_tools/list_prompts/list_resources handlers; "
-                "increase --timeout if needed. Capture server stderr with --stderr-file "
-                "for diagnostics. Use --strict-live in CI to fail the scan when discovery "
-                "is incomplete."
-            ),
-            evidence={
-                "discovery_mode": server.discovery_mode,
-                "discovery_warnings": list(server.discovery_warnings),
-                "tool_count": len(server.tools),
-                "initialize_succeeded": server.initialize_succeeded,
-            },
-            confidence=1.0,
-        ))
+            Finding(
+                id="live-discovery-incomplete",
+                analyzer="live_discovery",
+                title="Live MCP discovery incomplete",
+                description=description,
+                severity=severity,
+                recommendation=(
+                    "Investigate MCP server list_tools/list_prompts/list_resources handlers; "
+                    "increase --timeout if needed. Capture server stderr with --stderr-file "
+                    "for diagnostics. Use --strict-live in CI to fail the scan when discovery "
+                    "is incomplete."
+                ),
+                evidence={
+                    "discovery_mode": server.discovery_mode,
+                    "discovery_warnings": list(server.discovery_warnings),
+                    "tool_count": len(server.tools),
+                    "initialize_succeeded": server.initialize_succeeded,
+                },
+                confidence=1.0,
+            )
+        )
     ]
 
 

@@ -20,9 +20,7 @@ def load_assets(path: Path | None) -> AssetRegistry | None:
     if path is None or not path.exists():
         return None
     data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
-    overrides = {
-        str(k): float(v) for k, v in (data.get("overrides") or {}).items()
-    }
+    overrides = {str(k): float(v) for k, v in (data.get("overrides") or {}).items()}
     return AssetRegistry(overrides=overrides)
 
 

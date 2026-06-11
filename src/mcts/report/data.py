@@ -424,17 +424,35 @@ def parse_category_gates(raw_values: list[str] | None) -> dict[str, int]:
 
 
 CATEGORY_TAGS_V2: dict[str, frozenset[str]] = {
-    "injection": frozenset({
-        "prompt_injection", "jailbreak", "schema_surface", "metadata_integrity",
-        "skill_md", "sigma_metadata", "surface_metadata",
-    }),
+    "injection": frozenset(
+        {
+            "prompt_injection",
+            "jailbreak",
+            "schema_surface",
+            "metadata_integrity",
+            "skill_md",
+            "sigma_metadata",
+            "surface_metadata",
+        }
+    ),
     "exfiltration": frozenset({"data_leakage", "embedding_secrets"}),
-    "privilege": frozenset({
-        "permission_analyzer", "command_execution", "path_validation", "tool_abuse",
-    }),
-    "supply_chain": frozenset({
-        "supply_chain", "vulnerable_package", "npm_audit", "virustotal", "semgrep_sast",
-    }),
+    "privilege": frozenset(
+        {
+            "permission_analyzer",
+            "command_execution",
+            "path_validation",
+            "tool_abuse",
+        }
+    ),
+    "supply_chain": frozenset(
+        {
+            "supply_chain",
+            "vulnerable_package",
+            "npm_audit",
+            "virustotal",
+            "semgrep_sast",
+        }
+    ),
     "protocol": frozenset({"oauth_config", "runtime_events", "cloud_inspect"}),
 }
 CATEGORY_PRIORITY_V2 = ("injection", "exfiltration", "privilege", "supply_chain", "protocol")
@@ -477,9 +495,7 @@ def parse_min_category_score_v2(raw_values: list[str] | None) -> dict[str, int]:
             if not part:
                 continue
             if ":" not in part:
-                raise ValueError(
-                    f"Invalid --min-category-score-v2 value {part!r}. Use category:min_score."
-                )
+                raise ValueError(f"Invalid --min-category-score-v2 value {part!r}. Use category:min_score.")
             category, limit_text = part.split(":", 1)
             category = category.strip()
             if category not in valid:
@@ -957,10 +973,14 @@ def trend_meta(report: ScanReport, points: list[dict[str, Any]]) -> dict[str, An
     series_key = _trend_series_key(points)
     values = [_trend_value(row, series_key) for row in points]
     unique_values = sorted(set(values))
-    latest = values[-1] if values else (
-        report.score_v2.absolute_risk
-        if series_key == "absolute_risk" and report.score_v2 is not None
-        else report.score.overall
+    latest = (
+        values[-1]
+        if values
+        else (
+            report.score_v2.absolute_risk
+            if series_key == "absolute_risk" and report.score_v2 is not None
+            else report.score.overall
+        )
     )
     labels = {
         "score": "Security score (legacy, 0–100 pts, higher=better)",
@@ -1032,8 +1052,10 @@ def _primary_risk_header(report: ScanReport) -> tuple[str, str, str]:
             f"(range {report.score_v2.risk_range[0]}–{report.score_v2.risk_range[1]})"
         )
         return badge, level.lower(), brief
-    return risk_rating(report.score.overall)[0], risk_rating(report.score.overall)[1], _score_brief(
-        report.score.overall
+    return (
+        risk_rating(report.score.overall)[0],
+        risk_rating(report.score.overall)[1],
+        _score_brief(report.score.overall),
     )
 
 
@@ -1120,9 +1142,7 @@ def build_dashboard_payload(report: ScanReport) -> dict[str, Any]:
         },
         **({"score_v2": _score_v2_payload(report)} if report.score_v2 is not None else {}),
         **(
-            {"category_scores_v2": category_scores_v2(report.findings)}
-            if report.score_v2 is not None
-            else {}
+            {"category_scores_v2": category_scores_v2(report.findings)} if report.score_v2 is not None else {}
         ),
         "scoring_version": report.scoring_version,
         "summary": report.summary.model_dump(),
