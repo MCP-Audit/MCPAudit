@@ -241,7 +241,7 @@ def test_reporting_module_delegates_to_dashboard(example_server_path: Path, tmp_
     out = tmp_path / "via-reporting.html"
     write_via_reporting(report, out)
     html = out.read_text(encoding="utf-8")
-    assert "Risk Score Breakdown" in html
+    assert "Risk by category" in html
     assert "owasp-mcp-grid" in html
     assert "Location</th>" in html
     assert "Technique</th>" in html
@@ -263,19 +263,19 @@ def test_write_html_report_is_self_contained(example_server_path: Path, tmp_path
     assert 'alt="MCTS logo"' in html
     assert "&#34;use strict&#34;" not in html
     assert '"use strict"' in html
-    assert "Security Posture Summary" in html
+    assert "Summary &amp; recommended actions" in html
     assert "score-info" in html
     assert "Score derived from:" in html
-    assert "Security score over time" in html
+    assert "Score over time" in html
     assert "trend-chart-wrap" in html
     assert "trend-table-wrap" in html
     assert "not a percentage" in html
     assert "exec-summary-grid" in html
-    assert "Scores vs counts" in html
+    assert "Understanding the numbers" in html
     assert "not a percentage" in html.lower()
     assert "Security Score" in html
     assert "issues-table" in html
-    assert "Key results" in html
+    assert "overview-hero" in html
     assert "chart.js" in html
     assert "Inter" in html
     assert 'id="mcts-report-data"' in html

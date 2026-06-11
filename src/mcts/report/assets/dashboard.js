@@ -90,6 +90,131 @@
     threat_maturity: "Threat maturity",
   };
 
+  const V2_FACTOR_LABELS = {
+    exploitability: "easy to exploit",
+    reachability: "reachable by attackers",
+    exposure: "exposed to users",
+    blast_radius: "wide blast radius",
+    business_impact: "high business impact",
+    asset_value: "valuable asset",
+    attack_preconditions: "few preconditions",
+    threat_maturity: "known attack pattern",
+    chain_factor: "part of attack chain",
+  };
+
+  function applyScoringMode() {
+    const isV2 = Boolean(DATA.score_v2);
+    const legacyCard = document.getElementById("score-card");
+    const v2Panel = document.getElementById("v2-score-section");
+    const zoneRiskDetail = document.getElementById("zone-risk-detail");
+    const legacyBreakdown = document.getElementById("legacy-breakdown-card");
+    const scoreBreakdown = document.getElementById("score-breakdown-section");
+    const legendV2 = document.getElementById("legend-v2-block");
+    const legendScores = document.getElementById("legend-scores-block");
+    const heroTitle = document.getElementById("hero-title");
+    const trendTitle = document.getElementById("trend-card-title");
+    const trendHint = document.getElementById("trend-card-hint");
+    const riskGuideTitle = document.getElementById("risk-guide-title");
+    const riskGuideHint = document.getElementById("risk-guide-hint");
+    const trendIntro = document.getElementById("trend-zone-intro");
+
+    if (legacyCard) legacyCard.hidden = isV2;
+    if (v2Panel) v2Panel.hidden = !isV2;
+    if (zoneRiskDetail && !isV2) zoneRiskDetail.hidden = true;
+    if (legacyBreakdown) legacyBreakdown.hidden = isV2;
+    if (scoreBreakdown && isV2) scoreBreakdown.hidden = true;
+    if (legendV2) legendV2.hidden = !isV2;
+    if (legendScores && isV2) {
+      legendScores.querySelector("strong").textContent = "Benchmark score (0–100 points)";
+      const p = legendScores.querySelector("p");
+      if (p) {
+        p.textContent =
+          "How this server compares to others in the benchmark corpus. Higher = better — separate from absolute risk.";
+      }
+    }
+    if (heroTitle && isV2) {
+      const level = String(DATA.score_v2.risk_level || "low");
+      heroTitle.textContent =
+        level === "critical" || level === "high"
+          ? "Action needed — elevated risk"
+          : "Review recommended";
+    }
+    if (trendTitle && isV2) {
+      trendTitle.textContent = "Risk over time";
+      if (trendHint) trendHint.textContent = "Absolute risk per scan — lower is better.";
+      if (trendIntro) {
+        trendIntro.textContent = "Compare absolute risk across scans and see which band you are in.";
+      }
+    }
+    if (riskGuideTitle && isV2) {
+      riskGuideTitle.textContent = "Absolute risk bands";
+      if (riskGuideHint) riskGuideHint.textContent = "Higher numbers mean more overall danger.";
+    }
+  }
+
+  function fillHero() {
+    const statsEl = document.getElementById("hero-stats");
+    const eyebrow = document.getElementById("hero-eyebrow");
+    if (!statsEl) return;
+
+    const s = DATA.summary || {};
+    const cs = DATA.checks_summary || {};
+    const tools = DATA.meta?.tools_discovered || 0;
+    const v2 = DATA.score_v2;
+    const score = DATA.score?.overall ?? 0;
+
+    if (eyebrow) {
+      const target = DATA.meta?.target;
+      eyebrow.textContent = target ? `Scanned ${target}` : "Scan complete";
+    }
+
+    const stats = [];
+    if (v2) {
+      stats.push({
+        cls: "hero-stat--risk",
+        value: String(v2.absolute_risk),
+        label: `${String(v2.risk_level || "low").toUpperCase()} risk`,
+      });
+      if (v2.security_score != null) {
+        stats.push({
+          cls: "",
+          value: `${v2.security_score}/100`,
+          label: "Benchmark score",
+        });
+      }
+    } else {
+      stats.push({
+        cls: "hero-stat--risk",
+        value: `${score}/100`,
+        label: `${DATA.risk?.level || "risk"} rating`,
+      });
+    }
+    stats.push({
+      cls: "hero-stat--issues",
+      value: String(s.total || 0),
+      label: `issue${s.total === 1 ? "" : "s"} found`,
+    });
+    if (cs.analyzers_run) {
+      stats.push({
+        cls: "hero-stat--ok",
+        value: `${cs.analyzers_passed}/${cs.analyzers_run}`,
+        label: "checks passed",
+      });
+    }
+    stats.push({
+      cls: "",
+      value: String(tools),
+      label: `MCP tool${tools === 1 ? "" : "s"}`,
+    });
+
+    statsEl.innerHTML = stats
+      .map(
+        (row) =>
+          `<div class="hero-stat ${row.cls}"><span class="hero-stat-value">${escapeHtml(row.value)}</span><span class="hero-stat-label">${escapeHtml(row.label)}</span></div>`
+      )
+      .join("");
+  }
+
   function fillScoreV2() {
     const v2 = DATA.score_v2;
     const section = document.getElementById("v2-score-section");
@@ -102,6 +227,7 @@
     const secEl = document.getElementById("v2-security-score");
     const confEl = document.getElementById("v2-confidence");
     const pctEl = document.getElementById("v2-percentile");
+    const intro = document.getElementById("v2-metrics-intro");
     if (absEl) absEl.textContent = String(v2.absolute_risk);
     if (pill) {
       pill.textContent = `${String(v2.risk_level || "low").toUpperCase()} RISK`;
@@ -109,10 +235,10 @@
     }
     if (rangeEl && Array.isArray(v2.risk_range)) {
       const rangeConf = v2.risk_range_confidence != null ? String(v2.risk_range_confidence) : "—";
-      rangeEl.textContent = `Estimated range ${v2.risk_range[0]}–${v2.risk_range[1]} (confidence ${rangeConf})`;
+      rangeEl.textContent = `Likely range ${v2.risk_range[0]}–${v2.risk_range[1]} (confidence ${rangeConf}%)`;
     }
     if (secEl) {
-      secEl.textContent = v2.security_score != null ? `${v2.security_score} / 100 pts` : "—";
+      secEl.textContent = v2.security_score != null ? `${v2.security_score} / 100` : "—";
     }
     if (confEl) {
       confEl.textContent = v2.confidence_score != null ? `${v2.confidence_score}%` : "—";
@@ -120,18 +246,21 @@
     if (pctEl) {
       pctEl.textContent = v2.risk_percentile != null ? `${v2.risk_percentile}th percentile` : "—";
     }
-    const metricsRow = document.querySelector(".metrics-primary-row");
-    if (metricsRow && metricsRow.parentNode && section) {
-      metricsRow.parentNode.insertBefore(section, metricsRow);
-    }
-    const legacyCard = document.getElementById("score-card");
-    if (legacyCard) {
-      legacyCard.hidden = true;
+    if (intro) {
+      intro.textContent =
+        "These are the findings and OWASP categories contributing most to your absolute risk score.";
     }
 
-    fillV2Contributors(v2.top_contributors || []);
-    fillV2Categories(DATA.category_scores_v2 || []);
+    const contributors = v2.top_contributors || [];
+    const categories = DATA.category_scores_v2 || [];
+    fillV2Contributors(contributors);
+    fillV2Categories(categories);
     initV2DimensionRadar(v2.dimension_scores || {});
+    const zoneRiskDetail = document.getElementById("zone-risk-detail");
+    if (zoneRiskDetail) {
+      zoneRiskDetail.hidden = !contributors.length && !categories.length;
+    }
+    applyScoringMode();
   }
 
   function fillV2Categories(categories) {
@@ -176,10 +305,10 @@
         const factors = row.factors
           ? Object.entries(row.factors)
               .filter(([, v]) => Number(v) > 0)
-              .map(([k, v]) => `${k}: ${v}`)
-              .join(", ")
+              .map(([k, v]) => `${V2_FACTOR_LABELS[k] || k.replace(/_/g, " ")} (${v})`)
+              .join("; ")
           : row.hop_count != null
-            ? `hop_count: ${row.hop_count}`
+            ? `${row.hop_count}-step attack path`
             : "—";
         return `<tr>
           <td>${escapeHtml(title)}</td>
@@ -329,26 +458,34 @@
     const s = DATA.summary || {};
     const score = DATA.score?.overall ?? 0;
     const tools = DATA.meta?.tools_discovered || 0;
+    const cs = DATA.checks_summary || {};
     const parts = [
       s.critical ? `${s.critical} critical` : null,
       s.high ? `${s.high} high` : null,
       s.medium ? `${s.medium} medium` : null,
       s.low ? `${s.low} low` : null,
     ].filter(Boolean);
-    const breakdown = parts.length ? ` (${parts.join(" + ")})` : "";
-    let scoreLine = `Security score: <strong>${score} / 100 points</strong> (rating, not a percentage).`;
+    const breakdown = parts.length ? ` — ${parts.join(", ")}` : "";
+    let scoreLine;
     if (DATA.score_v2) {
+      const v2 = DATA.score_v2;
       scoreLine =
-        `Absolute risk: <strong>${DATA.score_v2.absolute_risk}</strong> (${DATA.score_v2.risk_level})` +
-        (DATA.score_v2.security_score != null
-          ? ` · benchmark security score <strong>${DATA.score_v2.security_score}/100</strong>`
-          : "") +
-        ".";
+        `MCTS found <strong>${s.total || 0} security issue${s.total === 1 ? "" : "s"}</strong> across ` +
+        `<strong>${tools} tool${tools === 1 ? "" : "s"}</strong>${breakdown}. ` +
+        `Overall absolute risk is <strong>${v2.absolute_risk}</strong> (${v2.risk_level}).`;
+      if (v2.security_score != null) {
+        scoreLine += ` Benchmark score: <strong>${v2.security_score}/100</strong>.`;
+      }
+    } else {
+      scoreLine =
+        `MCTS found <strong>${s.total || 0} issue${s.total === 1 ? "" : "s"}</strong> across ` +
+        `<strong>${tools} tool${tools === 1 ? "" : "s"}</strong>${breakdown}. ` +
+        `Security rating: <strong>${score}/100</strong> (higher is better, not a percentage).`;
     }
-    el.innerHTML =
-      `<strong>${s.total || 0} issue${s.total === 1 ? "" : "s"}</strong> (count) across ` +
-      `<strong>${tools} MCP tool${tools === 1 ? "" : "s"}</strong>${breakdown}. ` +
-      scoreLine;
+    if (cs.analyzers_run) {
+      scoreLine += ` ${cs.analyzers_passed} of ${cs.analyzers_run} checks passed.`;
+    }
+    el.innerHTML = scoreLine;
   }
 
   function fillIssuesSummary() {
@@ -691,14 +828,22 @@
 
     lead.textContent = `MCTS scanned ${tools} tool(s), ran ${cs.analyzers_run || "—"} checks, and counted ${total} issue(s). ${scoreLine}`;
 
-    steps.innerHTML = [
-      "<strong>Start Here</strong> — score, what passed, and what needs attention (this page).",
-      "<strong>Issues to Fix</strong> — full list of findings with severity and remediation.",
-      "<strong>All Checks</strong> — every analyzer: which passed (green) vs which found problems.",
-      "<strong>How to Fix</strong> — prioritized action items (P1 = fix first).",
-    ]
-      .map((line) => `<li>${line}</li>`)
-      .join("");
+    const stepsList = DATA.score_v2
+      ? [
+          "<strong>Snapshot</strong> — absolute risk, issue counts, and which checks passed.",
+          "<strong>What to do next</strong> — urgent findings and recommended fixes on this page.",
+          "<strong>Issues to Fix</strong> — every finding with severity, location, and remediation.",
+          "<strong>All Checks</strong> — what each analyzer inspected and whether it passed.",
+          "<strong>How to Fix</strong> — prioritized steps (P1 = most urgent).",
+        ]
+      : [
+          "<strong>Snapshot</strong> — security score, issue counts, and which checks passed.",
+          "<strong>What to do next</strong> — urgent findings and recommended fixes on this page.",
+          "<strong>Issues to Fix</strong> — every finding with severity, location, and remediation.",
+          "<strong>All Checks</strong> — what each analyzer inspected and whether it passed.",
+          "<strong>How to Fix</strong> — prioritized steps (P1 = most urgent).",
+        ];
+    steps.innerHTML = stepsList.map((line) => `<li>${line}</li>`).join("");
 
     const jumps = [
       ["findings", `${total} issue${total === 1 ? "" : "s"} to fix`, total > 0],
@@ -750,8 +895,11 @@
       .slice(0, 6);
     const passed = (DATA.analyzers || []).filter((a) => a.status === "passed");
 
-    if (!topFindings.length && !passed.length) return;
-    split.hidden = false;
+    if (!topFindings.length && !passed.length) {
+      split.hidden = true;
+    } else {
+      split.hidden = false;
+    }
 
     topList.innerHTML = topFindings.length
       ? topFindings
@@ -1766,10 +1914,12 @@
 
   function init() {
     fillBanners();
+    fillHero();
+    fillMetricsHeadline();
     fillReportGuide();
     fillNavBadges();
-    fillMetricsHeadline();
     fillIssuesSummary();
+    applyScoringMode();
     fillScoreBreakdown();
     fillScoreV2();
     fillChecksSummary();
