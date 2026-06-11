@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Validate governance `--policy` files before scan execution so missing or invalid policy files fail before reports are written.
 
+### Changed
+
+- Validate resolvable live launch configuration before the consent gate on `mcts snapshot` and `mcts fuzz`.
+
 ## [0.1.2] - 2026-06-10
 
 ### Added
