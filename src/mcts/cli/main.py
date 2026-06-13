@@ -1227,11 +1227,22 @@ def vet(
         bool,
         typer.Option("--json", help="Emit machine-readable JSON to stdout"),
     ] = False,
+    findings_trust_mode: Annotated[
+        str,
+        typer.Option(
+            "--findings-trust-mode",
+            help="Apply findings trust validator to vet findings (off, warn, enforce)",
+            case_sensitive=False,
+        ),
+    ] = "off",
 ) -> None:
     """Pre-install vetting for PyPI, npm, and OCI package references."""
     import json
 
+    from mcts.core.config import ScanConfig
     from mcts.reporting.models import Severity
+    from mcts.reporting.trust_apply import merge_scan_config_defaults
+    from mcts.reporting.vet_trust import apply_trust_to_vet_report, vet_severity_label
     from mcts.vet import run_vet
 
     try:
@@ -1243,15 +1254,25 @@ def vet(
         console.print(f"[red]Error:[/red] {exc}")
         raise typer.Exit(code=2) from exc
 
+    config = merge_scan_config_defaults(
+        ScanConfig(target=Path(".")),
+        findings_trust_mode=findings_trust_mode,
+    )
+    report = apply_trust_to_vet_report(report, config)
+    use_display = config.findings_trust_mode == "enforce"
+
     payload = report.model_dump(mode="json")
     if json_output:
         console.print(json.dumps(payload, indent=2))
     else:
         console.print(f"[bold]mcts vet[/bold] {package}")
-        console.print(f"Verdict: [bold]{report.verdict}[/bold]  Risk: {report.risk_score}/100")
+        console.print(
+            f"Verdict: [bold]{report.verdict}[/bold]  "
+            f"Risk: {report.compute_risk_score(use_display=use_display)}/100"
+        )
         if report.findings:
             for finding in report.findings:
-                console.print(f"  [{finding.severity.value}] {finding.title}")
+                console.print(f"  [{vet_severity_label(finding, config)}] {finding.title}")
         else:
             console.print("  No issues flagged by heuristics.")
 
@@ -1260,7 +1281,15 @@ def vet(
     if not json_output:
         console.print(f"[green]Saved[/green] {output_path}")
 
-    if any(f.severity in {Severity.CRITICAL, Severity.HIGH} for f in report.findings):
+    if any(
+        (
+            finding.display_severity
+            if use_display and finding.display_severity is not None
+            else finding.severity
+        )
+        in {Severity.CRITICAL, Severity.HIGH}
+        for finding in report.findings
+    ):
         raise typer.Exit(code=1)
 
 

@@ -152,7 +152,7 @@ These were **explicitly out of Phase 0** — documented in the roadmap and issue
 | Full 23-consumer migration | Phased | See table below |
 | History/trend `display_critical` | Consumer step 12 | **Done (A½)** |
 | Category tiles / OWASP badges on display | Phase A½ | **Done (A½)** |
-| CLI printed finding lists on display | Phase A½ | **Done** for `mcts scan` / `mcts report`; fuzz/readiness/vet/pentest still template |
+| CLI printed finding lists on display | Phase A½ | **Done** for `mcts scan` / `mcts report`; fuzz/readiness/vet/pentest use display under trust mode |
 | `severity_filter` on display severity | Consumer step 5 | **Done (A½)** |
 | Legacy score + `score.basis` on display | Phase A½ narrow B | **Done (A½)** — enforce only; v2 unchanged |
 | Pentest / fuzz / inventory validator | §K bypass paths | |
