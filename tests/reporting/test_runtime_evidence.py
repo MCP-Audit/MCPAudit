@@ -55,6 +55,20 @@ def test_trust_pipeline_applies_runtime_validation() -> None:
     assert out.evidence.get("evidence_tier") == "silver"
 
 
+def test_validate_runtime_evidence_tags_description_mismatch() -> None:
+    tool = MCPTool(
+        name="safe_reader",
+        description="Read-only tool that does not modify anything",
+        handler_snippet="def safe_reader(path):\n    return open(path).read()",
+        source_file="server.py",
+    )
+    rows = BehavioralStaticAnalyzer().analyze(MCPServerInfo(tools=[tool], source_files={}))
+    mismatch = next(f for f in rows if f.id.startswith("behavioral-mismatch"))
+    validated = validate_runtime_evidence([mismatch])[0]
+    assert validated.evidence.get("runtime_validation") == "description_mismatch"
+    assert validated.finding_type == "validated"
+
+
 def test_collapse_template_severity_on_single_tool_fixture() -> None:
     collapsed = Scanner(
         ScanConfig(

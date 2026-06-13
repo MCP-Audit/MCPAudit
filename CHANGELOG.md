@@ -16,7 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Governance policy merge** — `.mcts/policy.yaml` fills unset scan flags before scan; CLI overrides policy
 - **Priority model** — `priority_score` and `evidence_strength` on all security findings when trust is on
 - **Shared trust pipeline** — fuzz/inventory/vet/readiness/pentest honor `--findings-trust-mode`; bronze gate for experimental analyzers
-- **FindingBuilder adoption** — `command_execution`, `prompt_injection`, `data_leakage`, `path_validation`, `permissions`, `tool_abuse`, `schema_surface`, `jailbreak`, `tool_shadowing`, `behavioral_static` (taint)
+- **FindingBuilder adoption** — security, metadata, behavioral, and cross-server analyzers emit bronze facts
 - **Auxiliary trust wiring** — readiness, pentest (fuzz), inventory, fuzz CLI/API paths
 - **API policy merge** — REST scans load `.mcts/policy.yaml` like CLI
 - **Global thin-evidence caps** — low-confidence findings without facts default to `weak` strength

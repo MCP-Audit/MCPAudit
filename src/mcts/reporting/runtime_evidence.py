@@ -27,6 +27,17 @@ def _validate_runtime_one(finding: Finding) -> Finding:
                 updates["confidence"] = 0.78
         return finding.model_copy(update=updates)
 
+    if (
+        finding.analyzer == "behavioral_static"
+        and finding.id.startswith("behavioral-mismatch")
+        and evidence.get("sinks")
+    ):
+        evidence["runtime_validation"] = "description_mismatch"
+        evidence["evidence_tier"] = (
+            "silver" if has_facts and any(isinstance(row, dict) and row.get("snippet") for row in facts) else "bronze"
+        )
+        return finding.model_copy(update={"evidence": evidence, "finding_type": "validated"})
+
     if finding.analyzer == "jailbreak" and evidence.get("analysis_mode") == "live_probe":
         evidence["runtime_validation"] = "live_probe"
         evidence["evidence_tier"] = "silver" if has_facts else "bronze"

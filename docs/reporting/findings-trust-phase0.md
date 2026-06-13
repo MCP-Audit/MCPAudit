@@ -346,7 +346,7 @@ Phases 0, A½, 1, 1.5, 2, B2, and pre-Phase-3 adoption are shipped in-tree:
 
 | Gap | Status |
 |-----|--------|
-| FindingBuilder in mature analyzers | **Done** — `command_execution`, `prompt_injection`, `data_leakage`, `path_validation`, `permissions`, `tool_abuse`, `schema_surface`, `jailbreak`, `tool_shadowing`, `behavioral_static` (taint) |
+| FindingBuilder in mature analyzers | **Done** — core security + metadata + behavioral + cross_server (see `finding_facts.py` adopters) |
 | Pentest / readiness trust pipeline | **Done** — fuzz rows + readiness notes via `apply_trust_layer` |
 | Fuzz / inventory trust | **Done** (prior slice) |
 | API policy loader | **Done** — `_merge_policy()` on REST scan/readiness |
