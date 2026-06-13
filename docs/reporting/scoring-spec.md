@@ -210,9 +210,11 @@ Exit code **1** when a gate fails; **2** for usage/consent errors.
 | `--fail-on-critical` | `summary.critical > 0` (scorable findings) |
 | `--min-score N` | `score.overall < N` |
 | `--max-critical N` | `summary.critical > N` |
-| `--fail-on-category KEY:LIMIT` | Legacy category score ≥ LIMIT |
+| `--fail-on-category KEY:LIMIT` | Legacy category score >= LIMIT |
 
-Category gates are **inclusive** at the limit: `--fail-on-category permissions:10` fails when permissions category score is **10 or higher**.
+Category gates are **inclusive** at the limit: `--fail-on-category permissions:10` fails when permissions category score is **10 or higher**. For zero-risk policies, use `permissions:1` to allow a clean `0` and fail on any positive permissions risk. `permissions:0` fails even when the permissions score is `0` because `0 >= 0`.
+
+If a category tile displays `Passed`, that means the tile has zero category risk points; it is not a CI gate result. Gate failure messages include the inclusive comparison so CI output stays authoritative.
 
 ### v2 gates (shipped)
 
