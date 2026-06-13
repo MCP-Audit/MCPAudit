@@ -87,7 +87,7 @@ When `-o` is set, format determines serialization. SARIF uses `reporting/sarif.p
 | `--fail-on-critical` | false | Exit **1** if any critical finding |
 | `--min-score` | — | Exit **1** if legacy `score.overall` < N (0–100) |
 | `--max-critical` | — | Exit **1** if critical count > N |
-| `--fail-on-category` | — | Repeatable. Format: `category:limit`. Exit **1** when **legacy** category score ≥ limit |
+| `--fail-on-category` | — | Repeatable. Format: `category:limit`. Exit **1** when **legacy** category score >= limit (inclusive) |
 | `--scoring` | `both` | `legacy`, `v2`, or `both` — enable multi-factor scoring |
 | `--min-security-score` | — | Exit **1** if v2 benchmark security score < N (requires `--scoring v2` or `both`) |
 | `--max-absolute-risk` | — | Exit **1** if v2 `absolute_risk` > N (requires `--scoring v2` or `both`) |
@@ -98,6 +98,10 @@ When `-o` is set, format determines serialization. SARIF uses `reporting/sarif.p
 | `--no-attack-chains` | false | Disable v2 **chain multiplier** only (`chain_factor_mode: disabled`). Under `--scoring v2\|both` the attack chains analyzer still runs for graph + meta-findings. Use `--scoring legacy` to omit chain meta-findings entirely. |
 
 Valid **legacy** category keys: `permissions`, `injection`, `execution`, `data_leakage`, `attack_chains`, `shadowing`, `jailbreak`. Category gates apply to v1 tiles only — not `category_scores_v2`. See [Scoring developer guide](../reporting/scoring-guide.md).
+
+`--fail-on-category` limits are inclusive: the scan fails when the category score is greater than or equal to the limit. This makes `permissions:0` stricter than "zero findings"; a clean permissions tile has score `0`, so `0 >= 0` still fails. Use `permissions:1` when you want to allow zero permissions risk points and fail on any positive permissions risk.
+
+For multi-server MCP repository checks such as G02 policies, prefer `permissions:1` for "no permissions risk" gates. If a category tile displays `Passed`, read that as `0` category risk points, not as a CI gate result; the gate failure line is authoritative.
 
 ### Terminal UI flags
 
@@ -217,9 +221,9 @@ mcts scan . --config ~/.cursor/mcp.json --server my-server \
 mcts scan ./server.py -o report.sarif --format sarif \
   --min-score 70 --max-critical 0 --fail-on-critical
 
-# Category gates
+# Category gates (inclusive: score >= limit fails)
 mcts scan ./repo/ \
-  --fail-on-category permissions:10 \
+  --fail-on-category permissions:1 \
   --fail-on-category injection:15
 
 # Fuzz telemetry replay
@@ -456,6 +460,8 @@ See [Protocol Fuzzing](../scanning/fuzzing.md).
 | **2** | Usage error, missing consent, probe/fuzz failure, invalid theme/format |
 
 Gate failures (`scan` only): `--fail-on-critical`, `--min-score`, `--max-critical`, `--fail-on-category` (legacy); `--min-security-score`, `--max-absolute-risk`, `--max-risk-level`, `--min-category-score-v2` (v2, require `--scoring v2` or `both`).
+
+`--fail-on-category` uses the same inclusive `score >= limit` rule in CI and local scans. For example, `permissions:0` fails even when permissions score is `0`; use `permissions:1` to fail on any positive permissions risk while allowing a clean tile.
 
 ---
 
