@@ -10,7 +10,7 @@ from mcts.reporting.models import Finding, Severity
 from mcts.scoring.chains import path_is_proven, resolve_chain_factors
 from mcts.scoring.context import build_scoring_context, scorable_findings_v2
 from mcts.scoring.engine_v2 import RiskScoringEngineV2, base_risk
-from mcts.scoring.factors import ScoringContext, classify_business_impact
+from mcts.scoring.factors import classify_business_impact
 from mcts.scoring.models import RiskFactorVector
 from mcts.scoring.weights import load_weights
 

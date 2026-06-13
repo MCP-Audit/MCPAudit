@@ -31,7 +31,9 @@ _STRENGTH_MULT: dict[str, float] = {
 _CHAIN_MULT: dict[int, float] = {0: 0.4, 1: 0.7, 2: 0.9, 3: 1.0}
 
 _HYGIENE_ANALYZERS = frozenset({"live_discovery", "static_discovery"})
-_HEURISTIC_ANALYZERS = frozenset({"attack_chains", "behavioral_static", "jailbreak", "llm_judge", "llm_metadata_triage"})
+_HEURISTIC_ANALYZERS = frozenset(
+    {"attack_chains", "behavioral_static", "jailbreak", "llm_judge", "llm_metadata_triage"}
+)
 
 
 @dataclass

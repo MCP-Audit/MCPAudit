@@ -105,9 +105,7 @@ def priority_gate_violations(report: ScanReport, config: ScanConfig) -> list[str
     if not matched:
         return []
     strength_note = (
-        f" with evidence_strength>={config.min_evidence_strength}"
-        if config.min_evidence_strength
-        else ""
+        f" with evidence_strength>={config.min_evidence_strength}" if config.min_evidence_strength else ""
     )
     top = matched[0]
     return [

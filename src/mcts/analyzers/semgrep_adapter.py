@@ -10,7 +10,7 @@ from pathlib import Path
 from mcts.analyzers.base import BaseAnalyzer
 from mcts.mcp.models import MCPServerInfo
 from mcts.reporting.finding_builder import FindingBuilder
-from mcts.reporting.models import Finding, Severity, SourceLocation
+from mcts.reporting.models import Finding, Severity
 
 _DEFAULT_RULES = Path(__file__).resolve().parents[1] / "sast" / "semgrep" / "rules" / "mcts-mcp.yaml"
 

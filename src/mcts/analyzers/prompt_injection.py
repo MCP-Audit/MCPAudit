@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import re
 
-from mcts.analyzers.finding_facts import build_analyzer_finding
 from mcts.analyzers.base import BaseAnalyzer
+from mcts.analyzers.finding_facts import build_analyzer_finding
 from mcts.analyzers.surface_context import (
     is_intentional_context_surface,
     scan_surfaces,

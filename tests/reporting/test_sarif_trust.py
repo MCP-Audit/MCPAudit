@@ -13,9 +13,7 @@ def test_sarif_level_uses_display_severity_when_capped() -> None:
     report = Scanner(ScanConfig(target=SINGLE_TOOL, findings_trust_mode="enforce")).run()
     sarif = build_sarif(report)
     chain_results = [
-        r
-        for r in sarif["runs"][0]["results"]
-        if r.get("properties", {}).get("analyzer") == "attack_chains"
+        r for r in sarif["runs"][0]["results"] if r.get("properties", {}).get("analyzer") == "attack_chains"
     ]
     assert chain_results
     for result in chain_results:

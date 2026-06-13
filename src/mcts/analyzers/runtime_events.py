@@ -11,7 +11,6 @@ from mcts.analyzers.authority_claim_tool import detect_authority_claim_tool
 from mcts.analyzers.autonomous_loop import detect_autonomous_loop_event
 from mcts.analyzers.backdoored_install import detect_backdoored_install_event
 from mcts.analyzers.base import BaseAnalyzer
-from mcts.analyzers.finding_facts import build_analyzer_finding
 from mcts.analyzers.behavioral_extraction import detect_behavioral_extraction
 from mcts.analyzers.bridge_hopping import detect_bridge_hopping
 from mcts.analyzers.capability_enumeration import detect_capability_enumeration
@@ -37,6 +36,7 @@ from mcts.analyzers.dns_resolution_anomaly import detect_dns_resolution_anomaly
 from mcts.analyzers.env_file_access import detect_env_file_access
 from mcts.analyzers.exposed_endpoint import detect_exposed_endpoint
 from mcts.analyzers.fake_tool_invocation import detect_fake_tool_invocation
+from mcts.analyzers.finding_facts import build_analyzer_finding
 from mcts.analyzers.inspector_rce import detect_inspector_rce_event
 from mcts.analyzers.instruction_steganography import detect_instruction_steganography
 from mcts.analyzers.multimodal_injection import detect_multimodal_injection

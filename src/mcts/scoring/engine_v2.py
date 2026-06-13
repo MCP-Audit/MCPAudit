@@ -75,7 +75,7 @@ def build_top_contributors(
     per_finding_risks: list[int],
     limit: int = 10,
 ) -> list[TopContributor]:
-    from mcts.scoring.chains import hop_factor_for, path_is_proven
+    from mcts.scoring.chains import hop_factor_for
 
     rows: list[TopContributor] = []
     ranked = sorted(

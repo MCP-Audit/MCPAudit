@@ -16,6 +16,7 @@ from mcts.output.analysis_dir import ANALYSIS_DIR_NAME
 from mcts.reporting.models import Finding, RiskScore, ScanSummary, ScoreBasis, Severity, SourceLocation
 from mcts.scoring.models import RiskScoreV2, ScoreV2Basis
 
+
 def _score_v2(**kwargs) -> RiskScoreV2:
     defaults = {
         "absolute_risk": 400,

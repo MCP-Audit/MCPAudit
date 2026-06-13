@@ -26,17 +26,14 @@ def build_analyzer_finding(
     snippet: str | None = None,
     extra_evidence: dict[str, Any] | None = None,
 ) -> Finding:
-    builder = (
-        FindingBuilder(
-            finding_id=finding_id,
-            analyzer=analyzer,
-            title=title,
-            description=description,
-            severity=severity,
-            recommendation=recommendation,
-        )
-        .confidence(confidence)
-    )
+    builder = FindingBuilder(
+        finding_id=finding_id,
+        analyzer=analyzer,
+        title=title,
+        description=description,
+        severity=severity,
+        recommendation=recommendation,
+    ).confidence(confidence)
     if tool:
         builder = builder.tool(tool)
     if location and location.file:

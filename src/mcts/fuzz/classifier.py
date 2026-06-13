@@ -124,9 +124,7 @@ def finding_from_classification(
         "signal": classified.signal.value,
         "read_only": probe.read_only,
         "level": probe.level.value,
-        "attack_tags": (
-            ["attack.execution", "attack.t1499.003"] if probe.id.startswith("sampling-") else []
-        ),
+        "attack_tags": (["attack.execution", "attack.t1499.003"] if probe.id.startswith("sampling-") else []),
     }
     if response_excerpt:
         extra["response_excerpt"] = response_excerpt

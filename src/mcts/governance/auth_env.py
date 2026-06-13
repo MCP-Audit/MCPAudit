@@ -30,7 +30,6 @@ def evaluate_auth_env_violations(config: ScanConfig) -> list[str]:
             continue
         env_list = ", ".join(env_names)
         violations.append(
-            f"{label} enabled but required env not set ({env_list}) "
-            "(require_auth_env_for_sensitive)"
+            f"{label} enabled but required env not set ({env_list}) (require_auth_env_for_sensitive)"
         )
     return violations

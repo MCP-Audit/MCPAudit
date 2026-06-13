@@ -339,9 +339,7 @@ def build_executive_summary(findings: list[Finding], summary: ScanSummary) -> di
         if "exfil" in f.title.lower() or "webhook" in f.title.lower() or "send_webhook" in (f.tool or "")
     ]
     chain_exfil = any(
-        "exfil_tools" in (f.evidence or {})
-        for f in chain_findings
-        if f.evidence_type != "capability_overlap"
+        "exfil_tools" in (f.evidence or {}) for f in chain_findings if f.evidence_type != "capability_overlap"
     )
     if exfil_findings or chain_exfil:
         paragraphs.append("Sensitive data exfiltration paths were identified.")
@@ -387,8 +385,7 @@ def build_executive_summary(findings: list[Finding], summary: ScanSummary) -> di
         if action in seen_bullets:
             continue
         if any(
-            _keyword in f.title.lower() or _keyword in f.recommendation.lower()
-            for f in heuristic_findings
+            _keyword in f.title.lower() or _keyword in f.recommendation.lower() for f in heuristic_findings
         ):
             bullets.append(action)
             seen_bullets.add(action)
@@ -823,9 +820,7 @@ def build_technique_map(findings: list[Finding], *, use_display: bool = False) -
     for tech_id, matched in sorted(by_technique.items()):
         if tech_id in catalog_ids:
             continue
-        max_sev = min(
-            SEVERITY_ORDER[effective_severity(f) if use_display else f.severity] for f in matched
-        )
+        max_sev = min(SEVERITY_ORDER[effective_severity(f) if use_display else f.severity] for f in matched)
         severity = next(s for s in Severity if SEVERITY_ORDER[s] == max_sev)
         rows.append(
             {
@@ -1034,9 +1029,7 @@ def score_trend(report: ScanReport) -> list[dict[str, Any]]:
         return points
     label = report.scanned_at.strftime("%b %d")
     trend_summary = (
-        (report.display_summary or report.summary)
-        if report_trust_enforced(report)
-        else report.summary
+        (report.display_summary or report.summary) if report_trust_enforced(report) else report.summary
     )
     row: dict[str, Any] = {
         "date": label,

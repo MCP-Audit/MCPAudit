@@ -31,7 +31,9 @@ def fact_coverage(findings: list[Finding]) -> dict[str, float | int]:
     security = [f for f in findings if is_security_finding(f)]
     if not security:
         return {"total": 0, "with_facts": 0, "pct": 100.0}
-    with_facts = sum(1 for f in security if isinstance((f.evidence or {}).get("facts"), list) and f.evidence["facts"])
+    with_facts = sum(
+        1 for f in security if isinstance((f.evidence or {}).get("facts"), list) and f.evidence["facts"]
+    )
     total = len(security)
     return {
         "total": total,

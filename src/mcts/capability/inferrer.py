@@ -205,7 +205,11 @@ def infer_capability(tool: MCPTool) -> CapabilityProfile:
     profile = CapabilityProfile(
         reads_untrusted_input=reads or bool(READ_HINTS.search(haystack) or "path" in haystack.lower()),
         accesses_sensitive_data=sensitive
-        or bool(SENSITIVE_HINTS.search(haystack) or CREDENTIAL_MARKERS.search(haystack) or ENV_ACCESS.search(snippet)),
+        or bool(
+            SENSITIVE_HINTS.search(haystack)
+            or CREDENTIAL_MARKERS.search(haystack)
+            or ENV_ACCESS.search(snippet)
+        ),
         mutates_state=mutates or bool(MUTATE_HINTS.search(haystack)),
         egresses_network=egress_meta
         or egress_handler

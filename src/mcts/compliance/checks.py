@@ -113,9 +113,7 @@ class ComplianceChecker:
             )
 
         critical_count = sum(
-            1
-            for f in scorable
-            if _compliance_critical_severity(f, findings_trust_mode) == Severity.CRITICAL
+            1 for f in scorable if _compliance_critical_severity(f, findings_trust_mode) == Severity.CRITICAL
         )
         if critical_count >= 3:
             compliance_findings.append(

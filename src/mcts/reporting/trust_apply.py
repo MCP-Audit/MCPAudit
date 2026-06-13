@@ -7,7 +7,7 @@ from typing import Any
 from mcts.core.config import ScanConfig
 from mcts.mcp.models import MCPTool
 from mcts.reporting.display import effective_severity
-from mcts.reporting.models import Finding, Severity
+from mcts.reporting.models import Finding
 from mcts.reporting.trust_pipeline import apply_trust_layer, build_trust_context
 
 

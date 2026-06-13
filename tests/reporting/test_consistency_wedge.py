@@ -16,6 +16,7 @@ from mcts.reporting.sarif import build_sarif
 from mcts.scoring.engine import RiskScoringEngine
 
 SINGLE_TOOL = Path("examples/single-tool-agent-server/server.py")
+_NON_SECURITY_ANALYZERS = frozenset({"compliance", "live_discovery", "static_discovery"})
 
 
 def test_enforce_score_basis_uses_display_severity() -> None:
@@ -94,7 +95,7 @@ def test_severity_filter_uses_display_when_enforce() -> None:
             severity_filter=["critical"],
         )
     ).run()
-    security = [f for f in report.findings if f.analyzer not in {"compliance", "live_discovery", "static_discovery"}]
+    security = [f for f in report.findings if f.analyzer not in _NON_SECURITY_ANALYZERS]
     assert all(effective_severity(f) == Severity.CRITICAL for f in security)
     assert not any(f.analyzer == "attack_chains" for f in security)
 
@@ -107,7 +108,7 @@ def test_severity_filter_uses_template_when_warn() -> None:
             severity_filter=["critical"],
         )
     ).run()
-    security = [f for f in report.findings if f.analyzer not in {"compliance", "live_discovery", "static_discovery"}]
+    security = [f for f in report.findings if f.analyzer not in _NON_SECURITY_ANALYZERS]
     assert security
     assert all(f.severity == Severity.CRITICAL for f in security)
     assert any(f.analyzer == "attack_chains" for f in security)
@@ -152,9 +153,7 @@ def test_warn_mode_sarif_capped_gates_still_use_template() -> None:
     report = Scanner(ScanConfig(target=SINGLE_TOOL, findings_trust_mode="warn")).run()
     sarif = build_sarif(report)
     chain_results = [
-        r
-        for r in sarif["runs"][0]["results"]
-        if r.get("properties", {}).get("analyzer") == "attack_chains"
+        r for r in sarif["runs"][0]["results"] if r.get("properties", {}).get("analyzer") == "attack_chains"
     ]
     assert chain_results
     assert chain_results[0]["level"] == "warning"
@@ -170,16 +169,12 @@ def test_warn_mode_sarif_security_severity_capped() -> None:
     report = Scanner(ScanConfig(target=SINGLE_TOOL, findings_trust_mode="warn")).run()
     sarif = build_sarif(report)
     chain_results = [
-        r
-        for r in sarif["runs"][0]["results"]
-        if r.get("properties", {}).get("analyzer") == "attack_chains"
+        r for r in sarif["runs"][0]["results"] if r.get("properties", {}).get("analyzer") == "attack_chains"
     ]
     assert chain_results
     rule_id = chain_results[0]["ruleId"]
     rule_props = next(
-        rule["properties"]
-        for rule in sarif["runs"][0]["tool"]["driver"]["rules"]
-        if rule["id"] == rule_id
+        rule["properties"] for rule in sarif["runs"][0]["tool"]["driver"]["rules"] if rule["id"] == rule_id
     )
     assert rule_props.get("security-severity") == "5.0"
 

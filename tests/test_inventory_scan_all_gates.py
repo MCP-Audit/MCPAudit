@@ -8,9 +8,9 @@ from pathlib import Path
 from mcts.core.config import ScanConfig
 from mcts.inventory.models import InventoryEntry
 from mcts.inventory.scan_all import (
+    _row,
     collect_scan_all_gate_violations,
     scan_all_has_high_severity,
-    _row,
 )
 from mcts.mcp.models import MCPServerInfo
 from mcts.reporting.models import Finding, RiskScore, ScanReport, ScanSummary, ScoreBasis, Severity

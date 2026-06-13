@@ -51,7 +51,9 @@ def _has_handler_snippet(facts: object) -> bool:
     return any(isinstance(row, dict) and row.get("snippet") for row in facts)
 
 
-def _merge_runtime_scoring_tags(evidence: dict[str, Any], validation_tag: str, *, has_handler_snippet: bool) -> None:
+def _merge_runtime_scoring_tags(
+    evidence: dict[str, Any], validation_tag: str, *, has_handler_snippet: bool
+) -> None:
     """Align Phase 3 tags with v2 scoring (`risk_tags` / evidence_quality_factor)."""
     tags = set(evidence.get("risk_tags") or [])
     if validation_tag in {"live_probe", "live_proxy"}:

@@ -221,13 +221,17 @@ def _check_gates(report, config: ScanConfig) -> None:
         _print_min_score_gate_failure(report, config.min_score)
         violations = [item for item in violations if not item.startswith("legacy overall score")]
 
-    policy_failures = [item for item in violations if "allowlist" in item or item.startswith("blocked server")]
+    policy_failures = [
+        item for item in violations if "allowlist" in item or item.startswith("blocked server")
+    ]
     category_failures = [
         item
         for item in violations
         if item not in policy_failures and ("risk score" in item or "v2 category score" in item)
     ]
-    other_failures = [item for item in violations if item not in category_failures and item not in policy_failures]
+    other_failures = [
+        item for item in violations if item not in category_failures and item not in policy_failures
+    ]
 
     if policy_failures:
         console.print("[red]Governance policy violations:[/red]")
@@ -323,7 +327,10 @@ def scan(
     ] = None,
     max_high: Annotated[
         int | None,
-        typer.Option("--max-high", help="Exit 1 if high finding count exceeds this (enforce: display counts)"),
+        typer.Option(
+            "--max-high",
+            help="Exit 1 if high finding count exceeds this (enforce: display counts)",
+        ),
     ] = None,
     findings_trust_mode: Annotated[
         str | None,
@@ -1327,10 +1334,7 @@ def vet(
     if not json_output:
         console.print(f"[green]Saved[/green] {output_path}")
 
-    if any(
-        finding_severity_label(finding, config) in ("critical", "high")
-        for finding in report.findings
-    ):
+    if any(finding_severity_label(finding, config) in ("critical", "high") for finding in report.findings):
         raise typer.Exit(code=1)
 
 
@@ -1633,9 +1637,7 @@ def fuzz(
     output_path.write_text(json.dumps(payload, indent=2))
     ReportRenderer(resolved_theme, console=console).render_saved_notice(str(output_path))
 
-    if any(
-        finding_severity_label(finding, fuzz_config) in ("critical", "high") for finding in findings
-    ):
+    if any(finding_severity_label(finding, fuzz_config) in ("critical", "high") for finding in findings):
         raise typer.Exit(code=1)
 
 

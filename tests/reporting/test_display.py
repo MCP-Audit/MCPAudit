@@ -1,13 +1,12 @@
 """Tests for findings display helpers."""
 
-from mcts.reporting.display import effective_impact, effective_severity, is_security_finding, summary_for_gates
-from mcts.reporting.models import Finding, ScanReport, ScanSummary, Severity
-from mcts.core.config import ScanConfig
 from datetime import UTC, datetime
 from pathlib import Path
 
+from mcts.core.config import ScanConfig
 from mcts.mcp.models import MCPServerInfo
-from mcts.reporting.models import RiskScore, ScoreBasis
+from mcts.reporting.display import effective_severity, is_security_finding, summary_for_gates
+from mcts.reporting.models import Finding, RiskScore, ScanReport, ScanSummary, ScoreBasis, Severity
 
 
 def _finding(**kwargs) -> Finding:
@@ -64,9 +63,7 @@ def test_summary_for_gates_uses_template_by_default() -> None:
             risk_index=100,
             raw_risk=100,
             penalty=100,
-            basis=ScoreBasis(
-                critical=1, high=0, medium=0, low=0, scorable_total=1, excluded_non_scorable=0
-            ),
+            basis=ScoreBasis(critical=1, high=0, medium=0, low=0, scorable_total=1, excluded_non_scorable=0),
         ),
     )
     config = ScanConfig(target=Path("server.py"), findings_trust_mode="off")
@@ -87,9 +84,7 @@ def test_summary_for_gates_uses_display_when_enforced() -> None:
             risk_index=100,
             raw_risk=100,
             penalty=100,
-            basis=ScoreBasis(
-                critical=1, high=0, medium=0, low=0, scorable_total=1, excluded_non_scorable=0
-            ),
+            basis=ScoreBasis(critical=1, high=0, medium=0, low=0, scorable_total=1, excluded_non_scorable=0),
         ),
     )
     config = ScanConfig(target=Path("server.py"), findings_trust_mode="enforce")
@@ -111,9 +106,7 @@ def test_summary_for_gates_uses_template_when_warn() -> None:
             risk_index=100,
             raw_risk=100,
             penalty=100,
-            basis=ScoreBasis(
-                critical=1, high=0, medium=0, low=0, scorable_total=1, excluded_non_scorable=0
-            ),
+            basis=ScoreBasis(critical=1, high=0, medium=0, low=0, scorable_total=1, excluded_non_scorable=0),
         ),
     )
     config = ScanConfig(target=Path("server.py"), findings_trust_mode="warn")

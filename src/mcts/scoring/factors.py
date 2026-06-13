@@ -54,7 +54,9 @@ _CIAFC_HINT_WEIGHTS = {
 }
 
 
-def classify_business_impact(finding: Finding, weights: ScoringWeights, *, use_display: bool = False) -> float:
+def classify_business_impact(
+    finding: Finding, weights: ScoringWeights, *, use_display: bool = False
+) -> float:
     table = weights.classifiers.get("business_impact", {})
     evidence = finding.evidence or {}
     explicit = evidence.get("business_impact")
@@ -132,9 +134,7 @@ def build_factor_vector(finding: Finding, ctx: ScoringContext) -> RiskFactorVect
         reachability=reachability,
         exposure=exposure,
         blast_radius=compute_blast_radius(finding, ctx.tools),
-        business_impact=classify_business_impact(
-            finding, ctx.weights, use_display=ctx.use_display_severity
-        ),
+        business_impact=classify_business_impact(finding, ctx.weights, use_display=ctx.use_display_severity),
         asset_value=resolve_asset_value(finding, ctx.weights, ctx.assets),
         attack_preconditions=classify_preconditions(finding, ctx.scan_scope, ctx.weights),
         threat_maturity=classify_threat_maturity(finding, ctx.weights),

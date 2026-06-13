@@ -8,7 +8,7 @@ from mcts.analyzers.base import BaseAnalyzer
 from mcts.analyzers.finding_facts import build_analyzer_finding
 from mcts.analyzers.surface_context import scan_surfaces, surface_location, tool_name_for
 from mcts.mcp.models import MCPServerInfo
-from mcts.reporting.models import Severity
+from mcts.reporting.models import Finding, Severity
 
 PRIORITY_INSTRUCTIONS: tuple[str, ...] = (
     "system directive",

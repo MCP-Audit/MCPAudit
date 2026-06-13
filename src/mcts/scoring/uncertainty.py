@@ -88,8 +88,10 @@ def compute_risk_range(
         sum(effective_confidence(f) * r for r, f in pairs) / sum(r for r, _ in pairs) if pairs else 1.0
     )
     base_spread = absolute_risk * (1 - mean_conf) * 0.35
-    spread = base_spread * evidence_quality_factor(findings) * analyzer_disagreement_factor(
-        findings, use_display=use_display
+    spread = (
+        base_spread
+        * evidence_quality_factor(findings)
+        * analyzer_disagreement_factor(findings, use_display=use_display)
     )
     low = max(0, round(absolute_risk - spread))
     high = round(absolute_risk + spread)

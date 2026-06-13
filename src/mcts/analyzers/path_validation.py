@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import re
 
-from mcts.analyzers.finding_facts import build_analyzer_finding
 from mcts.analyzers.base import BaseAnalyzer
+from mcts.analyzers.finding_facts import build_analyzer_finding
 from mcts.analyzers.tool_classification import is_file_access_tool
 from mcts.mcp.models import MCPServerInfo
 from mcts.reporting.models import Finding, Severity, SourceLocation

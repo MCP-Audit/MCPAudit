@@ -81,7 +81,7 @@ def test_aggressive_requires_fuzz_consent() -> None:
 
 def test_fuzz_finding_emits_bronze_facts() -> None:
     from mcts.fuzz.classifier import ClassifiedResponse, ResponseSignal, finding_from_classification
-    from mcts.fuzz.payloads import FuzzProbe, FuzzLevel
+    from mcts.fuzz.payloads import FuzzLevel, FuzzProbe
 
     probe = FuzzProbe(
         id="malformed-json",
@@ -102,7 +102,7 @@ def test_fuzz_finding_emits_bronze_facts() -> None:
 
 def test_fuzz_finding_includes_response_excerpt_at_build() -> None:
     from mcts.fuzz.classifier import ClassifiedResponse, ResponseSignal, finding_from_classification
-    from mcts.fuzz.payloads import FuzzProbe, FuzzLevel
+    from mcts.fuzz.payloads import FuzzLevel, FuzzProbe
 
     probe = FuzzProbe(
         id="malformed-json",

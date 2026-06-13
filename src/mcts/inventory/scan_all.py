@@ -66,9 +66,8 @@ def scan_all_has_high_severity(base_config: ScanConfig, rows: list[dict]) -> boo
             continue
         report = ScanReport.model_validate(report_data)
         scan_config = base_config.model_copy(update={"target": report.target})
-        if report.score_v2 is not None:
-            if report.score_v2.risk_level in {"high", "critical"}:
-                return True
+        if report.score_v2 is not None and report.score_v2.risk_level in {"high", "critical"}:
+            return True
         gate_summary = summary_for_gates(report, scan_config)
         if gate_summary.critical or gate_summary.high:
             return True

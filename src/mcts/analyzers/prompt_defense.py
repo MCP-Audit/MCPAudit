@@ -9,7 +9,7 @@ from mcts.analyzers.finding_facts import build_analyzer_finding
 from mcts.analyzers.surface_context import is_intentional_context_surface, scan_surfaces
 from mcts.analyzers.surfaces import ScanSurfaceKind
 from mcts.mcp.models import MCPServerInfo
-from mcts.reporting.models import Severity
+from mcts.reporting.models import Finding, Severity
 
 _DEFENSE_VECTORS: dict[str, tuple[str, ...]] = {
     "instruction_override": (

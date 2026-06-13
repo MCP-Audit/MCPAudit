@@ -105,11 +105,7 @@ class MachineScanSummary:
             "servers": [],
         }
         for row in self.results:
-            critical, high = (
-                self._severity_counts(row.report)
-                if row.report is not None
-                else (0, 0)
-            )
+            critical, high = self._severity_counts(row.report) if row.report is not None else (0, 0)
             server_row: dict = {
                 "client": row.entry.client,
                 "server_name": row.entry.server_name,

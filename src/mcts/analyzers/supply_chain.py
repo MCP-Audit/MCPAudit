@@ -7,6 +7,7 @@ import re
 from pathlib import Path
 
 from mcts.analyzers.base import BaseAnalyzer
+from mcts.analyzers.finding_facts import build_analyzer_finding
 from mcts.analyzers.manifest_deps import (
     UNPINNED_PATTERN,
     is_unpinned_spec,
@@ -15,7 +16,6 @@ from mcts.analyzers.manifest_deps import (
     normalize_package_name,
 )
 from mcts.core.config import DEFAULT_EXCLUDE_DIRS
-from mcts.analyzers.finding_facts import build_analyzer_finding
 from mcts.mcp.models import MCPServerInfo
 from mcts.reporting.models import Finding, Severity, SourceLocation
 

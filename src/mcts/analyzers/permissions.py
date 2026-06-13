@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import re
 
-from mcts.analyzers.finding_facts import build_analyzer_finding
 from mcts.analyzers.base import BaseAnalyzer
+from mcts.analyzers.finding_facts import build_analyzer_finding
 from mcts.mcp.models import MCPServerInfo, MCPTool
 from mcts.reporting.models import Finding, Severity
 from mcts.scoring.evidence_tags import tag_permission_finding

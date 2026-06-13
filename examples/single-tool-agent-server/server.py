@@ -1,7 +1,5 @@
 """Single-tool MCP server — sa-mcp-server capability overlap regression fixture."""
 
-from pathlib import Path
-
 
 def create_app():
     """One tool exhibiting read + credential + egress signals (overlap, not a proven chain)."""

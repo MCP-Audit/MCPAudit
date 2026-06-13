@@ -72,10 +72,9 @@ def evaluate_policy(
     ScanConfig via merge_scan_config_with_policy and are enforced by scan_gates only.
     """
     violations: list[str] = []
-    if policy.allowed_servers:
-        if not any(server in policy.allowed_servers for server in servers):
-            checked = ", ".join(repr(server) for server in servers)
-            violations.append(f"scan target not in allowlist (checked: {checked})")
+    if policy.allowed_servers and not any(server in policy.allowed_servers for server in servers):
+        checked = ", ".join(repr(server) for server in servers)
+        violations.append(f"scan target not in allowlist (checked: {checked})")
     for server in policy.blocked_servers:
         if server in servers:
             violations.append(f"blocked server present: {server}")

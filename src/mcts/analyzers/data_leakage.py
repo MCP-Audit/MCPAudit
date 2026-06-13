@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import re
 
-from mcts.analyzers.finding_facts import build_analyzer_finding
 from mcts.analyzers.base import BaseAnalyzer
+from mcts.analyzers.finding_facts import build_analyzer_finding
 from mcts.mcp.models import MCPServerInfo
-from mcts.reporting.models import Severity, SourceLocation
+from mcts.reporting.models import Finding, Severity, SourceLocation
 from mcts.scoring.evidence_tags import tag_data_leakage_finding
 
 SECRET_PATTERNS: list[tuple[str, re.Pattern[str], Severity]] = [
