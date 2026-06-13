@@ -9,7 +9,7 @@ from typing import Any
 
 from mcts.analyzers.base import BaseAnalyzer
 from mcts.analyzers.data_leakage import SECRET_PATTERNS
-from mcts.analyzers.finding_facts import build_analyzer_finding
+from mcts.analyzers.finding_facts import build_analyzer_finding, build_skip_finding
 from mcts.mcp.models import MCPServerInfo
 from mcts.reporting.models import Finding, Severity, SourceLocation
 
@@ -58,6 +58,8 @@ class EmbeddingSecretsAnalyzer(BaseAnalyzer):
 
     def analyze(self, server: MCPServerInfo) -> list[Finding]:
         findings: list[Finding] = []
+        if self.semantic_secrets:
+            _load_embedding_model()
         for tool in server.tools:
             corpus = _tool_corpus(tool)
             if _regex_credential_hit(corpus):
@@ -65,6 +67,20 @@ class EmbeddingSecretsAnalyzer(BaseAnalyzer):
                 continue
             if self.semantic_secrets and _semantic_credential_hit(corpus, self.semantic_threshold):
                 findings.append(_finding(tool, "semantic_credential", 0.8))
+        if self.semantic_secrets and _EMBEDDING_STATE.unavailable:
+            findings.append(
+                build_skip_finding(
+                    finding_id="embedding-secrets-semantic-skipped",
+                    analyzer="embedding_secrets",
+                    title="Semantic credential detection skipped",
+                    description=(
+                        "Semantic embedding model unavailable; only regex and phrase fallback ran."
+                    ),
+                    recommendation=(
+                        "Install sentence-transformers and model weights, or disable semantic_secrets."
+                    ),
+                )
+            )
         return findings
 
 

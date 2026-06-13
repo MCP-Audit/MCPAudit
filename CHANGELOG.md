@@ -39,6 +39,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Pentest warn recommendations** — remediation text matches display severity (no false “remediate critical” on overlap)
 - **Readiness warn scoring** — `readiness_score` and `production_ready` use display severity when trust ≠ off
 - **Acceptance script lint** — `scripts/validate_trust_layer.py` passes `ruff check .` (CI blocker)
+- **Auxiliary gate parity** — vet/fuzz/inventory/readiness/pentest use `collect_findings_gate_violations()`
+- **MCP explain_finding** — trust fields, facts, and interpretation in tool output
+- **compare_baselines** — display-aware critical/high counts when trust summaries present
+- **embedding_secrets** — skip row when semantic model unavailable
 - **Validator `path_status`** — stale `evidence.path_status=proven` no longer bypasses graph checks
 - **Compliance coverage kind** — compliance meta-findings tagged `finding_kind=coverage` (excluded from security priority/bronze gates)
 - **`require_auth_env_for_sensitive`** — policy gate fails when sensitive analyzers enabled without API env vars

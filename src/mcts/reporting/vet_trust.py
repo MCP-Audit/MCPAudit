@@ -31,6 +31,10 @@ def vet_finding_to_finding(row: VetFinding) -> Finding:
         recommendation=row.recommendation,
         evidence=evidence,
         finding_kind="hygiene",
+        display_severity=row.display_severity,
+        priority_score=row.priority_score,
+        evidence_strength=row.evidence_strength,
+        rule_stability=row.rule_stability,
     )
 
 

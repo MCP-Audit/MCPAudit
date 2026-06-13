@@ -181,3 +181,22 @@ def test_machine_wide_v2_medium_still_checks_template_counts() -> None:
     )
     assert report.summary.critical >= 1
     assert summary.has_high_severity()
+
+
+def test_collect_findings_gate_violations_enforce_overlap_passes() -> None:
+    from mcts.governance.gate_violations import collect_findings_gate_violations
+
+    report = Scanner(ScanConfig(target=SINGLE_TOOL, findings_trust_mode="enforce")).run()
+    config = ScanConfig(
+        target=SINGLE_TOOL,
+        findings_trust_mode="enforce",
+        max_critical=0,
+        ignore_policy=True,
+    )
+    violations = collect_findings_gate_violations(
+        report.findings,
+        config,
+        target=str(SINGLE_TOOL),
+        scan_scope="repository",
+    )
+    assert violations == []

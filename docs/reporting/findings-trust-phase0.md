@@ -296,7 +296,7 @@ Items 1–8 from the June 2026 deep audits are **fixed** in-tree (see table abov
 
 ### Gate scope (auxiliary commands)
 
-Full YAML + scan gate evaluation (`collect_gate_violations`) applies to **`mcts scan`**, **REST `POST /scan`**, **`mcts scan --machine-wide`**, and **`mcts inventory --scan-all`**. Other auxiliary paths (`inventory` default, `vet`, `fuzz`, `readiness`, `pentest`) merge policy for trust mode and thresholds but exit on **severity heuristics** unless documented otherwise.
+Full YAML + scan gate evaluation (`collect_gate_violations`) applies to **`mcts scan`**, **REST `POST /scan`**, **`mcts scan --machine-wide`**, and **`mcts inventory --scan-all`**. Auxiliary CLIs (`inventory` default, `vet`, `fuzz`, `readiness`, `pentest`) call **`collect_findings_gate_violations()`** for policy thresholds (`max_critical`, priority gates, etc.) plus the legacy critical/high heuristic when findings remain severe.
 
 ### Policy trust mode on auxiliary CLIs
 

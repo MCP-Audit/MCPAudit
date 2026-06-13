@@ -212,7 +212,10 @@ def _level_exceeds(actual: str, maximum: str) -> bool:
 def _check_gates(report, config: ScanConfig) -> None:
     from mcts.governance.gate_violations import collect_gate_violations
 
-    violations = collect_gate_violations(report, config)
+    _exit_on_gate_violations(collect_gate_violations(report, config), report, config)
+
+
+def _exit_on_gate_violations(violations: list[str], report, config: ScanConfig) -> None:
     if not violations:
         return
 
@@ -246,6 +249,54 @@ def _check_gates(report, config: ScanConfig) -> None:
         for failure in other_failures:
             console.print(f"[red]{failure}[/red]")
     raise typer.Exit(code=1)
+
+
+def _check_finding_policy_gates(
+    findings: list,
+    config: ScanConfig,
+    *,
+    target: str | None = None,
+    scan_scope: str = "repository",
+) -> None:
+    """YAML/CLI policy gates for auxiliary finding lists (no severity heuristic)."""
+    from mcts.governance.gate_violations import build_gate_scan_report, collect_findings_gate_violations
+
+    violations = collect_findings_gate_violations(
+        findings,
+        config,
+        target=target,
+        scan_scope=scan_scope,
+    )
+    if violations:
+        gate_report = build_gate_scan_report(
+            findings,
+            config,
+            target=target,
+            scan_scope=scan_scope,
+        )
+        _exit_on_gate_violations(violations, gate_report, config)
+
+
+def _check_auxiliary_finding_gates(
+    findings: list,
+    config: ScanConfig,
+    *,
+    target: str | None = None,
+    scan_scope: str = "repository",
+) -> None:
+    """Policy gates plus legacy critical/high heuristic for security-oriented CLIs."""
+    from mcts.reporting.trust_apply import finding_severity_label
+
+    _check_finding_policy_gates(
+        findings,
+        config,
+        target=target,
+        scan_scope=scan_scope,
+    )
+    if findings and any(
+        finding_severity_label(finding, config) in ("critical", "high") for finding in findings
+    ):
+        raise typer.Exit(code=1)
 
 
 @app.callback()
@@ -1150,7 +1201,6 @@ def inventory(
         scan_all_has_high_severity,
         write_inventory_scan_all,
     )
-    from mcts.reporting.display import effective_severity
     from mcts.reporting.trust_apply import apply_config_trust_layer
     from mcts.taxonomy.mapper import enrich_findings
 
@@ -1252,12 +1302,12 @@ def inventory(
     ReportRenderer(resolved_theme, console=console).render_saved_notice(str(output_path))
 
     combined = shadow_findings + skill_findings + toxic_findings
-    if combined and any(
-        (effective_severity(f) if inv_config.findings_trust_mode != "off" else f.severity).value
-        in ("critical", "high")
-        for f in combined
-    ):
-        raise typer.Exit(code=1)
+    _check_auxiliary_finding_gates(
+        combined,
+        inv_config,
+        target=str(inv_config.target),
+        scan_scope="inventory",
+    )
 
 
 @app.command()
@@ -1294,8 +1344,8 @@ def vet(
     import json
 
     from mcts.core.config import ScanConfig
-    from mcts.reporting.trust_apply import finding_severity_label, merge_scan_config_defaults
-    from mcts.reporting.vet_trust import apply_trust_to_vet_report, vet_severity_label
+    from mcts.reporting.trust_apply import merge_scan_config_defaults
+    from mcts.reporting.vet_trust import apply_trust_to_vet_report, vet_finding_to_finding, vet_severity_label
     from mcts.vet import run_vet
 
     try:
@@ -1334,8 +1384,13 @@ def vet(
     if not json_output:
         console.print(f"[green]Saved[/green] {output_path}")
 
-    if any(finding_severity_label(finding, config) in ("critical", "high") for finding in report.findings):
-        raise typer.Exit(code=1)
+    gate_findings = [vet_finding_to_finding(finding) for finding in report.findings]
+    _check_auxiliary_finding_gates(
+        gate_findings,
+        config,
+        target=package,
+        scan_scope="vet",
+    )
 
 
 @app.command()
@@ -1637,8 +1692,12 @@ def fuzz(
     output_path.write_text(json.dumps(payload, indent=2))
     ReportRenderer(resolved_theme, console=console).render_saved_notice(str(output_path))
 
-    if any(finding_severity_label(finding, fuzz_config) in ("critical", "high") for finding in findings):
-        raise typer.Exit(code=1)
+    _check_auxiliary_finding_gates(
+        findings,
+        fuzz_config,
+        target=target_label,
+        scan_scope="live" if (url or command) else "repository",
+    )
 
 
 def _parse_headers(header: list[str] | None) -> dict[str, str]:
@@ -1723,6 +1782,13 @@ def readiness(
 
     if report.tools_checked == 0:
         raise typer.Exit(code=1)
+
+    _check_finding_policy_gates(
+        report.findings,
+        config,
+        target=str(target),
+        scan_scope="readiness",
+    )
 
 
 @app.command(name="serve")
@@ -2204,6 +2270,18 @@ def pentest(
             for item in report.recommendations[:5]:
                 console.print(f"  • {item}")
         console.print(f"\n[green]Saved[/green] {output_path}")
+
+    if report.static_report:
+        from mcts.reporting.models import Finding, ScanReport
+
+        static_scan = ScanReport.model_validate(report.static_report)
+        fuzz_rows = [Finding.model_validate(row) for row in report.fuzz_findings]
+        _check_auxiliary_finding_gates(
+            static_scan.findings + fuzz_rows,
+            config,
+            target=str(target),
+            scan_scope=static_scan.scan_scope,
+        )
 
     if report.verdict in {"critical", "high"}:
         raise typer.Exit(code=1)
