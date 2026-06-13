@@ -28,5 +28,9 @@ findings_trust_mode: enforce
 
 # Server allow/block lists:
 # allowed_servers:
+#   - my-mcp-server-name
 #   - ./examples/vulnerable-mcp-server/server.py
 # blocked_servers: []
+
+# Fail when sensitive opt-in analyzers are enabled without API credentials:
+# require_auth_env_for_sensitive: true

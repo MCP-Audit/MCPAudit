@@ -139,8 +139,7 @@ class ScanConfig(BaseModel):
     min_evidence_strength: str | None = None
     enforce_bronze_facts: bool | None = None
     collapse_template_severity: bool | None = None
-
-    @field_validator("min_evidence_strength")
+    require_auth_env_for_sensitive: bool = False
     @classmethod
     def _validate_min_evidence_strength(cls, value: str | None) -> str | None:
         if value is None:

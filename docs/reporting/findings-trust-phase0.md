@@ -2,7 +2,7 @@
 
 > [Documentation](../index.md) → [Reporting](README.md) → **Findings trust (Phase 0)**
 
-**Status:** Implemented in tree (Phase 0 → B2 + Phase 3 + alignment fixes) · **725 tests** · Acceptance: `scripts/validate_trust_layer.py` (0 failures) · Tracks [#258](https://github.com/MCP-Audit/MCTS/issues/258)
+**Status:** Implemented in tree (Phase 0 → B2 + Phase 3 + alignment fixes) · **728 tests** · Acceptance: `scripts/validate_trust_layer.py` (0 failures) · Tracks [#258](https://github.com/MCP-Audit/MCTS/issues/258)
 
 This document is the **maintainer-facing record** of what Phase 0 delivered, what was intentionally deferred, known operational risks, and the mitigation plan for follow-up work.
 
@@ -137,7 +137,7 @@ Overlap evidence: `path_status: unproven`; fake `hop_count` / `path` removed.
 **Acceptance (single-tool + enforce):** `display_summary.critical == 0`; overlap titles honest; gates pass with `--fail-on-critical`; SARIF `level=warning` + `security-severity=5.0` for capped chains.
 
 ```bash
-uv run pytest -q                                    # full suite — 725 passed (2026-06)
+uv run pytest -q                                    # full suite — 728 passed (2026-06)
 uv run pytest tests/reporting/ tests/scoring/ -q    # reporting + scoring focus
 uv run pytest tests/scoring/test_scoring_v2_trust.py -q
 uv run python scripts/validate_trust_layer.py       # acceptance harness — 0 failure(s)
@@ -440,7 +440,7 @@ Under **warn**: SARIF levels are capped but `--fail-on-critical` still uses temp
 ### Automated
 
 ```bash
-uv run pytest -q                                    # full suite — 725 passed (2026-06)
+uv run pytest -q                                    # full suite — 728 passed (2026-06)
 uv run pytest tests/reporting/ tests/scoring/ -q    # reporting + scoring focus
 uv run pytest tests/scoring/test_scoring_v2_trust.py -q
 uv run python scripts/validate_trust_layer.py       # acceptance harness — 0 failure(s)
@@ -508,7 +508,7 @@ All mature analyzers including optional/metadata-heavy paths (`npm_audit`, `vuln
 
 ### Still raw `Finding()` outside analyzers
 
-Readiness, compliance, and probe/discovery helpers still construct raw `Finding()` rows. **`fuzz/classifier.py` is migrated** — fuzz findings emit bronze `evidence.facts` via `build_analyzer_finding`. Deferred paths pass through `apply_trust_layer()` but do not emit bronze facts unless migrated. The bronze gate applies only to **`experimental`** analyzers when `--enforce-bronze-facts` is set.
+Readiness, compliance, and probe/discovery helpers still construct raw `Finding()` rows. Compliance meta-findings set `finding_kind=coverage` and receive `rule_stability` after the trust pipeline (excluded from priority/bronze security gates). **`fuzz/classifier.py` is migrated** — fuzz findings emit bronze `evidence.facts` via `build_analyzer_finding`. Deferred paths pass through `apply_trust_layer()` but do not emit bronze facts unless migrated. The bronze gate applies only to **`experimental`** analyzers when `--enforce-bronze-facts` is set.
 
 Vulnerable fixture under enforce: **100%** of security findings have `evidence.facts`; **3 display critical** remain (real issues, not overlap noise).
 
@@ -534,6 +534,10 @@ Schema-derived runtime rows (`schema-*` ids) are **not** tagged as live proxy.
 **Bronze gate:** `--enforce-bronze-facts` is active only under **`enforce`**.
 
 **`max_high` / `max_critical`:** Merged from `.mcts/policy.yaml` into `ScanConfig`; enforced via `scan_gates` (display counts under enforce). REST API exposes `max_critical`, `max_high`, and optional `enforce_bronze_facts` (null inherits policy). Machine-wide scans call `collect_gate_violations()` per server plus legacy critical/high heuristic when no explicit gate fires.
+
+**`require_auth_env_for_sensitive`:** When `true` in policy (merged into `ScanConfig`), gates fail if `--enable-llm-judge`, `--enable-llm-triage`, `--enable-cloud-inspect`, or `--enable-virustotal` is set without the corresponding `MCTS_*_API_KEY` env vars.
+
+**Compliance rows:** Emitted post-trust with `finding_kind=coverage` — excluded from priority/bronze security gates via `is_security_finding()`.
 
 ---
 

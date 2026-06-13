@@ -92,6 +92,7 @@ class ComplianceChecker:
                     description="Scan completed without security findings — verify discovery scope.",
                     severity=Severity.LOW,
                     recommendation="Confirm the target contains MCP tool definitions.",
+                    finding_kind="coverage",
                 )
             )
 
@@ -107,6 +108,7 @@ class ComplianceChecker:
                         "Expand scan scope or enable additional analyzers for full MCP Top 10 coverage."
                     ),
                     evidence={"missing_mcp_categories": sorted(missing_mcp), "covered": sorted(covered_mcp)},
+                    finding_kind="coverage",
                 )
             )
 
@@ -131,6 +133,7 @@ class ComplianceChecker:
                         "owasp_llm_gaps": sorted(missing_llm),
                         "owasp_mcp_gaps": sorted(missing_mcp),
                     },
+                    finding_kind="coverage",
                 )
             )
 

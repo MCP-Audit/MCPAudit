@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from mcts.core.config import ScanConfig
+from mcts.governance.auth_env import evaluate_auth_env_violations
 from mcts.governance.policy import evaluate_policy, load_policy
 from mcts.governance.scan_gates import evaluate_scan_gate_violations
 from mcts.reporting.models import ScanReport
@@ -23,6 +24,7 @@ def _policy_server_ids(report: ScanReport) -> list[str]:
 def collect_gate_violations(report: ScanReport, config: ScanConfig) -> list[str]:
     """Scan gates plus YAML governance policy (allowlist, v2 category mins, etc.)."""
     violations = list(evaluate_scan_gate_violations(report, config))
+    violations.extend(evaluate_auth_env_violations(config))
     if config.ignore_policy:
         return violations
     try:

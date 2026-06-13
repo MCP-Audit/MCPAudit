@@ -134,6 +134,9 @@ def merge_scan_config_with_policy(config: Any, policy: GovernancePolicy | None) 
         if getattr(policy, field):
             updates[field] = True
 
+    if not config.require_auth_env_for_sensitive and policy.require_auth_env_for_sensitive:
+        updates["require_auth_env_for_sensitive"] = True
+
     if not updates:
         return config
 

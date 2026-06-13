@@ -37,7 +37,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Auxiliary trust explicit parity** — vet/fuzz/inventory/readiness/pentest set `findings_trust_mode_explicit` when `--findings-trust-mode` is passed; API readiness adds `ignore_policy` + explicit flag
 - **Pentest warn parity** — verdict and ranking use display severity when trust ≠ off (aligned with fuzz/vet exit)
 - **Validator `path_status`** — stale `evidence.path_status=proven` no longer bypasses graph checks
-- **B3 pipeline** — post-collapse gates and score breakdown covered in tests + acceptance script
+- **Compliance coverage kind** — compliance meta-findings tagged `finding_kind=coverage` (excluded from security priority/bronze gates)
+- **`require_auth_env_for_sensitive`** — policy gate fails when sensitive analyzers enabled without API env vars
 - **Compliance critical threshold** — `multiple-critical` uses template severity in warn/off (aligned with CI gates); display under enforce
 - **Trust edge fixes (2026-06)** — `_has_proven_path` requires associated `finding_ids`; machine-wide runs `collect_gate_violations()` per server; fuzz/vet exit uses display severity under warn/enforce; toxic_flows unique finding IDs; fuzz evidence at build time; API `max_critical` + optional bronze flags
 - **Governance deduplication** — CLI/API use single `collect_gate_violations()` path; `evaluate_policy()` is allowlist/blocklist only (numeric gates via merged `ScanConfig` + scan gates)

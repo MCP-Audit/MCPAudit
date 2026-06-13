@@ -51,3 +51,29 @@ def test_collect_gate_violations_allowlist_matches_server_name(tmp_path: Path) -
     )
     violations = collect_gate_violations(report, config)
     assert not any("allowlist" in item for item in violations)
+
+
+def test_collect_gate_violations_auth_env_when_llm_enabled_without_key(monkeypatch) -> None:
+    monkeypatch.delenv("MCTS_LLM_API_KEY", raising=False)
+    report = Scanner(ScanConfig(target=SINGLE_TOOL, findings_trust_mode="enforce")).run()
+    config = ScanConfig(
+        target=SINGLE_TOOL,
+        findings_trust_mode="enforce",
+        enable_llm_judge=True,
+        require_auth_env_for_sensitive=True,
+    )
+    violations = collect_gate_violations(report, config)
+    assert any("require_auth_env_for_sensitive" in item for item in violations)
+
+
+def test_collect_gate_violations_auth_env_passes_with_key(monkeypatch) -> None:
+    monkeypatch.setenv("MCTS_LLM_API_KEY", "test-key")
+    report = Scanner(ScanConfig(target=SINGLE_TOOL, findings_trust_mode="enforce")).run()
+    config = ScanConfig(
+        target=SINGLE_TOOL,
+        findings_trust_mode="enforce",
+        enable_llm_judge=True,
+        require_auth_env_for_sensitive=True,
+    )
+    violations = collect_gate_violations(report, config)
+    assert not any("require_auth_env_for_sensitive" in item for item in violations)

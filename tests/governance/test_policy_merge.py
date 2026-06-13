@@ -30,10 +30,12 @@ def test_merge_policy_applies_boolean_flags_when_cli_default() -> None:
         findings_trust_mode="enforce",
         enforce_bronze_facts=True,
         collapse_template_severity=True,
+        require_auth_env_for_sensitive=True,
     )
     merged = merge_scan_config_with_policy(ScanConfig(target=SINGLE_TOOL), policy)
     assert merged.enforce_bronze_facts is True
     assert merged.collapse_template_severity is True
+    assert merged.require_auth_env_for_sensitive is True
 
 
 def test_merge_policy_explicit_false_preserves_cli_bool() -> None:
